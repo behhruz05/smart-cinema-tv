@@ -3,30 +3,35 @@ import { View, Text, StyleSheet } from 'react-native';
 import { AlloPlayBrand } from '../../../shared/components/AlloPlayBrand';
 import { LoadingBar } from '../../../shared/components/LoadingBar';
 
-export function LoaderScreen({ navigation }) {
+export function LoaderScreen() {
   const [progress, setProgress] = useState(0);
+  const [showBrand, setShowBrand] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
           clearInterval(interval);
-          navigation.replace('Login');
+          setShowBrand(true);
           return 100;
         }
         return prev + 2;
       });
-    }, 40);
+    }, 20);
 
     return () => clearInterval(interval);
-  }, [navigation]);
+  }, []);
 
   return (
     <View style={styles.container}>
-
-      <Text style={styles.percent}>{progress}%</Text>
-
-      <LoadingBar progress={progress} />
+      {!showBrand ? (
+        <>
+          <Text style={styles.percent}>{progress}%</Text>
+          <LoadingBar progress={progress} />
+        </>
+      ) : (
+        <AlloPlayBrand />
+      )}
     </View>
   );
 }
@@ -38,7 +43,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   percent: {
     color: '#fff',
     fontSize: 24,

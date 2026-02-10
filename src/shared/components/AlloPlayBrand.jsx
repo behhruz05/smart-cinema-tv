@@ -1,17 +1,37 @@
 import React from 'react';
-import { Text, View, Image } from 'react-native';
+import { Text, View, Image, StyleSheet } from 'react-native';
 import Logo from '../../assets/imgs/Group.png';
 
 export function AlloPlayBrand() {
   return (
-    <View style={{ marginBottom: 40 }}>
+    <View style={styles.container}>
       <Image
         source={Logo}
-        style={{ width: 120, height: 40, resizeMode: 'contain' }}
+        style={styles.logo}
       />
-      <Text style={{ color: 'white', fontSize: 20, fontWeight: '600' }}>
+      <Text style={styles.text}>
         Allo play
       </Text>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#010101',
+  },
+
+  logo: {
+    width: 50,
+    resizeMode: 'contain',
+    marginRight: 4,
+  },
+
+  text: {
+    color: '#fff',
+    fontSize: 40,
+  },
+});
