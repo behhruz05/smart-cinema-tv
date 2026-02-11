@@ -1,12 +1,14 @@
 import { api } from '../../../shared/hooks/api';
-import { LoginPayload, LoginResponse } from '../types';
+import { LoginPayload } from '../types';
 
 export const authApi = {
-  login(payload: LoginPayload) {
-    return api<LoginResponse>('/auth/login', {
+  async login(payload: LoginPayload) {
+    const res = await api<any>('/auth/login', {
       method: 'POST',
       body: payload,
       retry: 2,
     });
+
+    return res.data.tokens.access_token;
   },
 };

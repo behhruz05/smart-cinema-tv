@@ -66,10 +66,8 @@ export function LoginScreen() {
         ...DEVICE_INFO,
       };
 
-      const res = await authApi.login(payload);
-
-      // 🔥 SHU YER — Home ochiladi
-      setToken(res.token);
+      const token = await authApi.login(payload);
+      setToken(token);
 
     } catch (e: any) {
       setError(e.message || 'Ошибка входа');

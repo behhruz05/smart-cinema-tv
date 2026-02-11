@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Provider } from 'react-redux';
+import { store } from '../../store';
 
 type AuthContextType = {
   token: string | null;
@@ -25,9 +27,11 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ token, isLoading, setToken }}>
-      {children}
-    </AuthContext.Provider>
+    <Provider store={store}>
+      <AuthContext.Provider value={{ token, isLoading, setToken }}>
+        {children}
+      </AuthContext.Provider>
+    </Provider>
   );
 }
 
