@@ -21,7 +21,7 @@ export function HomeCarousel() {
   const SIDEBAR_WIDTH = isSidebarOpen ? 220 : 90;
 
   const PADDING = 40;
-  const SPACING = 20;
+  const SPACING = 22;
 
   const ITEM_WIDTH = width - SIDEBAR_WIDTH - PADDING;
 
@@ -57,7 +57,6 @@ export function HomeCarousel() {
       decelerationRate="fast"
       showsHorizontalScrollIndicator={false}
       bounces={false}
-      contentContainerStyle={{ paddingHorizontal: 20 }}
       ItemSeparatorComponent={() => <View style={{ width: SPACING }} />}
       renderItem={({ item }) => (
         <View style={{ width: ITEM_WIDTH }}>

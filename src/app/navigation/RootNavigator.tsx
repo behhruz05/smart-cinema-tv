@@ -22,5 +22,10 @@ export function RootNavigator() {
     return <LoaderScreen />;
   }
 
+  if (!token) {
+    return <AuthNavigator/>
+  }
+
   return <MainNavigator />;
 }
+

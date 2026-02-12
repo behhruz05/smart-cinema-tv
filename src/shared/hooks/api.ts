@@ -1,3 +1,6 @@
+import { triggerLogout } from "../../features/auth/authBridge";
+import { tokenStorage } from "../lib/tokenStorage";
+
 const BASE_URL = 'https://api.alloplay.uz/api/v1';
 const TIMEOUT = 10000;
 
@@ -6,7 +9,6 @@ type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 interface RequestOptions {
   method?: HttpMethod;
   body?: any;
-  token?: string;
   headers?: Record<string, string>;
   retry?: number;
 }
@@ -40,12 +42,13 @@ export async function api<T>(
   const {
     method = 'GET',
     body,
-    token,
     headers = {},
     retry = 0,
   } = options;
 
   try {
+    const token = await tokenStorage.get();
+
     const response = await fetchWithTimeout(
       `${BASE_URL}${endpoint}`,
       {
@@ -64,6 +67,8 @@ export async function api<T>(
     const data = text ? JSON.parse(text) : null;
 
     if (response.status === 401) {
+      await tokenStorage.remove();
+      triggerLogout();
       throw new Error(data?.error?.message || 'UNAUTHORIZED');
     }
 
@@ -80,6 +85,7 @@ export async function api<T>(
     }
 
     return data as T;
+
   } catch (e) {
     if (retry > 0) {
       return api(endpoint, { ...options, retry: retry - 1 });
