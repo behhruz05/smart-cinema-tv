@@ -1,16 +1,32 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  Pressable,
+} from 'react-native';
 import { Movie } from '../../../types/search';
 
 interface Props {
   movie: Movie;
 }
 
-export const SearchMovieCard = React.memo(({ movie }: Props) => {
+export const MovieCard = React.memo(({ movie }: Props) => {
+  const [focused, setFocused] = useState(false);
+
   const rating = Number(movie.imdb_rating).toFixed(1);
 
   return (
-    <View style={styles.card}>
+    <Pressable
+      focusable
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      style={[
+        styles.card,
+        focused && styles.focusedCard,
+      ]}
+    >
       <Image source={{ uri: movie.poster_url }} style={styles.image} />
 
       <View style={styles.info}>
@@ -22,13 +38,20 @@ export const SearchMovieCard = React.memo(({ movie }: Props) => {
           ⭐ {rating} • {movie.year}
         </Text>
       </View>
-    </View>
+    </Pressable>
   );
 });
 
 const styles = StyleSheet.create({
   card: {
     marginBottom: 20,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  focusedCard: {
+    borderColor: '#fff',
+    transform: [{ scale: 1.01 }],
   },
   image: {
     width: '100%',

@@ -10,7 +10,16 @@ interface MovieQueryParams {
 }
 
 export const searchService = {
-  getMovies({ endpoint, page = 1, per_page = 20, lang = 'uz', q }: MovieQueryParams) {
+  getMovies(
+    {
+      endpoint,
+      page = 1,
+      per_page = 20,
+      lang = 'uz',
+      q,
+    }: MovieQueryParams,
+    signal?: AbortSignal
+  ) {
     const query = new URLSearchParams({
       page: String(page),
       per_page: String(per_page),
@@ -19,7 +28,10 @@ export const searchService = {
 
     return api<ApiResponse<Movie[]>>(
       `/movies/${endpoint}?${query}`,
-      { headers: { 'Accept-Language': lang } }
+      {
+        headers: { 'Accept-Language': lang },
+        signal, 
+      }
     );
   },
 

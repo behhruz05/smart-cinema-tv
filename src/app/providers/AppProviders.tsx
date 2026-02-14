@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Provider } from 'react-redux';
-import { store } from '../../store';
 import { setLogoutHandler } from '../../features/auth/authBridge';
 import { tokenStorage } from '../../shared/lib/tokenStorage';
+import { store } from '../../store';
 
 type AuthContextType = {
   token: string | null;

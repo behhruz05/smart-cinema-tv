@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -15,22 +15,20 @@ import {
   setSelectedGenre,
 } from '../../../store/slice/search.slice';
 
-export function PopularMovies() {
+export function MovieGanres() {
   const dispatch = useDispatch<AppDispatch>();
 
-  const { genres, genreLoading, selectedGenre } = useSelector(
+  const { genres, selectedGenre } = useSelector(
     (state: RootState) => state.search
   );
+
+  const [focusedId, setFocusedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (genres.length === 0) {
       dispatch(fetchGenres());
     }
   }, []);
-
-  if (genreLoading) {
-    return <ActivityIndicator color="#fff" />;
-  }
 
   return (
     <View style={styles.container}>
@@ -42,14 +40,20 @@ export function PopularMovies() {
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ gap: 10 }}
-        renderItem={({ item }) => {
+        renderItem={({ item, index }) => {
           const isActive = selectedGenre === item.id;
+          const isFocused = focusedId === item.id;
 
           return (
             <Pressable
+              focusable
+              hasTVPreferredFocus={index === 0}
+              onFocus={() => setFocusedId(item.id)}
+              onBlur={() => setFocusedId(null)}
               style={[
                 styles.popular,
                 isActive && styles.activePopular,
+                isFocused && styles.focusedGenre,
               ]}
               onPress={() => {
                 dispatch(setSelectedGenre(item.id));
@@ -72,12 +76,10 @@ export function PopularMovies() {
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
     gap: 12,
-    marginBottom: 20
   },
   title: {
     fontSize: 16,
@@ -88,19 +90,22 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: '#1A1A1A',
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   titles: {
     color: '#fff',
     fontSize: 13,
   },
-
   activePopular: {
     backgroundColor: '#fff',
   },
   activeText: {
     color: '#000',
     fontWeight: '600',
+  },
+  focusedGenre: {
+    borderColor: '#fff',
+    transform: [{ scale: 1.01 }],
   },
 });

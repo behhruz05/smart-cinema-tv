@@ -11,27 +11,26 @@ interface RequestOptions {
   body?: any;
   headers?: Record<string, string>;
   retry?: number;
+  signal?: AbortSignal; // ✅ qo‘shildi
 }
 
 function fetchWithTimeout(
   url: string,
   options: RequestInit,
-  timeout: number
+  timeout: number,
+  signal?: AbortSignal
 ): Promise<Response> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      reject(new Error('REQUEST_TIMEOUT'));
-    }, timeout);
+  const controller = new AbortController();
 
-    fetch(url, options)
-      .then((res) => {
-        clearTimeout(timer);
-        resolve(res);
-      })
-      .catch((err) => {
-        clearTimeout(timer);
-        reject(err);
-      });
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, timeout);
+
+  return fetch(url, {
+    ...options,
+    signal: signal || controller.signal,
+  }).finally(() => {
+    clearTimeout(timeoutId);
   });
 }
 
@@ -44,6 +43,7 @@ export async function api<T>(
     body,
     headers = {},
     retry = 0,
+    signal,
   } = options;
 
   try {
@@ -60,7 +60,8 @@ export async function api<T>(
         },
         body: body ? JSON.stringify(body) : undefined,
       },
-      TIMEOUT
+      TIMEOUT,
+      signal
     );
 
     const text = await response.text();
@@ -86,10 +87,15 @@ export async function api<T>(
 
     return data as T;
 
-  } catch (e) {
+  } catch (e: any) {
+    if (e.name === 'AbortError') {
+      throw e; // abortni swallow qilmaymiz
+    }
+
     if (retry > 0) {
       return api(endpoint, { ...options, retry: retry - 1 });
     }
+
     throw e;
   }
 }

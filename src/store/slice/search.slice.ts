@@ -52,12 +52,16 @@ export const fetchPopularMovies = createAsyncThunk(
 
 export const fetchSearchMovies = createAsyncThunk(
   'search/searchMovies',
-  async (query: string) => {
-    const res = await searchService.getMovies({
-      endpoint: 'search',
-      page: 1,
-      q: query,
-    });
+  async (query: string, { signal }) => {
+    const res = await searchService.getMovies(
+      {
+        endpoint: 'search',
+        page: 1,
+        q: query,
+      },
+      signal
+    );
+
     return res.data;
   }
 );
@@ -94,6 +98,10 @@ const searchSlice = createSlice({
       state.searchResults = [];
       state.query = '';
       state.searchStatus = 'idle';
+    },    
+    clearSearchResults(state) {
+      state.searchResults = [];
+      state.searchStatus = 'loading';
     },
     setSelectedGenre(state, action: PayloadAction<string | null>) {
       state.selectedGenre = action.payload;
@@ -106,7 +114,6 @@ const searchSlice = createSlice({
   extraReducers: (builder) => {
     builder
 
-      // POPULAR
       .addCase(fetchPopularMovies.pending, (state) => {
         state.popularStatus = 'loading';
       })
@@ -118,19 +125,22 @@ const searchSlice = createSlice({
         state.popularStatus = 'error';
       })
 
-      // SEARCH
-      .addCase(fetchSearchMovies.pending, (state) => {
-        state.searchStatus = 'loading';
-      })
-      .addCase(fetchSearchMovies.fulfilled, (state, action) => {
-        state.searchResults = action.payload;
-        state.searchStatus = 'success';
-      })
-      .addCase(fetchSearchMovies.rejected, (state) => {
-        state.searchStatus = 'error';
-      })
+.addCase(fetchSearchMovies.pending, (state) => {
+  state.searchStatus = 'loading';
+  state.searchResults = []; 
+})
+.addCase(fetchSearchMovies.fulfilled, (state, action) => {
+  state.searchResults = action.payload;
+  state.searchStatus = 'success';
+})
+.addCase(fetchSearchMovies.rejected, (state, action) => {
+  if (action.error.name === 'AbortError') {
+    return;
+  }
+  state.searchStatus = 'error';
+})
 
-      // GENRES
+
       .addCase(fetchGenres.pending, (state) => {
         state.genreStatus = 'loading';
       })
@@ -142,7 +152,6 @@ const searchSlice = createSlice({
         state.genreStatus = 'error';
       })
 
-      // GENRE MOVIES
       .addCase(fetchGenreMovies.pending, (state) => {
         state.genreStatus = 'loading';
       })
@@ -156,7 +165,7 @@ const searchSlice = createSlice({
   },
 });
 
-export const { setQuery, clearSearch, setSelectedGenre } =
+export const { setQuery, clearSearch,clearSearchResults, setSelectedGenre } =
   searchSlice.actions;
 
 export default searchSlice.reducer;
