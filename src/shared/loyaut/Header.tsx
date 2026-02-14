@@ -106,7 +106,7 @@ export function Header() {
               onFocus={() => {
                 setFocused('back');
                 Animated.spring(scaleBack, {
-                  toValue: 1.05,
+                  toValue: 1.01,
                   useNativeDriver: true,
                 }).start();
               }}
@@ -171,7 +171,7 @@ export function Header() {
               onFocus={() => {
                 setFocused('search');
                 Animated.spring(scaleSearch, {
-                  toValue: 1.05,
+                  toValue: 1.01,
                   useNativeDriver: true,
                 }).start();
               }}
@@ -203,7 +203,7 @@ export function Header() {
               onFocus={() => {
                 setFocused('avatar');
                 Animated.spring(scaleAvatar, {
-                  toValue: 1.05,
+                  toValue: 1.01,
                   useNativeDriver: true,
                 }).start();
               }}
