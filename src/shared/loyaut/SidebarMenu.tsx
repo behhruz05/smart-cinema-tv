@@ -7,10 +7,18 @@ import {
   Animated,
   Text,
   Easing,
+  Platform,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import {
+  useNavigation,
+  useNavigationState,
+} from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
 import { RootState } from '../../store';
 import { toggleSidebar } from '../../store/slice/ui.slice';
+import { RootStackParamList } from '../../types/navigations';
 
 import { HomeIcon } from '../icons/HomeIcon';
 import { TvIcon } from '../icons/TvIcon';
@@ -23,21 +31,33 @@ const Logo = require('../../assets/imgs/Group.png');
 const COLLAPSED_WIDTH = 90;
 const EXPANDED_WIDTH = 220;
 
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
+
 const icons = [
-  { id: 'home', title: 'Home', Icon: HomeIcon },
-  { id: 'tv', title: 'TV', Icon: TvIcon },
-  { id: 'movies', title: 'Movies', Icon: MovieIcon },
-  { id: 'reel', title: 'Reels', Icon: ReelIcon },
+  { id: 'Home', title: 'Home', Icon: HomeIcon },
+  { id: 'TV', title: 'TV', Icon: TvIcon },
+  { id: 'Movies', title: 'Movies', Icon: MovieIcon },
+  { id: 'Reels', title: 'Reels', Icon: ReelIcon },
 ];
 
 export function SidebarMenu() {
   const dispatch = useDispatch();
-  const isOpen = useSelector((state: RootState) => state.ui.isSidebarOpen);
+  const navigation = useNavigation<NavProp>();
+  const isTV = Platform.isTV;
 
-  const [focused, setFocused] = useState('home');
+  const isOpen = useSelector(
+    (state: RootState) => state.ui.isSidebarOpen
+  );
 
-  const widthAnim = useRef(new Animated.Value(COLLAPSED_WIDTH)).current;
-  const textOpacity = useRef(new Animated.Value(0)).current;
+  const [focused, setFocused] = useState<string | null>(null);
+
+  const widthAnim = useRef(
+    new Animated.Value(COLLAPSED_WIDTH)
+  ).current;
+
+  const textOpacity = useRef(
+    new Animated.Value(0)
+  ).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -55,29 +75,67 @@ export function SidebarMenu() {
     ]).start();
   }, [isOpen]);
 
+  const currentRoute = useNavigationState((state: any) => {
+    const route = state.routes[state.index];
+    if (route.state) {
+      return route.state.routes[route.state.index].name;
+    }
+    return route.name;
+  });
+
+  const navigateTo = (screen: string) => {
+    navigation.navigate('Main', {
+      screen: screen as never,
+    });
+  };
+
   return (
     <Animated.View style={[styles.container, { width: widthAnim }]}>
-      <Pressable
-        onPress={() => dispatch(toggleSidebar())}
-        style={styles.logoWrapper}
-      >
-        <Image source={Logo} style={styles.logo} />
-      </Pressable>
+      
+<View style={styles.logoSection}>
+  <Pressable
+    focusable={isTV}
+    hasTVPreferredFocus={!isOpen} 
+    onFocus={() => setFocused('Logo')}
+    onBlur={() => setFocused(null)}
+    onPress={() => dispatch(toggleSidebar())}
 
-      <View style={styles.topSection}>
+    style={[
+      styles.logoWrapper,
+      focused === 'Logo' && styles.focusedItem,
+    ]}
+  >
+    <Image source={Logo} style={styles.logo} />
+  </Pressable>
+</View>
+
+
+      <View style={styles.menuSection}>
         {icons.map((item, index) => {
           const IconComponent = item.Icon;
-          const active = focused === item.id;
+          const active = currentRoute === item.id;
+          const isFocused = focused === item.id;
 
           return (
             <Pressable
               key={item.id}
-              hasTVPreferredFocus={index === 0}
+              focusable={isTV}
+              hasTVPreferredFocus={
+              index === 0 && currentRoute === 'Home'
+              }
               onFocus={() => setFocused(item.id)}
-              style={[styles.item, active && styles.activeItem]}
+              onBlur={() => setFocused(null)}
+              onPress={() => navigateTo(item.id)}
+              style={[
+                styles.item,
+                active && styles.activeItem,
+                isFocused && styles.focusedItem,
+              ]}
             >
               <IconComponent
-                color={active ? '#fff' : '#777'}
+                color={
+                  active || isFocused ? '#fff' : '#777'
+                }
                 size={18}
                 filled={active}
               />
@@ -86,7 +144,12 @@ export function SidebarMenu() {
                 <Text
                   style={[
                     styles.title,
-                    { color: active ? '#fff' : '#777' },
+                    {
+                      color:
+                        active || isFocused
+                          ? '#fff'
+                          : '#777',
+                    },
                   ]}
                 >
                   {item.title}
@@ -97,27 +160,45 @@ export function SidebarMenu() {
         })}
       </View>
 
-      <Pressable
-        onFocus={() => setFocused('settings')}
-        style={[styles.item, focused === 'settings' && styles.activeItem]}
-      >
-        <SettingsIcon
-          size={18}
-          color={focused === 'settings' ? '#fff' : '#777'}
-          filled={focused === 'settings'}
-        />
+      <View style={styles.bottomSection}>
+<Pressable
+  focusable={isTV}
+  onFocus={() => setFocused('Settings')}
+  onBlur={() => setFocused(null)}
+  onPress={() => navigateTo('Settings')}
+  style={[
+    styles.item,
+    currentRoute === 'Settings' && styles.activeItem,
+    focused === 'Settings' && styles.focusedItem,
+  ]}
+>
+  <SettingsIcon
+    size={18}
+    color={
+      currentRoute === 'Settings' || focused === 'Settings'
+        ? '#fff'
+        : '#777'
+    }
+    filled={currentRoute === 'Settings'}
+  />
 
-        <Animated.View style={{ opacity: textOpacity }}>
-          <Text
-            style={[
-              styles.title,
-              { color: focused === 'settings' ? '#fff' : '#777' },
-            ]}
-          >
-            Settings
-          </Text>
-        </Animated.View>
-      </Pressable>
+  <Animated.View style={{ opacity: textOpacity }}>
+    <Text
+      style={[
+        styles.title,
+        {
+          color:
+            currentRoute === 'Settings' || focused === 'Settings'
+              ? '#fff'
+              : '#777',
+        },
+      ]}
+    >
+      Settings
+    </Text>
+  </Animated.View>
+</Pressable>
+      </View>
     </Animated.View>
   );
 }
@@ -128,19 +209,34 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     paddingHorizontal: 20,
     overflow: 'hidden',
+    justifyContent: 'space-between', 
   },
-  logoWrapper: {
+
+  logoSection: {
     alignItems: 'center',
-    marginBottom: 50,
   },
+
+  menuSection: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+
+  bottomSection: {
+    marginBottom: 20,
+  },
+
   logo: {
     width: 34,
     height: 34,
     resizeMode: 'contain',
   },
-  topSection: {
-    flex: 1,
-  },
+logoWrapper: {
+  borderRadius: 12,
+  padding: 10,
+  borderWidth: 2,
+  borderColor: 'transparent',
+},
+
   item: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -148,10 +244,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 8,
     paddingHorizontal: 16,
+    backgroundColor: '#1A1A1A',
   },
+
   activeItem: {
     backgroundColor: '#1A1A1A',
   },
+
+    focusedItem: {
+    borderColor: '#fff',
+    backgroundColor: '#1A1A1A',
+  },
+
   title: {
     marginLeft: 14,
     fontSize: 14,

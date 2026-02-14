@@ -178,6 +178,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     gap: 10,
     marginBottom: 15,
+    paddingVertical: 10
   },
   loader: {
     marginTop: 100,

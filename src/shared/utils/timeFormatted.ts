@@ -36,7 +36,6 @@ export const formatDurationClock = (seconds: number): string => {
 // ==============================
 // 📅 DATE FORMATTERS
 // ==============================
-
 const monthsRu = [
   'янв',
   'фев',
@@ -52,45 +51,28 @@ const monthsRu = [
   'дек',
 ];
 
-export const formatDateShort = (iso: string): string => {
-  const date = new Date(iso);
+const weekDaysRu = [
+  'Вс',
+  'Пн',
+  'Вт',
+  'Ср',
+  'Чт',
+  'Пт',
+  'Сб',
+];
 
-  const day = date.getDate();
-  const month = monthsRu[date.getMonth()];
-  const year = date.getFullYear();
-
-  return `${day} ${month} ${year}`;
-};
-
-export const formatDateDots = (iso: string): string => {
-  const date = new Date(iso);
-
+export const formatCurrentHeaderDateTime = (): string => {
+  const date = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
 
-  return `${pad(date.getDate())}.${pad(
-    date.getMonth() + 1
-  )}.${date.getFullYear()}`;
-};
-
-export const formatDateWithTime = (iso: string): string => {
-  const date = new Date(iso);
-
-  const pad = (n: number) => String(n).padStart(2, '0');
-
+  const weekDay = weekDaysRu[date.getDay()];
   const day = date.getDate();
   const month = monthsRu[date.getMonth()];
-  const year = date.getFullYear();
-
   const hours = pad(date.getHours());
   const minutes = pad(date.getMinutes());
 
-  return `${day} ${month} ${year}, ${hours}:${minutes}`;
+  return `${weekDay}, ${day} ${month}. ${hours}:${minutes}`;
 };
-
-// ==============================
-// 📊 PROGRESS CALCULATOR
-// ==============================
-
 export const calculateProgressPercent = (
   current: number,
   total: number

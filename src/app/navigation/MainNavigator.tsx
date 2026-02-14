@@ -1,33 +1,62 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+import {
+  RootStackParamList,
+  ContentStackParamList,
+} from '../../types/navigations';
+
+
 import { HomeScreen } from '../../features/home/screens/HomeScreen';
+import { ProfileScreen } from '../../features/profile/sreens/ProfileScreen';
 import { SearchScreen } from '../../features/search/screens/SearchScreen';
+import { ReelScreen } from '../../features/reel/screens/ReelScreen';
 import { MainLayout } from '../../shared/loyaut/MainLayout';
+import { SettingsScreen } from '../../features/settings/screens/SettingsScreen';
 
-export type MainStackParamList = {
-  Home: undefined;
-  Search: undefined;
-};
+const RootStack =
+  createNativeStackNavigator<RootStackParamList>();
 
-const Stack = createNativeStackNavigator<MainStackParamList>();
+const ContentStack =
+  createNativeStackNavigator<ContentStackParamList>();
 
-function HomeWithLayout() {
+function ContentNavigator() {
+  return (
+    <ContentStack.Navigator
+    initialRouteName="Home"
+      screenOptions={{
+        headerShown: false,
+        animation: 'none',
+      }}
+    >
+      <ContentStack.Screen name="Home" component={HomeScreen} />
+      <ContentStack.Screen name="TV" component={HomeScreen} />
+      <ContentStack.Screen name="Movies" component={HomeScreen} />
+      <ContentStack.Screen name="Reels" component={ReelScreen} />
+      <ContentStack.Screen name="Profile" component={ProfileScreen} />
+      <ContentStack.Screen name="Settings" component={SettingsScreen} />
+    </ContentStack.Navigator>
+  );
+}
+
+function MainWithLayout() {
   return (
     <MainLayout>
-      <HomeScreen />
+      <ContentNavigator />
     </MainLayout>
   );
 }
 
 export function MainNavigator() {
   return (
-    <Stack.Navigator
+    <RootStack.Navigator
       screenOptions={{
         headerShown: false,
+        animation: 'none',
       }}
     >
-      <Stack.Screen name="Home" component={HomeWithLayout} />
-      <Stack.Screen name="Search" component={SearchScreen} />
-    </Stack.Navigator>
+      <RootStack.Screen name="Main" component={MainWithLayout} />
+      <RootStack.Screen name="Search" component={SearchScreen} />
+    </RootStack.Navigator>
   );
 }

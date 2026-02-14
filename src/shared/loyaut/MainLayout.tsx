@@ -3,14 +3,17 @@ import { View, StyleSheet } from 'react-native';
 import { SidebarMenu } from './SidebarMenu';
 import { Header } from './Header';
 
-export function MainLayout({ children }: { children: React.ReactNode }) {
+export function MainLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <View style={styles.container}>
       <SidebarMenu />
-
       <View style={styles.content}>
         <Header />
-        <View style={styles.screenContainer}>{children}</View>
+        <View style={styles.screen}>{children}</View>
       </View>
     </View>
   );
@@ -25,8 +28,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  screenContainer: {
+  screen: {
     flex: 1,
-    paddingTop: 20,
   },
 });

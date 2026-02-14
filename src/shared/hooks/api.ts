@@ -11,7 +11,8 @@ interface RequestOptions {
   body?: any;
   headers?: Record<string, string>;
   retry?: number;
-  signal?: AbortSignal; // ✅ qo‘shildi
+  signal?: AbortSignal;
+  skipAuth?: boolean;
 }
 
 function fetchWithTimeout(
@@ -44,10 +45,11 @@ export async function api<T>(
     headers = {},
     retry = 0,
     signal,
+    skipAuth = false,
   } = options;
 
   try {
-    const token = await tokenStorage.get();
+    const token = skipAuth ? null : await tokenStorage.get();
 
     const response = await fetchWithTimeout(
       `${BASE_URL}${endpoint}`,
@@ -67,7 +69,7 @@ export async function api<T>(
     const text = await response.text();
     const data = text ? JSON.parse(text) : null;
 
-    if (response.status === 401) {
+    if (response.status === 401 && !skipAuth) {
       await tokenStorage.remove();
       triggerLogout();
       throw new Error(data?.error?.message || 'UNAUTHORIZED');
@@ -89,7 +91,7 @@ export async function api<T>(
 
   } catch (e: any) {
     if (e.name === 'AbortError') {
-      throw e; // abortni swallow qilmaymiz
+      throw e;
     }
 
     if (retry > 0) {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,68 +6,159 @@ import {
   Pressable,
   TextInput,
   Platform,
+  Animated,
+  Easing,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import {
+  useNavigation,
+  useNavigationState,
+} from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useDispatch, useSelector } from 'react-redux';
+
 import { RootState } from '../../store';
 import { setQuery } from '../../store/slice/search.slice';
+import { RootStackParamList } from '../../types/navigations';
 
 import { SearchIcon } from '../icons/SearchIcon';
 import { VoiceIcon } from '../icons/VoiceIcon';
 import { UserIcon } from '../icons/UserIcon';
 import { BackIcon } from '../icons/BackIcon';
+import { formatCurrentHeaderDateTime } from '../utils/timeFormatted';
+import { useWeather } from '../hooks/useWeather';
+
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function Header() {
-  const navigation = useNavigation<any>();
-  const route = useRoute();
+  const navigation = useNavigation<NavProp>();
   const dispatch = useDispatch();
 
-  const { query } = useSelector((state: RootState) => state.search);
+  const { query } = useSelector(
+    (state: RootState) => state.search
+  );
+
+  const weather = useWeather();
+  const isTV = Platform.isTV;
 
   const [focused, setFocused] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState(
+    formatCurrentHeaderDateTime()
+  );
 
-  const isSearch = route.name === 'Search';
-  const isTV = Platform.isTV;
+  /**
+   * 🔥 Nested route detector
+   */
+  const currentRoute = useNavigationState((state: any) => {
+    const route = state.routes[state.index];
+
+    if (route.state) {
+      const nested = route.state.routes[route.state.index];
+      return nested.name;
+    }
+
+    return route.name;
+  });
+
+  const isSearch = currentRoute === 'Search';
+
+  /**
+   * 🔥 Animated values
+   */
+  const animatedWidth = useRef(new Animated.Value(320)).current;
+  const scaleSearch = useRef(new Animated.Value(1)).current;
+  const scaleAvatar = useRef(new Animated.Value(1)).current;
+  const scaleBack = useRef(new Animated.Value(1)).current;
+
+  /**
+   * 🔥 Animate width on route change
+   */
+  useEffect(() => {
+    Animated.timing(animatedWidth, {
+      toValue: isSearch ? 600 : 320, // TV ga mos qilib o'zgartir
+      duration: 250,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: false,
+    }).start();
+  }, [isSearch]);
+
+  /**
+   * 🔥 Clock update
+   */
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(formatCurrentHeaderDateTime());
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <View style={styles.container}>
+      {/* LEFT */}
       <View style={styles.left}>
         {isSearch ? (
-          <Pressable
-            focusable={isTV}
-            hasTVPreferredFocus
-            onFocus={() => setFocused('back')}
-            onBlur={() => setFocused(null)}
-            onPress={() => navigation.goBack()}
-            style={[
-              styles.back,
-              focused === 'back' && styles.focusedButton,
-            ]}
+          <Animated.View
+            style={{ transform: [{ scale: scaleBack }] }}
           >
-            <BackIcon size={20} color="#fff" />
-            <Text style={styles.backText}>Назад</Text>
-          </Pressable>
+            <Pressable
+              focusable={isTV}
+              hasTVPreferredFocus
+              onFocus={() => {
+                setFocused('back');
+                Animated.spring(scaleBack, {
+                  toValue: 1.05,
+                  useNativeDriver: true,
+                }).start();
+              }}
+              onBlur={() => {
+                setFocused(null);
+                Animated.spring(scaleBack, {
+                  toValue: 1,
+                  useNativeDriver: true,
+                }).start();
+              }}
+              onPress={() => navigation.goBack()}
+              style={[
+                styles.back,
+                focused === 'back' && styles.focusedButton,
+              ]}
+            >
+              <BackIcon size={20} color="#888" />
+              <Text style={styles.backText}>Назад</Text>
+            </Pressable>
+          </Animated.View>
         ) : (
-          <>
-            <Text style={styles.date}>Today</Text>
-            <Text style={styles.weather}>☁️ +3°C</Text>
-          </>
+          <View style={styles.timeWeatherRow}>
+            <Text style={styles.dateTime}>{currentTime}</Text>
+            <Text style={styles.separator}>|</Text>
+            <Text style={styles.weather}>
+              {weather?.icon ?? '☁️'} {weather?.temp ?? '--°'}
+            </Text>
+          </View>
         )}
       </View>
 
+      {/* RIGHT */}
       <View style={styles.right}>
-        <View
+        {/* SEARCH */}
+        <Animated.View
           style={[
             styles.searchContainer,
+            {
+              width: animatedWidth,
+              transform: [{ scale: scaleSearch }],
+            },
             focused === 'search' && styles.focusedButton,
           ]}
         >
-          <SearchIcon size={18} color="#fff" />
+          <SearchIcon size={18} color="#888" />
 
           {isSearch ? (
             <TextInput
               value={query}
-              onChangeText={(text) => dispatch(setQuery(text))}
+              onChangeText={(text) =>
+                dispatch(setQuery(text))
+              }
               placeholder="Поиск"
               placeholderTextColor="#888"
               style={styles.input}
@@ -77,43 +168,74 @@ export function Header() {
             <Pressable
               style={{ flex: 1 }}
               focusable={isTV}
-              onFocus={() => setFocused('search')}
-              onBlur={() => setFocused(null)}
+              onFocus={() => {
+                setFocused('search');
+                Animated.spring(scaleSearch, {
+                  toValue: 1.05,
+                  useNativeDriver: true,
+                }).start();
+              }}
+              onBlur={() => {
+                setFocused(null);
+                Animated.spring(scaleSearch, {
+                  toValue: 1,
+                  useNativeDriver: true,
+                }).start();
+              }}
               onPress={() => navigation.navigate('Search')}
             >
               <Text style={styles.searchPlaceholder}>
-                {query ? query : 'Поиск'}
+                {query || 'Поиск'}
               </Text>
             </Pressable>
           )}
 
-          <VoiceIcon size={18} color="#fff" />
-        </View>
+          <VoiceIcon size={18} color="#888" />
+        </Animated.View>
 
-        {isSearch ? (
-          <Pressable
-            focusable={isTV}
-            onFocus={() => setFocused('find')}
-            onBlur={() => setFocused(null)}
-            style={[
-              styles.findButton,
-              focused === 'find' && styles.focusedButton,
-            ]}
+        {/* AVATAR */}
+        {!isSearch && (
+          <Animated.View
+            style={{ transform: [{ scale: scaleAvatar }] }}
           >
-            <Text style={styles.findText}>Найти</Text>
-          </Pressable>
-        ) : (
-          <Pressable
-            focusable={isTV}
-            onFocus={() => setFocused('avatar')}
-            onBlur={() => setFocused(null)}
-            style={[
-              styles.avatar,
-              focused === 'avatar' && styles.focusedButton,
-            ]}
-          >
-            <UserIcon size={18} color="#fff" />
-          </Pressable>
+            <Pressable
+              focusable={isTV}
+              onFocus={() => {
+                setFocused('avatar');
+                Animated.spring(scaleAvatar, {
+                  toValue: 1.05,
+                  useNativeDriver: true,
+                }).start();
+              }}
+              onBlur={() => {
+                setFocused(null);
+                Animated.spring(scaleAvatar, {
+                  toValue: 1,
+                  useNativeDriver: true,
+                }).start();
+              }}
+              onPress={() =>
+                navigation.navigate('Main', {
+                  screen: 'Profile',
+                })
+              }
+              style={[
+                styles.avatar,
+                (focused === 'avatar' ||
+                  currentRoute === 'Profile') &&
+                  styles.focusedButton,
+              ]}
+            >
+              <UserIcon
+                size={18}
+                color={
+                  currentRoute === 'Profile'
+                    ? '#fff'
+                    : '#888'
+                }
+              />
+            </Pressable>
+          </Animated.View>
         )}
       </View>
     </View>
@@ -142,15 +264,26 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
 
-  date: {
-    fontSize: 16,
-    color: 'white',
+  timeWeatherRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  dateTime: {
+    fontSize: 14,
+    color: '#fff',
     fontWeight: '500',
   },
 
+  separator: {
+    color: '#666',
+    marginHorizontal: 12,
+    fontSize: 14,
+  },
+
   weather: {
-    fontSize: 16,
-    color: '#aaa',
+    fontSize: 14,
+    color: '#fff',
   },
 
   searchContainer: {
@@ -158,9 +291,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#1A1A1A',
     borderRadius: 8,
-    paddingHorizontal: 16,
-    height: 50,
-    width: 320,
+    paddingHorizontal: 12,
+    height: 45,
     borderWidth: 2,
     borderColor: 'transparent',
     gap: 12,
@@ -168,13 +300,13 @@ const styles = StyleSheet.create({
 
   searchPlaceholder: {
     color: '#888',
-    fontSize: 16,
+    fontSize: 14,
   },
 
   input: {
     flex: 1,
     color: '#fff',
-    fontSize: 16,
+    fontSize: 14,
   },
 
   avatar: {
@@ -182,34 +314,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#1A1A1A',
     borderRadius: 8,
-    paddingHorizontal: 20,
-    height: 50,
+    paddingHorizontal: 10,
+    height: 40,
     borderWidth: 2,
     borderColor: 'transparent',
-  },
-
-  findButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#1A1A1A',
-    borderRadius: 8,
-    paddingHorizontal: 24,
-    height: 50,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-
-  findText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
   },
 
   back: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 18,
-    height: 50,
+    paddingHorizontal: 10,
+    height: 45,
     gap: 8,
     backgroundColor: '#1A1A1A',
     borderRadius: 8,
@@ -218,7 +333,7 @@ const styles = StyleSheet.create({
   },
 
   backText: {
-    color: '#fff',
+    color: '#888',
     fontSize: 16,
   },
 

@@ -113,15 +113,16 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: 150,
-    borderRadius: 18,
+      borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
   },
 
   progressContainer: {
     position: 'absolute',
-    bottom: 0,
+    bottom: -5,
     left: 0,
     right: 0,
-    height: 4,
+    height: 6,
     backgroundColor: '#333',
     borderBottomLeftRadius: 18,
     borderBottomRightRadius: 18,

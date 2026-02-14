@@ -13,6 +13,8 @@ import { useAuth } from '../../../app/providers/AppProviders';
 
 import { InfoIcon } from '../../../shared/icons/InfoIcon';
 import { EyeIcon, EyeOffIcon } from '../../../shared/icons/EyeIcon';
+import { fetchMe } from '../../../store/slice/atuh.slice';
+import { store } from '../../../store';
 
 const Logo = require('../../../assets/imgs/Group.png');
 const SplineBg = require('../../../assets/imgs/Spline.png');
@@ -20,6 +22,7 @@ const QrCode = require('../../../assets/imgs/QR-code.png');
 
 export function LoginScreen() {
   const { setToken } = useAuth();
+const dispatch = store.dispatch;
 
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
@@ -67,7 +70,8 @@ export function LoginScreen() {
       };
 
       const token = await authApi.login(payload);
-      setToken(token);
+await setToken(token);
+dispatch(fetchMe());
 
     } catch (e: any) {
       setError(e.message || 'Ошибка входа');

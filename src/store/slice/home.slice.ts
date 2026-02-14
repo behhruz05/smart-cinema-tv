@@ -61,14 +61,6 @@
     }
   );
 
-  export const fetchReels = createAsyncThunk(
-    'home/reels',
-    async () => {
-      const res = await reelService.getReels();
-      return res.data.items;
-    }
-  );
-
   export const fetchChannels = createAsyncThunk(
     'home/channels',
     async () => {
@@ -103,9 +95,6 @@
         })
         .addCase(fetchHistory.fulfilled, (state, action) => {
           state.history = action.payload;
-        })
-        .addCase(fetchReels.fulfilled, (state, action) => {
-          state.reels = action.payload;
         })
         .addCase(fetchChannels.fulfilled, (state, action) => {
           state.channels = action.payload;
