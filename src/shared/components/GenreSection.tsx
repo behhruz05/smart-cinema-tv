@@ -9,10 +9,16 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { AppDispatch, RootState } from '../../store';
 import { fetchGenres } from '../../store/slice/movie.slice';
 
-export const GenreSection = () => {
+interface Props {
+  activeGenreId?: string;
+}
+
+export const GenreSection = ({ activeGenreId }: Props) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const navigation = useNavigation<any>();
   const [focusedId, setFocusedId] = useState<string | null>(null);
@@ -35,7 +41,7 @@ export const GenreSection = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Жанры</Text>
+      <Text style={styles.title}>{t('genre.title')}</Text>
 
       <FlatList
         horizontal
@@ -45,6 +51,7 @@ export const GenreSection = () => {
         contentContainerStyle={styles.list}
         renderItem={({ item, index }) => {
           const isFocused = focusedId === item.id;
+          const isActive = activeGenreId === item.id;
 
           return (
             <Pressable
@@ -54,10 +61,11 @@ export const GenreSection = () => {
               hasTVPreferredFocus={index === 0}
               style={[
                 styles.genreItem,
+                isActive && styles.activeItem,
                 isFocused && styles.focusedItem,
               ]}
             >
-              <Text style={styles.genreText}>
+              <Text style={[styles.genreText, isActive && styles.activeText]}>
                 {item.name}
               </Text>
             </Pressable>
@@ -91,11 +99,17 @@ const styles = StyleSheet.create({
 borderColor: 'transparent'
   },
   focusedItem: {
-    borderWidth: 2,
     borderColor: '#fff',
+  },
+  activeItem: {
+    backgroundColor: '#fff',
   },
   genreText: {
     color: '#fff',
     fontSize: 18,
+  },
+  activeText: {
+    color: '#000',
+    fontWeight: '700',
   },
 });

@@ -1,15 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SearchFoundIcon } from '../../../shared/icons/SearchFoundIcon';
 
 export function SearchNotFound() {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
       <SearchFoundIcon size={50} color="#838383" />
 
-      <Text style={styles.title}>Ничего не найдено</Text>
+      <Text style={styles.title}>{t('search.not_found_title')}</Text>
       <Text style={styles.subtitle}>
-        Попробуйте изменить запрос или проверить написание
+        {t('search.not_found_subtitle')}
       </Text>
     </View>
   );

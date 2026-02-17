@@ -1,20 +1,19 @@
-// src/shared/utils/timeFormatted.ts
-
-// ==============================
-// 🎬 DURATION FORMATTERS
-// ==============================
+import i18n from '../../i18n';
 
 export const formatDurationHM = (seconds: number): string => {
-  if (!seconds) return '0 мин';
+  if (!seconds) return i18n.t('time.duration_zero');
 
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
 
   if (hours > 0) {
-    return `${hours} ч ${minutes} мин`;
+    return i18n.t('time.duration_hours_minutes', {
+      hours,
+      minutes,
+    });
   }
 
-  return `${minutes} мин`;
+  return i18n.t('time.duration_minutes', { minutes });
 };
 
 export const formatDurationClock = (seconds: number): string => {
@@ -33,41 +32,19 @@ export const formatDurationClock = (seconds: number): string => {
   return `${pad(mins)}:${pad(secs)}`;
 };
 
-// ==============================
-// 📅 DATE FORMATTERS
-// ==============================
-const monthsRu = [
-  'янв',
-  'фев',
-  'мар',
-  'апр',
-  'май',
-  'июн',
-  'июл',
-  'авг',
-  'сен',
-  'окт',
-  'ноя',
-  'дек',
-];
-
-const weekDaysRu = [
-  'Вс',
-  'Пн',
-  'Вт',
-  'Ср',
-  'Чт',
-  'Пт',
-  'Сб',
-];
-
 export const formatCurrentHeaderDateTime = (): string => {
   const date = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
+  const months = i18n.t('time.months_short', {
+    returnObjects: true,
+  }) as string[];
+  const weekDays = i18n.t('time.weekdays_short', {
+    returnObjects: true,
+  }) as string[];
 
-  const weekDay = weekDaysRu[date.getDay()];
+  const weekDay = weekDays[date.getDay()];
   const day = date.getDate();
-  const month = monthsRu[date.getMonth()];
+  const month = months[date.getMonth()];
   const hours = pad(date.getHours());
   const minutes = pad(date.getMinutes());
 

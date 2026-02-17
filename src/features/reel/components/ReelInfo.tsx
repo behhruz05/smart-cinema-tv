@@ -1,22 +1,32 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Reel } from '../../../service/reel.service';
 
 export function ReelInfo({ reel }: { reel: Reel }) {
+  const { t, i18n } = useTranslation();
+  const title = i18n.language === 'ru' ? reel.title_ru : reel.title_uz || reel.title_ru;
+  const description =
+    i18n.language === 'ru'
+      ? reel.description_ru
+      : reel.description_uz || reel.description_ru;
+
   return (
     <View style={styles.container}>
       <View style={styles.profileRow}>
         <View style={styles.avatar} />
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>{reel.title_ru}</Text>
+          <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle} numberOfLines={3}>
-            {reel.description_ru}
+            {description}
           </Text>
         </View>
       </View>
 
       <Pressable style={styles.watchBtn}>
-        <Text style={styles.watchText}>▶ Смотреть фильм</Text>
+        <Text style={styles.watchText}>
+          {'\u25b6'} {t('reel.watch_movie')}
+        </Text>
       </Pressable>
     </View>
   );

@@ -11,6 +11,7 @@ import {
   formatDurationHM,
   calculateProgressPercent,
 } from '../utils/timeFormatted';
+import { useTranslation } from 'react-i18next';
 
 interface WatchHistoryItem {
   type: 'movie' | 'series';
@@ -31,6 +32,7 @@ interface Props {
 }
 
 export const WatchHistory = ({ item, onPress }: Props) => {
+  const { t, i18n } = useTranslation();
   const [focused, setFocused] = useState(false);
 
   const duration = formatDurationHM(
@@ -44,10 +46,10 @@ export const WatchHistory = ({ item, onPress }: Props) => {
       item.total_duration_seconds
     );
 
+  const titleByLanguage =
+    i18n.language === 'ru' ? item.title_ru : item.title_uz;
   const title =
-    item.title_ru ||
-    item.title_uz ||
-    'Без названия';
+    titleByLanguage || item.title_ru || item.title_uz || t('watch_history.untitled');
 
   const isSeries =
     item.type === 'series' ||
@@ -94,8 +96,10 @@ export const WatchHistory = ({ item, onPress }: Props) => {
         item.season_number &&
         item.episode_number && (
           <Text style={styles.subtitle}>
-            {item.season_number} сезон,{' '}
-            {item.episode_number} серия
+            {t('watch_history.season_episode', {
+              season: item.season_number,
+              episode: item.episode_number,
+            })}
           </Text>
         )}
     </Pressable>

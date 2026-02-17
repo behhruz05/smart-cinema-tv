@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { AppDispatch, RootState } from '../../../store';
 import { fetchGenreMovies } from '../../../store/slice/movie.slice';
@@ -28,6 +29,7 @@ const ITEM_WIDTH =
   NUM_COLUMNS;
 
 export function GenreScreen() {
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
@@ -69,7 +71,7 @@ export function GenreScreen() {
               backFocused && styles.backTextFocused,
             ]}
           >
-            Назад
+            {t('genre.back')}
           </Text>
         </Pressable>
 
@@ -104,7 +106,7 @@ export function GenreScreen() {
 
       {genreStatus === 'error' && (
         <Text style={styles.errorText}>
-          Ошибка загрузки
+          {t('genre.loading_error')}
         </Text>
       )}
     </View>

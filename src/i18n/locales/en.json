@@ -1,4 +1,14 @@
 {
+  "common": {
+    "back": "Back",
+    "search": "Search",
+    "cancel": "Cancel",
+    "logout": "Log out"
+  },
+  "errors": {
+    "loading": "Loading error",
+    "server": "Server error"
+  },
   "login": {
     "title": "Sign in",
     "subtitle": "Scan the QR code or sign in with login",
@@ -10,5 +20,94 @@
     "login_loading": "Signing in...",
     "fill_fields": "Fill all fields",
     "login_error": "Login error"
+  },
+  "genre": {
+    "title": "Genres",
+    "back": "Back",
+    "loading_error": "Loading error"
+  },
+  "home": {
+    "sections": {
+      "most_watched": "Most watched",
+      "continue_watching": "Continue watching",
+      "latest": "New releases",
+      "tv_channels": "TV channels",
+      "reels": "Reels"
+    },
+    "carousel": {
+      "watch": "Watch",
+      "details": "Details"
+    }
+  },
+  "sidebar": {
+    "home": "Home",
+    "tv": "TV",
+    "movies": "Movies",
+    "reels": "Reels",
+    "settings": "Settings"
+  },
+  "search": {
+    "popular_genres": "Popular genres",
+    "recommended": "You may like",
+    "results": "Search results",
+    "not_found_title": "Nothing found",
+    "not_found_subtitle": "Try changing your query or checking spelling"
+  },
+  "profile": {
+    "default_name": "User",
+    "my_rentals": "My rentals",
+    "saved": "Saved"
+  },
+  "watch_history": {
+    "untitled": "Untitled",
+    "season_episode": "Season {{season}}, Episode {{episode}}"
+  },
+  "reel": {
+    "watch_movie": "Watch movie"
+  },
+  "settings": {
+    "interface_language": "Interface and language",
+    "playback": "Playback",
+    "parental_control": "Parental controls",
+    "support": "Support and about app",
+    "system_cache": "System and cache",
+    "logout": "Log out",
+    "logout_modal_title": "Do you want to log out?",
+    "logout_modal_subtitle": "You will be signed out of your account.",
+    "language": {
+      "title": "Interface and language",
+      "select": "Select app language",
+      "uz": "Uzbek",
+      "ru": "Russian",
+      "en": "English"
+    }
+  },
+  "time": {
+    "duration_zero": "0 min",
+    "duration_hours_minutes": "{{hours}} h {{minutes}} min",
+    "duration_minutes": "{{minutes}} min",
+    "months_short": [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ],
+    "weekdays_short": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ]
   }
 }

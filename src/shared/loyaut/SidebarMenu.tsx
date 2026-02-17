@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import {
   useNavigation,
   useNavigationState,
@@ -34,13 +35,14 @@ const EXPANDED_WIDTH = 220;
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const icons = [
-  { id: 'Home', title: 'Home', Icon: HomeIcon },
-  { id: 'TV', title: 'TV', Icon: TvIcon },
-  { id: 'Movies', title: 'Movies', Icon: MovieIcon },
-  { id: 'Reels', title: 'Reels', Icon: ReelIcon },
+  { id: 'Home', titleKey: 'sidebar.home', Icon: HomeIcon },
+  { id: 'TV', titleKey: 'sidebar.tv', Icon: TvIcon },
+  { id: 'Movies', titleKey: 'sidebar.movies', Icon: MovieIcon },
+  { id: 'Reels', titleKey: 'sidebar.reels', Icon: ReelIcon },
 ];
 
 export function SidebarMenu() {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigation = useNavigation<NavProp>();
   const isTV = Platform.isTV;
@@ -157,7 +159,7 @@ export function SidebarMenu() {
                     },
                   ]}
                 >
-                  {item.title}
+                  {t(item.titleKey)}
                 </Text>
               </Animated.View>
             </Pressable>
@@ -202,7 +204,7 @@ export function SidebarMenu() {
                 },
               ]}
             >
-              Settings
+              {t('sidebar.settings')}
             </Text>
           </Animated.View>
         </Pressable>

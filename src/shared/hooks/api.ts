@@ -1,5 +1,6 @@
 import { triggerLogout } from "../../features/auth/authBridge";
 import { tokenStorage } from "../lib/tokenStorage";
+import i18n from '../../i18n';
 
 const BASE_URL = 'https://api.alloplay.uz/api/v1';
 const TIMEOUT = 10000;
@@ -79,7 +80,7 @@ export async function api<T>(
       throw new Error(
         data?.error?.message ||
         data?.message ||
-        'Ошибка сервера'
+        i18n.t('errors.server')
       );
     }
 

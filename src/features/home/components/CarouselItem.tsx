@@ -9,12 +9,14 @@ import {
 import { Carousel } from '../../../types/home';
 import { PlayIcon } from '../../../shared/icons/PlayIcon';
 import { SavedIcon } from '../../../shared/icons/SaverIcon';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   item: Carousel;
 }
 
 export function CarouselItem({ item }: Props) {
+  const { t } = useTranslation();
   const movie = item.movie;
 
   return (
@@ -41,11 +43,11 @@ export function CarouselItem({ item }: Props) {
         <View style={styles.actions}>
           <Pressable style={styles.playBtn}>
             <PlayIcon size={18} color="#000" />
-            <Text style={styles.playText}>Смотреть</Text>
+            <Text style={styles.playText}>{t('home.carousel.watch')}</Text>
           </Pressable>
 
           <Pressable style={styles.moreBtn}>
-            <Text style={styles.moreText}>Подробнее</Text>
+            <Text style={styles.moreText}>{t('home.carousel.details')}</Text>
           </Pressable>
 
           <Pressable style={styles.savedBtn}>

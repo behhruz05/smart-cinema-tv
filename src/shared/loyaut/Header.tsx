@@ -15,6 +15,7 @@ import {
 } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 
 import { RootState } from '../../store';
 import { setQuery } from '../../store/slice/movie.slice';
@@ -30,6 +31,7 @@ import { useWeather } from '../hooks/useWeather';
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function Header() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavProp>();
   const dispatch = useDispatch();
   const { query } = useSelector((state: RootState) => state.movie);
@@ -105,7 +107,7 @@ export function Header() {
               ]}
             >
               <BackIcon size={20} color="#888" />
-              <Text style={styles.backText}>Назад</Text>
+              <Text style={styles.backText}>{t('common.back')}</Text>
             </Pressable>
           </Animated.View>
         ) : (
@@ -138,7 +140,7 @@ export function Header() {
               onChangeText={(text) =>
                 dispatch(setQuery(text))
               }
-              placeholder="Поиск"
+              placeholder={t('common.search')}
               placeholderTextColor="#888"
               style={styles.input}
               autoFocus
@@ -158,7 +160,7 @@ export function Header() {
               onPress={() => navigation.navigate('Search')}
             >
               <Text style={styles.searchPlaceholder}>
-                {query || 'Поиск'}
+                {query || t('common.search')}
               </Text>
             </Pressable>
           )}

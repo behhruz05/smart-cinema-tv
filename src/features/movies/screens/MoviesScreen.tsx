@@ -7,6 +7,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import {
   fetchPopular,
   fetchLatest,
@@ -23,6 +24,7 @@ import { GenreSection } from '../../../shared/components/GenreSection';
 import { NewMovieCard } from '../../../shared/components/NewMovieCard';
 
 export function MoviesScreen() {
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
 
   const { popular, latest, history } =
@@ -44,7 +46,7 @@ export function MoviesScreen() {
       style={styles.container}
       showsVerticalScrollIndicator={false}
     >
-      <Section title="Больше всего смотрят" data={popular}>
+      <Section title={t('home.sections.most_watched')} data={popular}>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -62,7 +64,7 @@ export function MoviesScreen() {
 
       <GenreSection />
 
-      <Section title="Продолжить просмотр" data={history}>
+      <Section title={t('home.sections.continue_watching')} data={history}>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -75,7 +77,7 @@ export function MoviesScreen() {
         />
       </Section>
 
-      <Section title="Новинки" data={latest}>
+      <Section title={t('home.sections.latest')} data={latest}>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -91,7 +93,7 @@ export function MoviesScreen() {
         />
       </Section>
 
-      <Section title="Reels" data={reels}>
+      <Section title={t('home.sections.reels')} data={reels}>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}

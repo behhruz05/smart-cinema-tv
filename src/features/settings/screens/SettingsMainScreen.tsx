@@ -6,6 +6,7 @@ import {
   Pressable,
   Platform,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import ParentalControlScreen from './ParentalControlsScreen';
 import SupportScreen from './SupportScreen';
@@ -15,6 +16,7 @@ import SystemCacheScreen from './SystemCacheScreen';
 import LogoutModal from './LogoutModal';
 
 export function SettingsMainScreen() {
+  const { t } = useTranslation();
   const isTV = Platform.isTV;
 
   const [active, setActive] = useState<string>('InterfaceLanguage');
@@ -22,12 +24,12 @@ export function SettingsMainScreen() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const items = [
-    { title: 'Интерфейс и язык', route: 'InterfaceLanguage' },
-    { title: 'Воспроизведение', route: 'Playback' },
-    { title: 'Родительский контроль', route: 'ParentalControl' },
-    { title: 'Поддержка и о прилож.', route: 'Support' },
-    { title: 'Система и кэш', route: 'SystemCache' },
-    { title: 'Выход', route: 'Logout' },
+    { title: t('settings.interface_language'), route: 'InterfaceLanguage' },
+    { title: t('settings.playback'), route: 'Playback' },
+    { title: t('settings.parental_control'), route: 'ParentalControl' },
+    { title: t('settings.support'), route: 'Support' },
+    { title: t('settings.system_cache'), route: 'SystemCache' },
+    { title: t('settings.logout'), route: 'Logout' },
   ];
 
   const renderContent = () => {
@@ -57,7 +59,7 @@ export function SettingsMainScreen() {
 
           return (
             <Pressable
-              key={item.title}
+              key={item.route}
               focusable={isTV}
               hasTVPreferredFocus={index === 0}
               onFocus={() => setFocused(item.route)}

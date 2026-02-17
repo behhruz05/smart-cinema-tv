@@ -8,6 +8,7 @@ import {
   Pressable,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { RootState, AppDispatch } from '../../../store';
 import {
   fetchGenres,
@@ -16,6 +17,7 @@ import {
 } from '../../../store/slice/movie.slice';
 
 export function MovieGanres() {
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
 
   const { genres, selectedGenre } = useSelector(
@@ -28,11 +30,11 @@ export function MovieGanres() {
     if (genres.length === 0) {
       dispatch(fetchGenres());
     }
-  }, []);
+  }, [dispatch, genres.length]);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Популярные жанры</Text>
+      <Text style={styles.title}>{t('search.popular_genres')}</Text>
 
       <FlatList
         data={genres}

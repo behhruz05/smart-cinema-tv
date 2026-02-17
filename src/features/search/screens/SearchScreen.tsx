@@ -8,6 +8,7 @@ import {
   Text,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { RootState, AppDispatch } from '../../../store';
 import {
   fetchSearchMovies,
@@ -31,6 +32,7 @@ const ITEM_WIDTH =
   NUM_COLUMNS;
 
 export function SearchScreen() {
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
 
   const {
@@ -102,7 +104,7 @@ export function SearchScreen() {
           ) : (
             <>
               <Text style={styles.sectionTitle}>
-                Вам может понравиться
+                {t('search.recommended')}
               </Text>
 
               {popularStatus === 'loading' ? (
@@ -128,7 +130,7 @@ export function SearchScreen() {
           {searchStatus === 'success' && searchResults.length > 0 && (
             <>
               <Text style={styles.sectionTitle}>
-                Результаты поиска
+                {t('search.results')}
               </Text>
               {renderMovies(searchResults)}
             </>
@@ -136,7 +138,7 @@ export function SearchScreen() {
 
           {searchStatus === 'error' && (
             <Text style={styles.errorText}>
-              Ошибка загрузки
+              {t('errors.loading')}
             </Text>
           )}
         </>

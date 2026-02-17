@@ -1,4 +1,14 @@
 {
+  "common": {
+    "back": "Назад",
+    "search": "Поиск",
+    "cancel": "Отмена",
+    "logout": "Выйти"
+  },
+  "errors": {
+    "loading": "Ошибка загрузки",
+    "server": "Ошибка сервера"
+  },
   "login": {
     "title": "Вход в аккаунт",
     "subtitle": "Отсканируйте QR-код или войдите с помощью логина",
@@ -10,5 +20,94 @@
     "login_loading": "Вход...",
     "fill_fields": "Заполните все поля",
     "login_error": "Ошибка входа"
+  },
+  "genre": {
+    "title": "Жанры",
+    "back": "Назад",
+    "loading_error": "Ошибка загрузки"
+  },
+  "home": {
+    "sections": {
+      "most_watched": "Больше всего смотрят",
+      "continue_watching": "Продолжить просмотр",
+      "latest": "Новинки",
+      "tv_channels": "Телеканалы",
+      "reels": "Reels"
+    },
+    "carousel": {
+      "watch": "Смотреть",
+      "details": "Подробнее"
+    }
+  },
+  "sidebar": {
+    "home": "Главная",
+    "tv": "TV",
+    "movies": "Фильмы",
+    "reels": "Reels",
+    "settings": "Настройки"
+  },
+  "search": {
+    "popular_genres": "Популярные жанры",
+    "recommended": "Вам может понравиться",
+    "results": "Результаты поиска",
+    "not_found_title": "Ничего не найдено",
+    "not_found_subtitle": "Попробуйте изменить запрос или проверить написание"
+  },
+  "profile": {
+    "default_name": "Пользователь",
+    "my_rentals": "Мои аренды",
+    "saved": "Сохранённые"
+  },
+  "watch_history": {
+    "untitled": "Без названия",
+    "season_episode": "{{season}} сезон, {{episode}} серия"
+  },
+  "reel": {
+    "watch_movie": "Смотреть фильм"
+  },
+  "settings": {
+    "interface_language": "Интерфейс и язык",
+    "playback": "Воспроизведение",
+    "parental_control": "Родительский контроль",
+    "support": "Поддержка и о приложении",
+    "system_cache": "Система и кэш",
+    "logout": "Выход",
+    "logout_modal_title": "Вы действительно хотите выйти?",
+    "logout_modal_subtitle": "Вы выйдете из вашего аккаунта.",
+    "language": {
+      "title": "Интерфейс и язык",
+      "select": "Выберите язык приложения",
+      "uz": "Узбекский",
+      "ru": "Русский",
+      "en": "Английский"
+    }
+  },
+  "time": {
+    "duration_zero": "0 мин",
+    "duration_hours_minutes": "{{hours}} ч {{minutes}} мин",
+    "duration_minutes": "{{minutes}} мин",
+    "months_short": [
+      "янв",
+      "фев",
+      "мар",
+      "апр",
+      "май",
+      "июн",
+      "июл",
+      "авг",
+      "сен",
+      "окт",
+      "ноя",
+      "дек"
+    ],
+    "weekdays_short": [
+      "Вс",
+      "Пн",
+      "Вт",
+      "Ср",
+      "Чт",
+      "Пт",
+      "Сб"
+    ]
   }
 }

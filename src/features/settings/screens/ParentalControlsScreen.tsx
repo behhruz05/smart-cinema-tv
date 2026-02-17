@@ -1,10 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 export default function ParentalControlScreen() {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Родительский контроль</Text>
+      <Text style={styles.title}>{t('settings.parental_control')}</Text>
     </View>
   );
 }

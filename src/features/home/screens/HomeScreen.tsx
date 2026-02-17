@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { ScrollView, FlatList } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import {
   fetchPopular,
   fetchLatest,
@@ -18,6 +19,7 @@ import { WatchHistory } from '../../../shared/components/WatchHistory';
 import { NewMovieCard } from '../../../shared/components/NewMovieCard';
 
 export function HomeScreen() {
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
 
   const { popular, latest, history, channels } =
@@ -44,7 +46,7 @@ export function HomeScreen() {
     >
       <HomeCarousel />
 
-      <Section title="Больше всего смотрят" data={popular}>
+      <Section title={t('home.sections.most_watched')} data={popular}>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -59,7 +61,7 @@ export function HomeScreen() {
         />
       </Section>
 
-      <Section title="Продолжить просмотр" data={history}>
+      <Section title={t('home.sections.continue_watching')} data={history}>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -71,7 +73,7 @@ export function HomeScreen() {
         />
       </Section>
 
-      <Section title="Новинки" data={latest}>
+      <Section title={t('home.sections.latest')} data={latest}>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -86,7 +88,7 @@ export function HomeScreen() {
         />
       </Section>
 
-      <Section title="Reels" data={reels}>
+      <Section title={t('home.sections.reels')} data={reels}>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -98,7 +100,7 @@ export function HomeScreen() {
         />
       </Section>
 
-      <Section title="Телеканалы" data={channels}>
+      <Section title={t('home.sections.tv_channels')} data={channels}>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}

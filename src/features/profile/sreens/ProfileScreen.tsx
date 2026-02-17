@@ -6,12 +6,14 @@ import {
   FlatList,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { AppDispatch, RootState } from '../../../store';
 import { WatchHistory } from '../../../shared/components/WatchHistory';
 import { fetchHistory } from '../../../store/slice/home.slice';
 import { Section } from '../../../shared/components/Section';
 
 export function ProfileScreen() {
+  const { t } = useTranslation();
   const { user } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch<AppDispatch>();
   const { history } =
@@ -34,7 +36,7 @@ export function ProfileScreen() {
             <View style={styles.avatar} />
             <View>
               <Text style={styles.name}>
-                {user?.full_name || 'Иванов Иван'}
+                {user?.full_name || t('profile.default_name')}
               </Text>
               <Text style={styles.userId}>
                 ID: {user?.id || '00001'}
@@ -43,7 +45,7 @@ export function ProfileScreen() {
           </View>
 
           {/* History */}
-          <Section title="Мои аренды" data={history}>
+          <Section title={t('profile.my_rentals')} data={history}>
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -56,7 +58,7 @@ export function ProfileScreen() {
           </Section>
 
           {/* Saved */}
-          <Section title="Сохранённые" data={history}>
+          <Section title={t('profile.saved')} data={history}>
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={false}

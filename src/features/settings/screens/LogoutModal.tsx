@@ -6,6 +6,7 @@ import {
   Pressable,
   Platform,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../app/providers/AppProviders';
 import { WarningIcon } from '../../../shared/icons/WarningIcon';
 
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export default function LogoutModal({ onCancel }: Props) {
+  const { t } = useTranslation();
   const { logout } = useAuth();
   const isTV = Platform.isTV;
 
@@ -27,8 +29,8 @@ export default function LogoutModal({ onCancel }: Props) {
     <View style={styles.overlay}>
       <View style={styles.modal}>
               <WarningIcon size={50}/>
-        <Text style={styles.title}>Оплата прошла успешно</Text>
-        <Text style={styles.subtitle}>Доступ к фильму открыт. Приятного просмотра</Text>
+        <Text style={styles.title}>{t('settings.logout_modal_title')}</Text>
+        <Text style={styles.subtitle}>{t('settings.logout_modal_subtitle')}</Text>
 
         <View style={styles.row}>
           {/* CANCEL */}
@@ -43,7 +45,7 @@ export default function LogoutModal({ onCancel }: Props) {
               focused === 'cancel' && styles.focused,
             ]}
           >
-            <Text style={styles.cancelText}>Отмена</Text>
+            <Text style={styles.cancelText}>{t('common.cancel')}</Text>
           </Pressable>
 
           {/* LOGOUT */}
@@ -57,7 +59,7 @@ export default function LogoutModal({ onCancel }: Props) {
               focused === 'logout' && styles.focused,
             ]}
           >
-            <Text style={styles.logoutText}>Выйти</Text>
+            <Text style={styles.logoutText}>{t('common.logout')}</Text>
           </Pressable>
         </View>
       </View>
