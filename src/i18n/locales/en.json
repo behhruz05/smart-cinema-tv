@@ -80,7 +80,35 @@
       "uz": "Uzbek",
       "ru": "Russian",
       "en": "English"
-    }
+    },
+    "video_quality": "Video quality",
+    "video_quality_desc": "Default playback quality",
+    "quality_auto": "Auto (recommended)",
+    "quality_1080": "High (1080p)",
+    "quality_720": "Data saver (720p / 480p)",
+    "theme": {
+      "select": "Select theme",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "playback_desc": "Playback preferences",
+    "autoplay_next": "Autoplay next episode",
+    "high_quality": "Prefer high quality stream",
+    "parental_desc": "Access restrictions",
+    "parental_enabled": "Enable parental control",
+    "parental_pin": "Parental PIN code",
+    "parental_pin_placeholder": "Enter 4-digit PIN",
+    "save_pin": "Save PIN",
+    "pin_saved": "PIN code saved",
+    "pin_invalid": "PIN must be exactly 4 digits",
+    "support_desc": "Support and app information",
+    "support_email": "Support email",
+    "support_phone": "Support phone",
+    "app_version": "App version",
+    "cache_desc": "Cache and storage",
+    "clear_cache": "Clear cache",
+    "clear_on_exit": "Clear cache on app exit",
+    "cache_cleared": "Cache cleared successfully"
   },
   "time": {
     "duration_zero": "0 min",

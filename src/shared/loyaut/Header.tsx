@@ -16,6 +16,7 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../app/providers/AppProviders';
 
 import { RootState } from '../../store';
 import { setQuery } from '../../store/slice/movie.slice';
@@ -32,6 +33,7 @@ type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function Header() {
   const { t } = useTranslation();
+  const { resolvedTheme } = useAuth();
   const navigation = useNavigation<NavProp>();
   const dispatch = useDispatch();
   const { query } = useSelector((state: RootState) => state.movie);
@@ -53,6 +55,7 @@ export function Header() {
   });
 
   const isSearch = currentRoute === 'Search';
+  const isLight = resolvedTheme === 'light';
 
   const animatedWidth = useRef(new Animated.Value(320)).current;
   const scaleSearch = useRef(new Animated.Value(1)).current;
@@ -83,7 +86,7 @@ export function Header() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isLight && styles.containerLight]}>
       <View style={styles.left}>
         {isSearch ? (
           <Animated.View
@@ -103,18 +106,20 @@ export function Header() {
               onPress={() => navigation.goBack()}
               style={[
                 styles.back,
+                isLight && styles.cardLight,
                 focused === 'back' && styles.focusedButton,
+                isLight && focused === 'back' && styles.focusedButtonLight,
               ]}
             >
-              <BackIcon size={20} color="#888" />
-              <Text style={styles.backText}>{t('common.back')}</Text>
+              <BackIcon size={20} color={isLight ? '#6b7280' : '#888'} />
+              <Text style={[styles.backText, isLight && styles.textMutedLight]}>{t('common.back')}</Text>
             </Pressable>
           </Animated.View>
         ) : (
           <View style={styles.timeWeatherRow}>
-            <Text style={styles.dateTime}>{currentTime}</Text>
-            <Text style={styles.separator}>|</Text>
-            <Text style={styles.weather}>
+            <Text style={[styles.dateTime, isLight && styles.textPrimaryLight]}>{currentTime}</Text>
+            <Text style={[styles.separator, isLight && styles.textMutedLight]}>|</Text>
+            <Text style={[styles.weather, isLight && styles.textPrimaryLight]}>
               {weather?.icon ?? '☁️'} {weather?.temp ?? '--°'}
             </Text>
           </View>
@@ -125,14 +130,16 @@ export function Header() {
         <Animated.View
           style={[
             styles.searchContainer,
+            isLight && styles.cardLight,
             {
               width: animatedWidth,
               transform: [{ scale: scaleSearch }],
             },
             focused === 'search' && styles.focusedButton,
+            isLight && focused === 'search' && styles.focusedButtonLight,
           ]}
         >
-          <SearchIcon size={18} color="#888" />
+          <SearchIcon size={18} color={isLight ? '#6b7280' : '#888'} />
 
           {isSearch ? (
             <TextInput
@@ -141,8 +148,8 @@ export function Header() {
                 dispatch(setQuery(text))
               }
               placeholder={t('common.search')}
-              placeholderTextColor="#888"
-              style={styles.input}
+              placeholderTextColor={isLight ? '#6b7280' : '#888'}
+              style={[styles.input, isLight && styles.inputLight]}
               autoFocus
             />
           ) : (
@@ -159,13 +166,13 @@ export function Header() {
               }}
               onPress={() => navigation.navigate('Search')}
             >
-              <Text style={styles.searchPlaceholder}>
+              <Text style={[styles.searchPlaceholder, isLight && styles.textMutedLight]}>
                 {query || t('common.search')}
               </Text>
             </Pressable>
           )}
 
-          <VoiceIcon size={18} color="#888" />
+          <VoiceIcon size={18} color={isLight ? '#6b7280' : '#888'} />
         </Animated.View>
 
         {!isSearch && (
@@ -189,17 +196,25 @@ export function Header() {
               }
               style={[
                 styles.avatar,
+                isLight && styles.cardLight,
                 (focused === 'avatar' ||
                   currentRoute === 'Profile') &&
                   styles.focusedButton,
+                isLight &&
+                  (focused === 'avatar' || currentRoute === 'Profile') &&
+                  styles.focusedButtonLight,
               ]}
             >
               <UserIcon
                 size={18}
                 color={
                   currentRoute === 'Profile'
-                    ? '#fff'
-                    : '#888'
+                    ? isLight
+                      ? '#111827'
+                      : '#fff'
+                    : isLight
+                      ? '#6b7280'
+                      : '#888'
                 }
               />
             </Pressable>
@@ -216,6 +231,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
+  },
+  containerLight: {
+    backgroundColor: '#f4f4f5',
   },
   left: {
     flexDirection: 'row',
@@ -267,6 +285,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
   },
+  inputLight: {
+    color: '#111827',
+  },
   avatar: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -294,5 +315,17 @@ const styles = StyleSheet.create({
   },
   focusedButton: {
     borderColor: '#fff',
+  },
+  focusedButtonLight: {
+    borderColor: '#2563eb',
+  },
+  cardLight: {
+    backgroundColor: '#ffffff',
+  },
+  textPrimaryLight: {
+    color: '#111827',
+  },
+  textMutedLight: {
+    color: '#6b7280',
   },
 });

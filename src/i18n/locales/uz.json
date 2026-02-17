@@ -80,7 +80,35 @@
       "uz": "O'zbek",
       "ru": "Rus",
       "en": "Ingliz"
-    }
+    },
+    "video_quality": "Video sifati",
+"video_quality_desc": "Standart ijro sifati",
+"quality_auto": "Avto (tavsiya etiladi)",
+"quality_1080": "Yuqori (1080p)",
+"quality_720": "Trafikni tejash (720p / 480p)",
+    "theme": {
+      "select": "Mavzuni tanlang",
+      "dark": "Qorong'i",
+      "system": "Tizim bo'yicha"
+    },
+    "playback_desc": "Ijro sozlamalari",
+    "autoplay_next": "Keyingi qismni avtomatik ijro etish",
+    "high_quality": "Yuqori sifatli oqimni afzal ko'rish",
+    "parental_desc": "Kirish cheklovlari",
+    "parental_enabled": "Ota-ona nazoratini yoqish",
+    "parental_pin": "Ota-ona nazorati PIN kodi",
+    "parental_pin_placeholder": "4 xonali PIN kiriting",
+    "save_pin": "PINni saqlash",
+    "pin_saved": "PIN kod saqlandi",
+    "pin_invalid": "PIN aniq 4 ta raqam bo'lishi kerak",
+    "support_desc": "Yordam va ilova ma'lumotlari",
+    "support_email": "Yordam emaili",
+    "support_phone": "Yordam telefoni",
+    "app_version": "Ilova versiyasi",
+    "cache_desc": "Kesh va xotira",
+    "clear_cache": "Keshni tozalash",
+    "clear_on_exit": "Chiqishda keshni tozalash",
+    "cache_cleared": "Kesh muvaffaqiyatli tozalandi"
   },
   "time": {
     "duration_zero": "0 daq",

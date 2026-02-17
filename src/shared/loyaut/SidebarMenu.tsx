@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../app/providers/AppProviders';
 import {
   useNavigation,
   useNavigationState,
@@ -43,6 +44,7 @@ const icons = [
 
 export function SidebarMenu() {
   const { t } = useTranslation();
+  const { resolvedTheme } = useAuth();
   const dispatch = useDispatch();
   const navigation = useNavigation<NavProp>();
   const isTV = Platform.isTV;
@@ -52,6 +54,7 @@ export function SidebarMenu() {
   );
 
   const [focused, setFocused] = useState<string | null>(null);
+  const isLight = resolvedTheme === 'light';
 
   const widthAnim = useRef(
     new Animated.Value(COLLAPSED_WIDTH)
@@ -100,7 +103,13 @@ export function SidebarMenu() {
   };
 
   return (
-    <Animated.View style={[styles.container, { width: widthAnim }]}>
+    <Animated.View
+      style={[
+        styles.container,
+        isLight && styles.containerLight,
+        { width: widthAnim },
+      ]}
+    >
       
       {/* 🔹 LOGO */}
       <View style={styles.logoSection}>
@@ -112,6 +121,7 @@ export function SidebarMenu() {
           style={[
             styles.logoWrapper,
             focused === 'Logo' && styles.focusedItem,
+            isLight && focused === 'Logo' && styles.focusedItemLight,
           ]}
         >
           <Image source={Logo} style={styles.logo} />
@@ -135,13 +145,21 @@ export function SidebarMenu() {
               onPress={() => navigateTo(item.id)}
               style={[
                 styles.item,
+                isLight && styles.itemLight,
                 active && styles.activeItem,
                 isFocused && styles.focusedItem,
+                isLight && isFocused && styles.focusedItemLight,
               ]}
             >
               <IconComponent
                 color={
-                  active || isFocused ? '#fff' : '#777'
+                  active || isFocused
+                    ? isLight
+                      ? '#111827'
+                      : '#fff'
+                    : isLight
+                      ? '#6b7280'
+                      : '#777'
                 }
                 size={18}
                 filled={active}
@@ -154,8 +172,12 @@ export function SidebarMenu() {
                     {
                       color:
                         active || isFocused
-                          ? '#fff'
-                          : '#777',
+                          ? isLight
+                            ? '#111827'
+                            : '#fff'
+                          : isLight
+                            ? '#6b7280'
+                            : '#777',
                     },
                   ]}
                 >
@@ -176,8 +198,12 @@ export function SidebarMenu() {
           onPress={() => navigateTo('Settings')}
           style={[
             styles.item,
+            isLight && styles.itemLight,
             currentRoute === 'Settings' && styles.activeItem,
             focused === 'Settings' && styles.focusedItem,
+            isLight &&
+              focused === 'Settings' &&
+              styles.focusedItemLight,
           ]}
         >
           <SettingsIcon
@@ -185,8 +211,12 @@ export function SidebarMenu() {
             color={
               currentRoute === 'Settings' ||
               focused === 'Settings'
-                ? '#fff'
-                : '#777'
+                ? isLight
+                  ? '#111827'
+                  : '#fff'
+                : isLight
+                  ? '#6b7280'
+                  : '#777'
             }
             filled={currentRoute === 'Settings'}
           />
@@ -199,8 +229,12 @@ export function SidebarMenu() {
                   color:
                     currentRoute === 'Settings' ||
                     focused === 'Settings'
-                      ? '#fff'
-                      : '#777',
+                      ? isLight
+                        ? '#111827'
+                        : '#fff'
+                      : isLight
+                        ? '#6b7280'
+                        : '#777',
                 },
               ]}
             >
@@ -220,6 +254,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     overflow: 'hidden',
     justifyContent: 'space-between',
+  },
+  containerLight: {
+    backgroundColor: '#f4f4f5',
+    borderRightWidth: 1,
+    borderRightColor: '#e5e7eb',
   },
 
   logoSection: {
@@ -259,6 +298,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
+  itemLight: {
+    backgroundColor: '#ffffff',
+  },
 
   activeItem: {
     backgroundColor: '#1A1A1A',
@@ -267,6 +309,10 @@ const styles = StyleSheet.create({
   focusedItem: {
     borderColor: '#fff',
     backgroundColor: '#1A1A1A',
+  },
+  focusedItemLight: {
+    borderColor: '#2563eb',
+    backgroundColor: '#ffffff',
   },
 
   title: {
