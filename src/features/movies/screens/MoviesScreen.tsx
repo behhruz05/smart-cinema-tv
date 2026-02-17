@@ -1,0 +1,122 @@
+import React, { useEffect } from 'react';
+import {
+  ScrollView,
+  FlatList,
+  View,
+  StyleSheet,
+  Dimensions,
+} from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  fetchPopular,
+  fetchLatest,
+  fetchHistory,
+  fetchChannels,
+} from '../../../store/slice/home.slice';
+import { fetchReels } from '../../../store/slice/reel.slice';
+import { AppDispatch, RootState } from '../../../store';
+import { Section } from '../../../shared/components/Section';
+import { MovieCard } from '../../../shared/components/MovieCard';
+import { ReelCard } from '../../../shared/components/ReelCard';
+import { WatchHistory } from '../../../shared/components/WatchHistory';
+import { GenreSection } from '../../../shared/components/GenreSection';
+import { NewMovieCard } from '../../../shared/components/NewMovieCard';
+
+export function MoviesScreen() {
+  const dispatch = useDispatch<AppDispatch>();
+
+  const { popular, latest, history } =
+    useSelector((state: RootState) => state.home);
+
+  const { reels } =
+    useSelector((state: RootState) => state.reel);
+
+  useEffect(() => {
+    dispatch(fetchPopular());
+    dispatch(fetchLatest());
+    dispatch(fetchHistory());
+    dispatch(fetchChannels());
+    dispatch(fetchReels({ page: 1, per_page: 20 }));
+  }, [dispatch]);
+
+  return (
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+    >
+      <Section title="Больше всего смотрят" data={popular}>
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={popular}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.horizontalList}
+          renderItem={({ item }) => (
+            <MovieCard
+              movie={item}
+              style={{ width: 320 }}
+            />
+          )}
+        />
+      </Section>
+
+      <GenreSection />
+
+      <Section title="Продолжить просмотр" data={history}>
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={history}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.horizontalList}
+          renderItem={({ item }) => (
+            <WatchHistory item={item} />
+          )}
+        />
+      </Section>
+
+      <Section title="Новинки" data={latest}>
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={latest}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.horizontalList}
+          renderItem={({ item }) => (
+            <NewMovieCard
+              movie={item}
+              style={{ width: 200 }}
+            />
+          )}
+        />
+      </Section>
+
+      <Section title="Reels" data={reels}>
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={reels}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.horizontalList}
+          renderItem={({ item }) => (
+            <ReelCard item={item} />
+          )}
+        />
+      </Section>
+
+      <View style={{ height: 50 }} />
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#101010',
+    paddingHorizontal: 20,
+  },
+  horizontalList: {
+    gap: 16,
+    paddingVertical: 10,
+  },
+});

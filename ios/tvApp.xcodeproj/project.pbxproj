@@ -11,6 +11,11 @@
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		D0A72D64284C4EC0AD255A9B /* ComedyFont.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0E7E456C71DF4CE9B4AED83B /* ComedyFont.ttf */; };
+		4E648344C87F490581FFFAA4 /* HorrorFont.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6B528058E30B4C4BADD84570 /* HorrorFont.ttf */; };
+		2F3386EBBB074424A05ACF60 /* SciFiFont.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7CA6A88304D942FFB06DE231 /* SciFiFont.ttf */; };
+		7F26AABA5C64409CBE9B01F7 /* ActionFont.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1D50CB3FC72C4087A60731D2 /* ActionFont.ttf */; };
+		5C463811EE7E45BEBE411BB6 /* DefaultFont.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C775B774455941AE931FF4A6 /* DefaultFont.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +29,11 @@
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = tvApp/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = tvApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		0E7E456C71DF4CE9B4AED83B /* ComedyFont.ttf */ = {isa = PBXFileReference; name = "ComedyFont.ttf"; path = "../src/assets/fonts/ComedyFont.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		6B528058E30B4C4BADD84570 /* HorrorFont.ttf */ = {isa = PBXFileReference; name = "HorrorFont.ttf"; path = "../src/assets/fonts/HorrorFont.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		7CA6A88304D942FFB06DE231 /* SciFiFont.ttf */ = {isa = PBXFileReference; name = "SciFiFont.ttf"; path = "../src/assets/fonts/SciFiFont.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		1D50CB3FC72C4087A60731D2 /* ActionFont.ttf */ = {isa = PBXFileReference; name = "ActionFont.ttf"; path = "../src/assets/fonts/ActionFont.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		C775B774455941AE931FF4A6 /* DefaultFont.ttf */ = {isa = PBXFileReference; name = "DefaultFont.ttf"; path = "../src/assets/fonts/DefaultFont.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +84,7 @@
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
+				B65BA46EE9454B489273A3B6 /* Resources */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -96,6 +107,19 @@
 			);
 			path = Pods;
 			sourceTree = "<group>";
+		};
+		B65BA46EE9454B489273A3B6 /* Resources */ = {
+			isa = "PBXGroup";
+			children = (
+				0E7E456C71DF4CE9B4AED83B /* ComedyFont.ttf */,
+				6B528058E30B4C4BADD84570 /* HorrorFont.ttf */,
+				7CA6A88304D942FFB06DE231 /* SciFiFont.ttf */,
+				1D50CB3FC72C4087A60731D2 /* ActionFont.ttf */,
+				C775B774455941AE931FF4A6 /* DefaultFont.ttf */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+			path = "";
 		};
 /* End PBXGroup section */
 
@@ -159,6 +183,11 @@
 			files = (
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
+				D0A72D64284C4EC0AD255A9B /* ComedyFont.ttf in Resources */,
+				4E648344C87F490581FFFAA4 /* HorrorFont.ttf in Resources */,
+				2F3386EBBB074424A05ACF60 /* SciFiFont.ttf in Resources */,
+				7F26AABA5C64409CBE9B01F7 /* ActionFont.ttf in Resources */,
+				5C463811EE7E45BEBE411BB6 /* DefaultFont.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

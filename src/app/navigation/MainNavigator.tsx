@@ -10,9 +10,11 @@ import {
 import { HomeScreen } from '../../features/home/screens/HomeScreen';
 import { ProfileScreen } from '../../features/profile/sreens/ProfileScreen';
 import { SearchScreen } from '../../features/search/screens/SearchScreen';
+import { GenreScreen } from '../../features/ganre/screens/GenreScreen';
 import { ReelScreen } from '../../features/reel/screens/ReelScreen';
 import { MainLayout } from '../../shared/loyaut/MainLayout';
-import { SettingsScreen } from '../../features/settings/screens/SettingsScreen';
+import { MoviesScreen } from '../../features/movies/screens/MoviesScreen';
+import { SettingsMainScreen } from '../../features/settings/screens/SettingsMainScreen';
 
 const RootStack =
   createNativeStackNavigator<RootStackParamList>();
@@ -31,10 +33,10 @@ function ContentNavigator() {
     >
       <ContentStack.Screen name="Home" component={HomeScreen} />
       <ContentStack.Screen name="TV" component={HomeScreen} />
-      <ContentStack.Screen name="Movies" component={HomeScreen} />
+      <ContentStack.Screen name="Movies" component={MoviesScreen} />
       <ContentStack.Screen name="Reels" component={ReelScreen} />
       <ContentStack.Screen name="Profile" component={ProfileScreen} />
-      <ContentStack.Screen name="Settings" component={SettingsScreen} />
+      <ContentStack.Screen name="Settings" component={SettingsMainScreen} />
     </ContentStack.Navigator>
   );
 }
@@ -57,6 +59,7 @@ export function MainNavigator() {
     >
       <RootStack.Screen name="Main" component={MainWithLayout} />
       <RootStack.Screen name="Search" component={SearchScreen} />
+      <RootStack.Screen name="Ganre" component={GenreScreen} />
     </RootStack.Navigator>
   );
 }

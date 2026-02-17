@@ -6,18 +6,20 @@ import {
   Pressable,
   Platform,
 } from 'react-native';
-import {
-  useNavigation,
-  useRoute,
-} from '@react-navigation/native';
 
-export function SettingsScreen() {
-  const navigation = useNavigation<any>();
-  const route = useRoute<any>();
+import ParentalControlScreen from './ParentalControlsScreen';
+import SupportScreen from './SupportScreen';
+import InterfaceLanguageScreen from './InterfaceLanguage';
+import PlaybackScreen from './PlaybackScreen';
+import SystemCacheScreen from './SystemCacheScreen';
+import LogoutModal from './LogoutModal';
+
+export function SettingsMainScreen() {
   const isTV = Platform.isTV;
 
   const [active, setActive] = useState<string>('InterfaceLanguage');
   const [focused, setFocused] = useState<string | null>(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const items = [
     { title: 'Интерфейс и язык', route: 'InterfaceLanguage' },
@@ -28,16 +30,26 @@ export function SettingsScreen() {
     { title: 'Выход', route: 'Logout' },
   ];
 
-  const handlePress = (item: any) => {
-    if (item.route === 'Logout') return;
-
-    setActive(item.route);
-    navigation.navigate(item.route);
+  const renderContent = () => {
+    switch (active) {
+      case 'InterfaceLanguage':
+        return <InterfaceLanguageScreen />;
+      case 'Playback':
+        return <PlaybackScreen />;
+      case 'ParentalControl':
+        return <ParentalControlScreen />;
+      case 'Support':
+        return <SupportScreen />;
+      case 'SystemCache':
+        return <SystemCacheScreen />;
+      default:
+        return null;
+    }
   };
 
   return (
     <View style={styles.container}>
-      {/* LEFT MENU */}
+      {/* LEFT SIDEBAR */}
       <View style={styles.sidebar}>
         {items.map((item, index) => {
           const isActive = active === item.route;
@@ -50,7 +62,13 @@ export function SettingsScreen() {
               hasTVPreferredFocus={index === 0}
               onFocus={() => setFocused(item.route)}
               onBlur={() => setFocused(null)}
-              onPress={() => handlePress(item)}
+              onPress={() => {
+                if (item.route === 'Logout') {
+                  setShowLogoutModal(true);
+                } else {
+                  setActive(item.route);
+                }
+              }}
               style={[
                 styles.menuItem,
                 isActive && styles.activeItem,
@@ -72,8 +90,13 @@ export function SettingsScreen() {
 
       {/* RIGHT CONTENT */}
       <View style={styles.content}>
-        <Text style={styles.title}>Настройки</Text>
+        {renderContent()}
       </View>
+
+      {/* LOGOUT MODAL */}
+      {showLogoutModal && (
+        <LogoutModal onCancel={() => setShowLogoutModal(false)} />
+      )}
     </View>
   );
 }
@@ -83,9 +106,11 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     backgroundColor: '#101010',
+    paddingVertical: 20,
   },
 
   sidebar: {
+    width: 300,
     paddingHorizontal: 20,
   },
 
@@ -112,17 +137,12 @@ const styles = StyleSheet.create({
   },
 
   menuText: {
-    color: '#ffff',
-    fontSize: 14,
+    color: '#ffffff',
+    fontSize: 16,
   },
 
   content: {
     flex: 1,
-    paddingHorizontal: 80,
-  },
-
-  title: {
-    fontSize: 22,
-    color: '#ffffff',
+    paddingHorizontal: 40,
   },
 });

@@ -1,0 +1,14 @@
+{
+  "login": {
+    "title": "Sign in",
+    "subtitle": "Scan the QR code or sign in with login",
+    "phone_or_id": "Phone or Subscriber ID",
+    "password": "Password",
+    "enter_phone": "Enter phone or ID",
+    "enter_password": "Enter password",
+    "login_button": "Sign in",
+    "login_loading": "Signing in...",
+    "fill_fields": "Fill all fields",
+    "login_error": "Login error"
+  }
+}

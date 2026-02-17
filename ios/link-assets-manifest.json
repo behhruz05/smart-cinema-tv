@@ -1,0 +1,25 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "src/assets/fonts/ComedyFont.ttf",
+      "sha1": "ed3e64b6fbd7c83489b4a2e1b3d653968359a497"
+    },
+    {
+      "path": "src/assets/fonts/HorrorFont.ttf",
+      "sha1": "ed3e64b6fbd7c83489b4a2e1b3d653968359a497"
+    },
+    {
+      "path": "src/assets/fonts/SciFiFont.ttf",
+      "sha1": "ed3e64b6fbd7c83489b4a2e1b3d653968359a497"
+    },
+    {
+      "path": "src/assets/fonts/ActionFont.ttf",
+      "sha1": "ed3e64b6fbd7c83489b4a2e1b3d653968359a497"
+    },
+    {
+      "path": "src/assets/fonts/DefaultFont.ttf",
+      "sha1": "ed3e64b6fbd7c83489b4a2e1b3d653968359a497"
+    }
+  ]
+}

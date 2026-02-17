@@ -59,6 +59,7 @@ export function SidebarMenu() {
     new Animated.Value(0)
   ).current;
 
+  // 🔥 Sidebar animation
   useEffect(() => {
     Animated.parallel([
       Animated.timing(widthAnim, {
@@ -83,6 +84,13 @@ export function SidebarMenu() {
     return route.name;
   });
 
+  // 🔥 FIRST RENDER HOME FOCUS FIX
+  useEffect(() => {
+    if (currentRoute === 'Home') {
+      setFocused('Home');
+    }
+  }, []);
+
   const navigateTo = (screen: string) => {
     navigation.navigate('Main', {
       screen: screen as never,
@@ -92,24 +100,23 @@ export function SidebarMenu() {
   return (
     <Animated.View style={[styles.container, { width: widthAnim }]}>
       
-<View style={styles.logoSection}>
-  <Pressable
-    focusable={isTV}
-    hasTVPreferredFocus={!isOpen} 
-    onFocus={() => setFocused('Logo')}
-    onBlur={() => setFocused(null)}
-    onPress={() => dispatch(toggleSidebar())}
+      {/* 🔹 LOGO */}
+      <View style={styles.logoSection}>
+        <Pressable
+          focusable={isTV}
+          onFocus={() => setFocused('Logo')}
+          onBlur={() => setFocused(null)}
+          onPress={() => dispatch(toggleSidebar())}
+          style={[
+            styles.logoWrapper,
+            focused === 'Logo' && styles.focusedItem,
+          ]}
+        >
+          <Image source={Logo} style={styles.logo} />
+        </Pressable>
+      </View>
 
-    style={[
-      styles.logoWrapper,
-      focused === 'Logo' && styles.focusedItem,
-    ]}
-  >
-    <Image source={Logo} style={styles.logo} />
-  </Pressable>
-</View>
-
-
+      {/* 🔹 MENU ITEMS */}
       <View style={styles.menuSection}>
         {icons.map((item, index) => {
           const IconComponent = item.Icon;
@@ -120,9 +127,7 @@ export function SidebarMenu() {
             <Pressable
               key={item.id}
               focusable={isTV}
-              hasTVPreferredFocus={
-              index === 0 && currentRoute === 'Home'
-              }
+              hasTVPreferredFocus={index === 0} // 🔥 always first item
               onFocus={() => setFocused(item.id)}
               onBlur={() => setFocused(null)}
               onPress={() => navigateTo(item.id)}
@@ -160,44 +165,47 @@ export function SidebarMenu() {
         })}
       </View>
 
+      {/* 🔹 SETTINGS */}
       <View style={styles.bottomSection}>
-<Pressable
-  focusable={isTV}
-  onFocus={() => setFocused('Settings')}
-  onBlur={() => setFocused(null)}
-  onPress={() => navigateTo('Settings')}
-  style={[
-    styles.item,
-    currentRoute === 'Settings' && styles.activeItem,
-    focused === 'Settings' && styles.focusedItem,
-  ]}
->
-  <SettingsIcon
-    size={18}
-    color={
-      currentRoute === 'Settings' || focused === 'Settings'
-        ? '#fff'
-        : '#777'
-    }
-    filled={currentRoute === 'Settings'}
-  />
+        <Pressable
+          focusable={isTV}
+          onFocus={() => setFocused('Settings')}
+          onBlur={() => setFocused(null)}
+          onPress={() => navigateTo('Settings')}
+          style={[
+            styles.item,
+            currentRoute === 'Settings' && styles.activeItem,
+            focused === 'Settings' && styles.focusedItem,
+          ]}
+        >
+          <SettingsIcon
+            size={18}
+            color={
+              currentRoute === 'Settings' ||
+              focused === 'Settings'
+                ? '#fff'
+                : '#777'
+            }
+            filled={currentRoute === 'Settings'}
+          />
 
-  <Animated.View style={{ opacity: textOpacity }}>
-    <Text
-      style={[
-        styles.title,
-        {
-          color:
-            currentRoute === 'Settings' || focused === 'Settings'
-              ? '#fff'
-              : '#777',
-        },
-      ]}
-    >
-      Settings
-    </Text>
-  </Animated.View>
-</Pressable>
+          <Animated.View style={{ opacity: textOpacity }}>
+            <Text
+              style={[
+                styles.title,
+                {
+                  color:
+                    currentRoute === 'Settings' ||
+                    focused === 'Settings'
+                      ? '#fff'
+                      : '#777',
+                },
+              ]}
+            >
+              Settings
+            </Text>
+          </Animated.View>
+        </Pressable>
       </View>
     </Animated.View>
   );
@@ -209,7 +217,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     paddingHorizontal: 20,
     overflow: 'hidden',
-    justifyContent: 'space-between', 
+    justifyContent: 'space-between',
   },
 
   logoSection: {
@@ -230,12 +238,13 @@ const styles = StyleSheet.create({
     height: 34,
     resizeMode: 'contain',
   },
-logoWrapper: {
-  borderRadius: 12,
-  padding: 10,
-  borderWidth: 2,
-  borderColor: 'transparent',
-},
+
+  logoWrapper: {
+    borderRadius: 12,
+    padding: 10,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
 
   item: {
     flexDirection: 'row',
@@ -243,15 +252,17 @@ logoWrapper: {
     height: 44,
     marginBottom: 16,
     borderRadius: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     backgroundColor: '#1A1A1A',
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
 
   activeItem: {
     backgroundColor: '#1A1A1A',
   },
 
-    focusedItem: {
+  focusedItem: {
     borderColor: '#fff',
     backgroundColor: '#1A1A1A',
   },

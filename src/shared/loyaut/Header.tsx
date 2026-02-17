@@ -17,7 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { RootState } from '../../store';
-import { setQuery } from '../../store/slice/search.slice';
+import { setQuery } from '../../store/slice/movie.slice';
 import { RootStackParamList } from '../../types/navigations';
 
 import { SearchIcon } from '../icons/SearchIcon';
@@ -32,11 +32,7 @@ type NavProp = NativeStackNavigationProp<RootStackParamList>;
 export function Header() {
   const navigation = useNavigation<NavProp>();
   const dispatch = useDispatch();
-
-  const { query } = useSelector(
-    (state: RootState) => state.search
-  );
-
+  const { query } = useSelector((state: RootState) => state.movie);
   const weather = useWeather();
   const isTV = Platform.isTV;
 
@@ -45,56 +41,47 @@ export function Header() {
     formatCurrentHeaderDateTime()
   );
 
-  /**
-   * 🔥 Nested route detector
-   */
   const currentRoute = useNavigationState((state: any) => {
     const route = state.routes[state.index];
-
     if (route.state) {
       const nested = route.state.routes[route.state.index];
       return nested.name;
     }
-
     return route.name;
   });
 
   const isSearch = currentRoute === 'Search';
 
-  /**
-   * 🔥 Animated values
-   */
   const animatedWidth = useRef(new Animated.Value(320)).current;
   const scaleSearch = useRef(new Animated.Value(1)).current;
   const scaleAvatar = useRef(new Animated.Value(1)).current;
   const scaleBack = useRef(new Animated.Value(1)).current;
 
-  /**
-   * 🔥 Animate width on route change
-   */
   useEffect(() => {
     Animated.timing(animatedWidth, {
-      toValue: isSearch ? 600 : 320, // TV ga mos qilib o'zgartir
+      toValue: isSearch ? 600 : 320,
       duration: 250,
       easing: Easing.out(Easing.ease),
       useNativeDriver: false,
     }).start();
   }, [isSearch]);
 
-  /**
-   * 🔥 Clock update
-   */
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(formatCurrentHeaderDateTime());
     }, 60000);
-
     return () => clearInterval(interval);
   }, []);
 
+  const animateScale = (value: Animated.Value, to: number) => {
+    Animated.spring(value, {
+      toValue: to,
+      useNativeDriver: false,
+    }).start();
+  };
+
   return (
     <View style={styles.container}>
-      {/* LEFT */}
       <View style={styles.left}>
         {isSearch ? (
           <Animated.View
@@ -105,17 +92,11 @@ export function Header() {
               hasTVPreferredFocus
               onFocus={() => {
                 setFocused('back');
-                Animated.spring(scaleBack, {
-                  toValue: 1.01,
-                  useNativeDriver: true,
-                }).start();
+                animateScale(scaleBack, 1);
               }}
               onBlur={() => {
                 setFocused(null);
-                Animated.spring(scaleBack, {
-                  toValue: 1,
-                  useNativeDriver: true,
-                }).start();
+                animateScale(scaleBack, 1);
               }}
               onPress={() => navigation.goBack()}
               style={[
@@ -138,9 +119,7 @@ export function Header() {
         )}
       </View>
 
-      {/* RIGHT */}
       <View style={styles.right}>
-        {/* SEARCH */}
         <Animated.View
           style={[
             styles.searchContainer,
@@ -170,17 +149,11 @@ export function Header() {
               focusable={isTV}
               onFocus={() => {
                 setFocused('search');
-                Animated.spring(scaleSearch, {
-                  toValue: 1.01,
-                  useNativeDriver: true,
-                }).start();
+                animateScale(scaleSearch, 1);
               }}
               onBlur={() => {
                 setFocused(null);
-                Animated.spring(scaleSearch, {
-                  toValue: 1,
-                  useNativeDriver: true,
-                }).start();
+                animateScale(scaleSearch, 1);
               }}
               onPress={() => navigation.navigate('Search')}
             >
@@ -193,7 +166,6 @@ export function Header() {
           <VoiceIcon size={18} color="#888" />
         </Animated.View>
 
-        {/* AVATAR */}
         {!isSearch && (
           <Animated.View
             style={{ transform: [{ scale: scaleAvatar }] }}
@@ -202,17 +174,11 @@ export function Header() {
               focusable={isTV}
               onFocus={() => {
                 setFocused('avatar');
-                Animated.spring(scaleAvatar, {
-                  toValue: 1.01,
-                  useNativeDriver: true,
-                }).start();
+                animateScale(scaleAvatar, 1);
               }}
               onBlur={() => {
                 setFocused(null);
-                Animated.spring(scaleAvatar, {
-                  toValue: 1,
-                  useNativeDriver: true,
-                }).start();
+                animateScale(scaleAvatar, 1);
               }}
               onPress={() =>
                 navigation.navigate('Main', {
@@ -249,13 +215,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
-
   left: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 20,
   },
-
   right: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -263,29 +227,24 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
   },
-
   timeWeatherRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-
   dateTime: {
     fontSize: 14,
     color: '#fff',
     fontWeight: '500',
   },
-
   separator: {
     color: '#666',
     marginHorizontal: 12,
     fontSize: 14,
   },
-
   weather: {
     fontSize: 14,
     color: '#fff',
   },
-
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -297,18 +256,15 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     gap: 12,
   },
-
   searchPlaceholder: {
     color: '#888',
     fontSize: 14,
   },
-
   input: {
     flex: 1,
     color: '#fff',
     fontSize: 14,
   },
-
   avatar: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -319,7 +275,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-
   back: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -331,12 +286,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-
   backText: {
     color: '#888',
     fontSize: 16,
   },
-
   focusedButton: {
     borderColor: '#fff',
   },

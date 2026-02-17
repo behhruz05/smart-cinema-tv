@@ -1,0 +1,14 @@
+{
+  "login": {
+    "title": "Вход в аккаунт",
+    "subtitle": "Отсканируйте QR-код или войдите с помощью логина",
+    "phone_or_id": "Телефон или Abonent ID",
+    "password": "Пароль",
+    "enter_phone": "Введите телефон или ID",
+    "enter_password": "Введите пароль",
+    "login_button": "Войти",
+    "login_loading": "Вход...",
+    "fill_fields": "Заполните все поля",
+    "login_error": "Ошибка входа"
+  }
+}

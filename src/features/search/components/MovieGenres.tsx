@@ -13,13 +13,13 @@ import {
   fetchGenres,
   fetchGenreMovies,
   setSelectedGenre,
-} from '../../../store/slice/search.slice';
+} from '../../../store/slice/movie.slice';
 
 export function MovieGanres() {
   const dispatch = useDispatch<AppDispatch>();
 
   const { genres, selectedGenre } = useSelector(
-    (state: RootState) => state.search
+    (state: RootState) => state.movie
   );
 
   const [focusedId, setFocusedId] = useState<string | null>(null);
@@ -102,7 +102,6 @@ const styles = StyleSheet.create({
   },
   activeText: {
     color: '#000',
-    fontWeight: '600',
   },
   focusedGenre: {
     borderColor: '#fff',

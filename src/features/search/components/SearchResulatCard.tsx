@@ -5,17 +5,21 @@ import {
   Image,
   StyleSheet,
   Pressable,
+  ViewStyle,
 } from 'react-native';
 import { Movie } from '../../../types/search';
 
 interface Props {
   movie: Movie;
+  style?: ViewStyle;
 }
 
-export const MovieCard = React.memo(({ movie }: Props) => {
+export const SearchResultCard = React.memo(({ movie, style }: Props) => {
   const [focused, setFocused] = useState(false);
 
-  const rating = Number(movie.imdb_rating).toFixed(1);
+  const rating = movie?.imdb_rating
+    ? Number(movie.imdb_rating).toFixed(1)
+    : null;
 
   return (
     <Pressable
@@ -24,18 +28,23 @@ export const MovieCard = React.memo(({ movie }: Props) => {
       onBlur={() => setFocused(false)}
       style={[
         styles.card,
+        style,
         focused && styles.focusedCard,
       ]}
     >
-      <Image source={{ uri: movie.poster_url }} style={styles.image} />
+      <Image
+        source={{ uri: movie.poster_url }}
+        style={styles.image}
+      />
 
       <View style={styles.info}>
         <Text style={styles.title} numberOfLines={1}>
-          {movie.title_uz}
+          {movie.title_uz || movie.title_ru}
         </Text>
 
         <Text style={styles.meta}>
-          ⭐ {rating} • {movie.year}
+          {rating ? `⭐ ${rating} • ` : ''}
+          {movie.year}
         </Text>
       </View>
     </Pressable>
@@ -44,14 +53,13 @@ export const MovieCard = React.memo(({ movie }: Props) => {
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: 20,
     borderRadius: 14,
     borderWidth: 2,
     borderColor: 'transparent',
+    padding: 10
   },
   focusedCard: {
     borderColor: '#fff',
-    transform: [{ scale: 1.01 }],
   },
   image: {
     width: '100%',
@@ -64,7 +72,6 @@ const styles = StyleSheet.create({
   title: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: '600',
   },
   meta: {
     color: '#888',

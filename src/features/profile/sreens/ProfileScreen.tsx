@@ -7,9 +7,9 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../../store';
-import { WatchHistory } from '../../home/components/WatchHistory';
+import { WatchHistory } from '../../../shared/components/WatchHistory';
 import { fetchHistory } from '../../../store/slice/home.slice';
-import { Section } from '../../home/components/Section';
+import { Section } from '../../../shared/components/Section';
 
 export function ProfileScreen() {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -100,7 +100,6 @@ const styles = StyleSheet.create({
   name: {
     color: '#fff',
     fontSize: 28,
-    fontWeight: '600',
   },
 
   userId: {

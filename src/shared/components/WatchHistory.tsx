@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Image,
   StyleSheet,
@@ -10,7 +10,7 @@ import {
 import {
   formatDurationHM,
   calculateProgressPercent,
-} from '../../../shared/utils/timeFormatted';
+} from '../utils/timeFormatted';
 
 interface WatchHistoryItem {
   type: 'movie' | 'series';
@@ -31,6 +31,8 @@ interface Props {
 }
 
 export const WatchHistory = ({ item, onPress }: Props) => {
+  const [focused, setFocused] = useState(false);
+
   const duration = formatDurationHM(
     item.total_duration_seconds
   );
@@ -53,13 +55,18 @@ export const WatchHistory = ({ item, onPress }: Props) => {
 
   return (
     <Pressable
+      focusable
       onPress={() => onPress?.(item)}
-      style={({ focused }) => [
-        styles.card,
-        focused && styles.focusedCard,
-      ]}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      style={styles.card}
     >
-      <View style={styles.imageWrapper}>
+      <View
+        style={[
+          styles.imageWrapper,
+          focused && styles.focusedImageWrapper,
+        ]}
+      >
         <Image
           source={{ uri: item.poster_url }}
           style={styles.image}
@@ -97,36 +104,34 @@ export const WatchHistory = ({ item, onPress }: Props) => {
 
 const styles = StyleSheet.create({
   card: {
-    width: 260,
+    width: 320,
     marginRight: 18,
-    borderRadius: 18,
-  },
-
-  focusedCard: {
-    transform: [{ scale: 1.05 }],
   },
 
   imageWrapper: {
     position: 'relative',
+    borderRadius: 18,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+
+  focusedImageWrapper: {
+    borderColor: '#fff',
   },
 
   image: {
     width: '100%',
-    height: 150,
-      borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
+    height: 180,
   },
 
   progressContainer: {
     position: 'absolute',
-    bottom: -5,
+    bottom: 0,
     left: 0,
     right: 0,
     height: 6,
     backgroundColor: '#333',
-    borderBottomLeftRadius: 18,
-    borderBottomRightRadius: 18,
-    overflow: 'hidden',
   },
 
   progressBar: {
@@ -150,7 +155,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
   },
 
   subtitle: {

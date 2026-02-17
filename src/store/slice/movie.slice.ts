@@ -40,7 +40,7 @@ const initialState: SearchState = {
 };
 
 export const fetchPopularMovies = createAsyncThunk(
-  'search/popular',
+  'movie/popular',
   async () => {
     const res = await searchService.getMovies({
       endpoint: 'popular',
@@ -51,7 +51,7 @@ export const fetchPopularMovies = createAsyncThunk(
 );
 
 export const fetchSearchMovies = createAsyncThunk(
-  'search/searchMovies',
+  'movie/searchMovies',
   async (query: string, { signal }) => {
     const res = await searchService.getMovies(
       {
@@ -67,7 +67,7 @@ export const fetchSearchMovies = createAsyncThunk(
 );
 
 export const fetchGenres = createAsyncThunk(
-  'search/genres',
+  'movie/genres',
   async () => {
     const res = await searchService.getGenres('uz');
     return res.data.items;
@@ -75,7 +75,7 @@ export const fetchGenres = createAsyncThunk(
 );
 
 export const fetchGenreMovies = createAsyncThunk(
-  'search/genreMovies',
+  'movie/genreMovies',
   async (genre_id: string) => {
     const res = await searchService.getMoviesByGenre(
       genre_id,
@@ -87,8 +87,8 @@ export const fetchGenreMovies = createAsyncThunk(
   }
 );
 
-const searchSlice = createSlice({
-  name: 'search',
+const movieSclice = createSlice({
+  name: 'movie',
   initialState,
   reducers: {
     setQuery(state, action: PayloadAction<string>) {
@@ -166,6 +166,6 @@ const searchSlice = createSlice({
 });
 
 export const { setQuery, clearSearch,clearSearchResults, setSelectedGenre } =
-  searchSlice.actions;
+  movieSclice.actions;
 
-export default searchSlice.reducer;
+export default movieSclice.reducer;

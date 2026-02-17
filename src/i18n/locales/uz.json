@@ -1,0 +1,14 @@
+{
+  "login": {
+    "title": "Hisobga kirish",
+    "subtitle": "QR-kodni skaner qiling yoki login orqali kiring",
+    "phone_or_id": "Telefon yoki Abonent ID",
+    "password": "Parol",
+    "enter_phone": "Telefon yoki ID kiriting",
+    "enter_password": "Parolni kiriting",
+    "login_button": "Kirish",
+    "login_loading": "Kirilmoqda...",
+    "fill_fields": "Barcha maydonlarni to‘ldiring",
+    "login_error": "Kirishda xatolik"
+  }
+}

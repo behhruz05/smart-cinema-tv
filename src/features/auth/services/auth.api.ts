@@ -1,5 +1,5 @@
 import { api } from '../../../shared/hooks/api';
-import { LoginPayload } from '../types';
+import { LoginPayload } from '../../../types/user';
 
 export const authApi = {
   async login(payload: LoginPayload) {

@@ -9,12 +9,13 @@ import {
 } from '../../../store/slice/home.slice';
 import { fetchReels } from '../../../store/slice/reel.slice';
 import { AppDispatch, RootState } from '../../../store';
-import { Section } from '../components/Section';
-import { MovieCard } from '../components/MovieCard';
-import { ReelCard } from '../components/ReelCard';
+import { Section } from '../../../shared/components/Section';
+import { MovieCard } from '../../../shared/components/MovieCard';
+import { ReelCard } from '../../../shared/components/ReelCard';
 import { ChannelCard } from '../components/ChannelCard';
 import { HomeCarousel } from '../components/HomeCarousel';
-import { WatchHistory } from '../components/WatchHistory';
+import { WatchHistory } from '../../../shared/components/WatchHistory';
+import { NewMovieCard } from '../../../shared/components/NewMovieCard';
 
 export function HomeScreen() {
   const dispatch = useDispatch<AppDispatch>();
@@ -43,7 +44,6 @@ export function HomeScreen() {
     >
       <HomeCarousel />
 
-      {/* Popular */}
       <Section title="Больше всего смотрят" data={popular}>
         <FlatList
           horizontal
@@ -51,12 +51,14 @@ export function HomeScreen() {
           data={popular}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <MovieCard item={item} />
+            <MovieCard
+              movie={item}
+              style={{ width: 320, marginRight: 16 }}
+            />
           )}
         />
       </Section>
 
-      {/* Continue Watching */}
       <Section title="Продолжить просмотр" data={history}>
         <FlatList
           horizontal
@@ -69,7 +71,6 @@ export function HomeScreen() {
         />
       </Section>
 
-      {/* Latest */}
       <Section title="Новинки" data={latest}>
         <FlatList
           horizontal
@@ -77,12 +78,14 @@ export function HomeScreen() {
           data={latest}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <MovieCard item={item} />
+            <NewMovieCard
+              movie={item}
+              style={{ width: 200, marginRight: 16}}
+            />
           )}
         />
       </Section>
 
-      {/* Reels */}
       <Section title="Reels" data={reels}>
         <FlatList
           horizontal
@@ -95,7 +98,6 @@ export function HomeScreen() {
         />
       </Section>
 
-      {/* Channels */}
       <Section title="Телеканалы" data={channels}>
         <FlatList
           horizontal

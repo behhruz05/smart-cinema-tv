@@ -7,10 +7,10 @@ import {
   Image,
   StyleSheet,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { authApi } from '../services/auth.api';
 import { useAuth } from '../../../app/providers/AppProviders';
-
 import { InfoIcon } from '../../../shared/icons/InfoIcon';
 import { EyeIcon, EyeOffIcon } from '../../../shared/icons/EyeIcon';
 import { fetchMe } from '../../../store/slice/atuh.slice';
@@ -21,8 +21,9 @@ const SplineBg = require('../../../assets/imgs/Spline.png');
 const QrCode = require('../../../assets/imgs/QR-code.png');
 
 export function LoginScreen() {
+  const { t } = useTranslation();
   const { setToken } = useAuth();
-const dispatch = store.dispatch;
+  const dispatch = store.dispatch;
 
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
@@ -43,15 +44,13 @@ const dispatch = store.dispatch;
   };
 
   const handleLoginChange = (text: string) => {
-    if (/^[0-9+]*$/.test(text) || !/^[0-9]/.test(text)) {
-      setLogin(text);
-      setError('');
-    }
+    setLogin(text);
+    setError('');
   };
 
   const onLogin = async () => {
     if (!login || !password) {
-      setError('Заполните все поля');
+      setError(t('login.fill_fields'));
       return;
     }
 
@@ -70,11 +69,10 @@ const dispatch = store.dispatch;
       };
 
       const token = await authApi.login(payload);
-await setToken(token);
-dispatch(fetchMe());
-
+      await setToken(token);
+      dispatch(fetchMe());
     } catch (e: any) {
-      setError(e.message || 'Ошибка входа');
+      setError(t(e.message) || t('login.login_error'));
     } finally {
       setLoading(false);
     }
@@ -85,15 +83,17 @@ dispatch(fetchMe());
       <Image source={SplineBg} style={styles.spline} />
 
       <View style={styles.container}>
+        {/* LEFT */}
         <View style={styles.left}>
           <View style={styles.titles}>
             <View style={styles.brand}>
               <Image source={Logo} style={styles.logo} />
               <Text style={styles.brandText}>Allo play</Text>
             </View>
-            <Text style={styles.title}>Вход в аккаунт</Text>
+
+            <Text style={styles.title}>{t('login.title')}</Text>
             <Text style={styles.subtitle}>
-              Отсканируйте QR-код или войдите с помощью логина
+              {t('login.subtitle')}
             </Text>
           </View>
 
@@ -102,39 +102,53 @@ dispatch(fetchMe());
           </View>
         </View>
 
+        {/* RIGHT */}
         <View style={styles.right}>
           <View style={styles.field}>
-            <Text style={styles.label}>Телефон или Abonent ID</Text>
-            <View style={styles.inputWrapper}>
+            <Text style={styles.label}>
+              {t('login.phone_or_id')}
+            </Text>
+
+            <Pressable
+              focusable
+              style={({ focused }) => [
+                styles.inputWrapper,
+                focused && styles.inputFocused,
+              ]}
+            >
               <TextInput
-                style={[
-                  styles.input,
-                  error && { borderColor: '#f87171' },
-                ]}
+                style={styles.input}
                 value={login}
                 onChangeText={handleLoginChange}
-                placeholder="Введите телефон или ID"
+                placeholder={t('login.enter_phone')}
                 placeholderTextColor="#6b7280"
               />
-            </View>
+            </Pressable>
           </View>
 
-          {/* PASSWORD */}
           <View style={styles.field}>
-            <Text style={styles.label}>Пароль</Text>
-            <View style={styles.inputWrapper}>
+            <Text style={styles.label}>
+              {t('login.password')}
+            </Text>
+
+            <Pressable
+              focusable
+              style={({ focused }) => [
+                styles.inputWrapper,
+                focused && styles.inputFocused,
+              ]}
+            >
               <TextInput
-                style={[
-                  styles.input,
-                  error && { borderColor: '#f87171' },
-                ]}
+                style={styles.input}
                 value={password}
                 onChangeText={setPassword}
-                placeholder="Введите пароль"
+                placeholder={t('login.enter_password')}
                 placeholderTextColor="#6b7280"
                 secureTextEntry={!showPassword}
               />
+
               <Pressable
+                focusable={false}
                 style={styles.iconRight}
                 onPress={() => setShowPassword(!showPassword)}
               >
@@ -144,22 +158,30 @@ dispatch(fetchMe());
                   <EyeIcon size={20} color="#9ca3af" />
                 )}
               </Pressable>
-            </View>
+            </Pressable>
           </View>
 
-
-          {error ? <View style={styles.errorView}>
-            <InfoIcon size={18} color="#f87171" />
-                  <Text style={styles.error}>{error}</Text> 
-          </View> : null}
+          {error ? (
+            <View style={styles.errorView}>
+              <InfoIcon size={18} color="#f87171" />
+              <Text style={styles.error}>{error}</Text>
+            </View>
+          ) : null}
 
           <Pressable
-            style={[styles.button, loading && { opacity: 0.6 }]}
+            focusable
             onPress={onLogin}
             disabled={loading}
+            style={({ focused }) => [
+              styles.button,
+              focused && styles.buttonFocused,
+              loading && { opacity: 0.6 },
+            ]}
           >
             <Text style={styles.buttonText}>
-              {loading ? 'Вход...' : 'Войти'}
+              {loading
+                ? t('login.login_loading')
+                : t('login.login_button')}
             </Text>
           </Pressable>
         </View>
@@ -170,6 +192,7 @@ dispatch(fetchMe());
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#010101' },
+
   spline: {
     position: 'absolute',
     left: 90,
@@ -178,66 +201,123 @@ const styles = StyleSheet.create({
     height: 420,
     resizeMode: 'contain',
   },
+
   container: { flex: 1, flexDirection: 'row' },
+
+  left: {
+    width: '40%',
+    justifyContent: 'center',
+    paddingLeft: 24,
+  },
+
   titles: { marginBottom: 68 },
-  error: { color: '#f87171', fontSize: 12, marginBottom: 8 },
-  left: { width: '40%', justifyContent: 'center', paddingLeft: 24 },
+
   brand: { flexDirection: 'row', alignItems: 'center' },
-  logo: { width: 20, resizeMode: 'contain', marginRight: 4 },
-  brandText: { color: '#fff', fontSize: 24, fontWeight: '600' },
+
+  logo: {
+    width: 20,
+    resizeMode: 'contain',
+    marginRight: 4,
+  },
+
+  brandText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '600',
+  },
+
+  title: {
+    color: '#fff',
+    fontSize: 30,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+
+  subtitle: {
+    color: '#9ca3af',
+    fontSize: 14,
+    marginBottom: 22,
+    width: 230,
+  },
+
   qrWrapper: { marginTop: 32 },
+
   qrBox: {
     width: 200,
     height: 200,
     borderRadius: 16,
     resizeMode: 'contain',
   },
-  title: { color: '#fff', fontSize: 30, fontWeight: '600', marginBottom: 6 },
-  subtitle: { color: '#9ca3af', fontSize: 14, marginBottom: 22, width: 230 },
+
   right: {
     width: '55%',
     justifyContent: 'center',
     marginLeft: 90,
     paddingHorizontal: 100,
   },
+
   field: { marginBottom: 18 },
-  label: { color: '#fff', fontSize: 13, marginBottom: 6 },
-  inputWrapper: {
-    position: 'relative',
-    justifyContent: 'center',
+
+  label: {
+    color: '#fff',
+    fontSize: 13,
+    marginBottom: 6,
   },
 
- input: {
-  borderWidth: 1,
-  borderRadius: 4,
-  padding: 12,
-  paddingRight: 42,
-  color: '#fff',
-  backgroundColor: '#141414',
-  fontSize: 12,
-},
+  inputWrapper: {
+    borderWidth: 1,
+    borderColor: '#333',
+    borderRadius: 6,
+    backgroundColor: '#141414',
+  },
 
-inputActive: {
-  borderColor: '#ffffff',
-},
+  inputFocused: {
+    borderColor: '#ffffff',
+    borderWidth: 2,
+  },
 
- 
-  errorView: {
-    flexDirection: 'row',
-    gap: 4,
-    marginBottom: 4
+  input: {
+    padding: 12,
+    paddingRight: 42,
+    color: '#fff',
+    fontSize: 14,
   },
 
   iconRight: {
     position: 'absolute',
     right: 12,
+    top: 14,
   },
+
+  errorView: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+
+  error: {
+    color: '#f87171',
+    fontSize: 12,
+  },
+
   button: {
-    marginTop: 4,
+    marginTop: 6,
     backgroundColor: '#dc2626',
     borderRadius: 8,
-    padding: 10,
+    padding: 12,
     alignItems: 'center',
   },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+
+  buttonFocused: {
+    borderWidth: 2,
+    borderColor: '#ffffff',
+    backgroundColor: '#b91c1c',
+  },
+
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });

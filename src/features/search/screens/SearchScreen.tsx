@@ -14,17 +14,17 @@ import {
   fetchPopularMovies,
   clearSearch,
   setSelectedGenre,
-} from '../../../store/slice/search.slice';
+} from '../../../store/slice/movie.slice';
 import { Header } from '../../../shared/loyaut/Header';
 import { SearchNotFound } from '../components/SearchNotFound';
-import { MovieGanres } from '../components/MovieGanres';
-import { MovieCard } from '../components/MovieCard';
+import { MovieGanres } from '../components/MovieGenres';
+import { SearchResultCard } from '../components/SearchResulatCard';
 
 const { width } = Dimensions.get('window');
 
-const NUM_COLUMNS = 5;
+const NUM_COLUMNS = 4;
+const GAP = 16;
 const HORIZONTAL_PADDING = 40;
-const GAP = 10;
 
 const ITEM_WIDTH =
   (width - HORIZONTAL_PADDING - GAP * (NUM_COLUMNS - 1)) /
@@ -42,18 +42,16 @@ export function SearchScreen() {
     popularStatus,
     searchStatus,
     genreStatus,
-  } = useSelector((state: RootState) => state.search);
+  } = useSelector((state: RootState) => state.movie);
 
   const isSearching = query.trim().length > 0;
 
-  /* ================= POPULAR FETCH ================= */
   useEffect(() => {
     if (popular.length === 0) {
       dispatch(fetchPopularMovies());
     }
   }, [dispatch]);
 
-  /* ================= SEARCH DEBOUNCE ================= */
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (isSearching) {
@@ -65,22 +63,11 @@ export function SearchScreen() {
     return () => clearTimeout(timeout);
   }, [query, isSearching, dispatch]);
 
-  /* ================= CLEAR SEARCH ================= */
   useEffect(() => {
     if (!isSearching) {
       dispatch(clearSearch());
     }
   }, [isSearching, dispatch]);
-
-  /* ================= UNMOUNT CLEAN ================= */
-  useEffect(() => {
-    return () => {
-      dispatch(clearSearch());
-      dispatch(setSelectedGenre(null));
-    };
-  }, [dispatch]);
-
-  /* ================= RENDER ================= */
 
   const renderMovies = (data: any[]) => (
     <FlatList
@@ -90,9 +77,10 @@ export function SearchScreen() {
       columnWrapperStyle={styles.row}
       contentContainerStyle={styles.list}
       renderItem={({ item }) => (
-        <View style={{ width: ITEM_WIDTH }}>
-          <MovieCard movie={item} />
-        </View>
+        <SearchResultCard
+          movie={item}
+          style={{ width: ITEM_WIDTH }}
+        />
       )}
     />
   );
@@ -101,7 +89,6 @@ export function SearchScreen() {
     <View style={styles.container}>
       <Header />
 
-      {/* ================= SEARCH YO‘Q ================= */}
       {!isSearching && (
         <>
           <MovieGanres />
@@ -128,7 +115,6 @@ export function SearchScreen() {
         </>
       )}
 
-      {/* ================= SEARCH BOR ================= */}
       {isSearching && (
         <>
           {searchStatus === 'loading' && (
@@ -175,10 +161,8 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   row: {
-    justifyContent: 'flex-start',
-    gap: 10,
-    marginBottom: 15,
-    paddingVertical: 10
+    marginBottom: GAP,
+
   },
   loader: {
     marginTop: 100,

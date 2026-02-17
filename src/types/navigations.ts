@@ -12,4 +12,9 @@ export type ContentStackParamList = {
 export type RootStackParamList = {
   Main: NavigatorScreenParams<ContentStackParamList>;
   Search: undefined;
+  Ganre: {
+    genreId: string;
+    genreName: string;
+    slug: string;
+  };
 };
