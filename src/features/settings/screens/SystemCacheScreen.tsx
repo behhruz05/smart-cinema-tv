@@ -15,7 +15,7 @@ export default function SystemCacheScreen() {
   const { t } = useTranslation();
   const { resolvedTheme } = useAuth();
   const isTV = Platform.isTV;
-  const isLight = resolvedTheme === 'light';
+  const isDarkMode = resolvedTheme === 'dark';
 
   const [clearOnExit, setClearOnExit] = useState(false);
   const [focused, setFocused] = useState<string | null>(null);
@@ -42,9 +42,9 @@ export default function SystemCacheScreen() {
   };
 
   return (
-    <View style={[styles.container, isLight && styles.containerLight]}>
-      <Text style={[styles.title, isLight && styles.titleLight]}>{t('settings.system_cache')}</Text>
-      <Text style={[styles.subtitle, isLight && styles.subtitleLight]}>{t('settings.cache_desc')}</Text>
+    <View style={[styles.container, isDarkMode && styles.containerDark]}>
+      <Text style={[styles.title, isDarkMode && styles.titleDark]}>{t('settings.system_cache')}</Text>
+      <Text style={[styles.subtitle, isDarkMode && styles.subtitleDark]}>{t('settings.cache_desc')}</Text>
 
       <Pressable
         focusable={isTV}
@@ -54,12 +54,12 @@ export default function SystemCacheScreen() {
         onPress={onClearCache}
         style={[
           styles.clearButton,
-          isLight && styles.clearButtonLight,
+          isDarkMode && styles.clearButtonDark,
           focused === 'clear' && styles.focused,
-          isLight && focused === 'clear' && styles.focusedLight,
+          isDarkMode && focused === 'clear' && styles.focusedDark,
         ]}
       >
-        <Text style={[styles.clearButtonText, isLight && styles.clearButtonTextLight]}>
+        <Text style={[styles.clearButtonText, isDarkMode && styles.clearButtonTextDark]}>
           {t('settings.clear_cache')}
         </Text>
       </Pressable>
@@ -71,13 +71,13 @@ export default function SystemCacheScreen() {
         onPress={onToggleClearOnExit}
         style={[
           styles.row,
-          isLight && styles.rowLight,
+          isDarkMode && styles.rowDark,
           focused === 'exit' && styles.focused,
-          isLight && focused === 'exit' && styles.focusedLight,
+          isDarkMode && focused === 'exit' && styles.focusedDark,
         ]}
       >
-        <Text style={[styles.label, isLight && styles.labelLight]}>{t('settings.clear_on_exit')}</Text>
-        <Text style={[styles.value, isLight && styles.valueLight]}>{clearOnExit ? 'ON' : 'OFF'}</Text>
+        <Text style={[styles.label, isDarkMode && styles.labelDark]}>{t('settings.clear_on_exit')}</Text>
+        <Text style={[styles.value, isDarkMode && styles.valueDark]}>{clearOnExit ? 'ON' : 'OFF'}</Text>
       </Pressable>
     </View>
   );
@@ -88,23 +88,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#101010',
   },
-  containerLight: {
-    backgroundColor: '#f4f4f5',
+  containerDark: {
+    backgroundColor: '#111111',
   },
   title: {
     color: '#fff',
     fontSize: 24,
     marginBottom: 8,
   },
-  titleLight: {
-    color: '#111827',
+  titleDark: {
+    color: '#ffffff',
   },
   subtitle: {
     color: '#a3a3a3',
     marginBottom: 20,
   },
-  subtitleLight: {
-    color: '#4b5563',
+  subtitleDark: {
+    color: '#a1a1a1',
   },
   clearButton: {
     alignSelf: 'flex-start',
@@ -120,10 +120,10 @@ const styles = StyleSheet.create({
     color: '#000',
     fontWeight: '600',
   },
-  clearButtonLight: {
-    backgroundColor: '#2563eb',
+  clearButtonDark: {
+    backgroundColor: '#2c2c2c',
   },
-  clearButtonTextLight: {
+  clearButtonTextDark: {
     color: '#fff',
   },
   row: {
@@ -137,14 +137,14 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  rowLight: {
-    backgroundColor: '#ffffff',
+  rowDark: {
+    backgroundColor: '#181818',
   },
   focused: {
     borderColor: '#fff',
   },
-  focusedLight: {
-    borderColor: '#2563eb',
+  focusedDark: {
+    borderColor: '#ffffff',
   },
   label: {
     color: '#fff',
@@ -152,14 +152,14 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: 12,
   },
-  labelLight: {
-    color: '#111827',
+  labelDark: {
+    color: '#ffffff',
   },
   value: {
     color: '#fff',
     fontWeight: '700',
   },
-  valueLight: {
-    color: '#111827',
+  valueDark: {
+    color: '#ffffff',
   },
 });

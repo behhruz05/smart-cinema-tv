@@ -15,7 +15,7 @@ export function ReelInfo({ reel }: { reel: Reel }) {
     <View style={styles.container}>
       <View style={styles.profileRow}>
         <View style={styles.avatar} />
-        <View style={{ flex: 1 }}>
+        <View style={styles.infoContainer}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle} numberOfLines={3}>
             {description}
@@ -47,6 +47,9 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     backgroundColor: '#fff',
     marginRight: 12,
+  },
+  infoContainer: {
+    flex: 1,
   },
   title: {
     color: '#fff',

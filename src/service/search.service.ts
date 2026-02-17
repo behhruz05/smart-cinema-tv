@@ -9,6 +9,16 @@ interface MovieQueryParams {
   q?: string;
 }
 
+interface Genre {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface GenresPayload {
+  items: Genre[];
+}
+
 export const searchService = {
   getMovies(
     {
@@ -36,27 +46,27 @@ export const searchService = {
   },
 
   getGenres(lang: 'uz' | 'ru' | 'en' = 'uz') {
-    return api(`/movies/genres`, {
+    return api<ApiResponse<GenresPayload>>(`/movies/genres`, {
       headers: { 'Accept-Language': lang },
     });
   },
 
-getMoviesByGenre(
-  genre_id: string,
-  page: number = 1,
-  per_page: number = 20,
-  lang: 'uz' | 'ru' | 'en' = 'uz'
-) {
-  const query = new URLSearchParams({
-    page: String(page),
-    per_page: String(per_page),
-  }).toString();
+  getMoviesByGenre(
+    genre_id: string,
+    page: number = 1,
+    per_page: number = 20,
+    lang: 'uz' | 'ru' | 'en' = 'uz'
+  ) {
+    const query = new URLSearchParams({
+      page: String(page),
+      per_page: String(per_page),
+    }).toString();
 
-  return api(
-    `/movies/by-genre/${genre_id}?${query}`,
-    {
-      headers: { 'Accept-Language': lang },
-    }
-  );
-},
+    return api<ApiResponse<Movie[]>>(
+      `/movies/by-genre/${genre_id}?${query}`,
+      {
+        headers: { 'Accept-Language': lang },
+      }
+    );
+  },
 };

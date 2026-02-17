@@ -16,7 +16,7 @@ export default function ParentalControlScreen() {
   const { t } = useTranslation();
   const { resolvedTheme } = useAuth();
   const isTV = Platform.isTV;
-  const isLight = resolvedTheme === 'light';
+  const isDarkMode = resolvedTheme === 'dark';
 
   const [enabled, setEnabled] = useState(false);
   const [pin, setPin] = useState('');
@@ -50,9 +50,9 @@ export default function ParentalControlScreen() {
   };
 
   return (
-    <View style={[styles.container, isLight && styles.containerLight]}>
-      <Text style={[styles.title, isLight && styles.titleLight]}>{t('settings.parental_control')}</Text>
-      <Text style={[styles.subtitle, isLight && styles.subtitleLight]}>{t('settings.parental_desc')}</Text>
+    <View style={[styles.container, isDarkMode && styles.containerDark]}>
+      <Text style={[styles.title, isDarkMode && styles.titleDark]}>{t('settings.parental_control')}</Text>
+      <Text style={[styles.subtitle, isDarkMode && styles.subtitleDark]}>{t('settings.parental_desc')}</Text>
 
       <Pressable
         focusable={isTV}
@@ -62,17 +62,17 @@ export default function ParentalControlScreen() {
         onPress={toggleEnabled}
         style={[
           styles.row,
-          isLight && styles.rowLight,
+          isDarkMode && styles.rowDark,
           focused === 'enabled' && styles.focused,
-          isLight && focused === 'enabled' && styles.focusedLight,
+          isDarkMode && focused === 'enabled' && styles.focusedDark,
         ]}
       >
-        <Text style={[styles.label, isLight && styles.labelLight]}>{t('settings.parental_enabled')}</Text>
-        <Text style={[styles.value, isLight && styles.valueLight]}>{enabled ? 'ON' : 'OFF'}</Text>
+        <Text style={[styles.label, isDarkMode && styles.labelDark]}>{t('settings.parental_enabled')}</Text>
+        <Text style={[styles.value, isDarkMode && styles.valueDark]}>{enabled ? 'ON' : 'OFF'}</Text>
       </Pressable>
 
-      <View style={[styles.pinBox, isLight && styles.pinBoxLight]}>
-        <Text style={[styles.pinLabel, isLight && styles.pinLabelLight]}>{t('settings.parental_pin')}</Text>
+      <View style={[styles.pinBox, isDarkMode && styles.pinBoxDark]}>
+        <Text style={[styles.pinLabel, isDarkMode && styles.pinLabelDark]}>{t('settings.parental_pin')}</Text>
         <TextInput
           value={pin}
           onChangeText={(v) => setPin(v.replace(/[^0-9]/g, '').slice(0, 4))}
@@ -81,7 +81,7 @@ export default function ParentalControlScreen() {
           maxLength={4}
           placeholder={t('settings.parental_pin_placeholder')}
           placeholderTextColor="#7a7a7a"
-          style={[styles.input, isLight && styles.inputLight]}
+          style={[styles.input, isDarkMode && styles.inputDark]}
         />
 
         <Pressable
@@ -91,12 +91,12 @@ export default function ParentalControlScreen() {
           onPress={savePin}
           style={[
             styles.saveButton,
-            isLight && styles.saveButtonLight,
+            isDarkMode && styles.saveButtonDark,
             focused === 'save' && styles.focused,
-            isLight && focused === 'save' && styles.focusedLight,
+            isDarkMode && focused === 'save' && styles.focusedDark,
           ]}
         >
-          <Text style={[styles.saveButtonText, isLight && styles.saveButtonTextLight]}>
+          <Text style={[styles.saveButtonText, isDarkMode && styles.saveButtonTextDark]}>
             {t('settings.save_pin')}
           </Text>
         </Pressable>
@@ -110,23 +110,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#101010',
   },
-  containerLight: {
-    backgroundColor: '#f4f4f5',
+  containerDark: {
+    backgroundColor: '#111111',
   },
   title: {
     color: '#fff',
     fontSize: 24,
     marginBottom: 8,
   },
-  titleLight: {
-    color: '#111827',
+  titleDark: {
+    color: '#ffffff',
   },
   subtitle: {
     color: '#a3a3a3',
     marginBottom: 20,
   },
-  subtitleLight: {
-    color: '#4b5563',
+  subtitleDark: {
+    color: '#a1a1a1',
   },
   row: {
     flexDirection: 'row',
@@ -140,14 +140,14 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  rowLight: {
-    backgroundColor: '#ffffff',
+  rowDark: {
+    backgroundColor: '#181818',
   },
   focused: {
     borderColor: '#fff',
   },
-  focusedLight: {
-    borderColor: '#2563eb',
+  focusedDark: {
+    borderColor: '#ffffff',
   },
   label: {
     color: '#fff',
@@ -155,15 +155,15 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: 12,
   },
-  labelLight: {
-    color: '#111827',
+  labelDark: {
+    color: '#ffffff',
   },
   value: {
     color: '#fff',
     fontWeight: '700',
   },
-  valueLight: {
-    color: '#111827',
+  valueDark: {
+    color: '#ffffff',
   },
   pinBox: {
     backgroundColor: '#1a1a1a',
@@ -171,15 +171,15 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
   },
-  pinBoxLight: {
-    backgroundColor: '#ffffff',
+  pinBoxDark: {
+    backgroundColor: '#181818',
   },
   pinLabel: {
     color: '#fff',
     fontSize: 16,
   },
-  pinLabelLight: {
-    color: '#111827',
+  pinLabelDark: {
+    color: '#ffffff',
   },
   input: {
     backgroundColor: '#101010',
@@ -190,10 +190,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  inputLight: {
-    backgroundColor: '#f9fafb',
-    borderColor: '#d1d5db',
-    color: '#111827',
+  inputDark: {
+    backgroundColor: '#141414',
+    borderColor: '#2f2f2f',
+    color: '#ffffff',
   },
   saveButton: {
     alignSelf: 'flex-start',
@@ -204,14 +204,14 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  saveButtonLight: {
-    backgroundColor: '#2563eb',
+  saveButtonDark: {
+    backgroundColor: '#2c2c2c',
   },
   saveButtonText: {
     color: '#000',
     fontWeight: '600',
   },
-  saveButtonTextLight: {
+  saveButtonTextDark: {
     color: '#fff',
   },
 });

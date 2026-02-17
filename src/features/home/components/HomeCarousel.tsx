@@ -31,16 +31,12 @@ export function HomeCarousel() {
 
   useEffect(() => {
     dispatch(fetchCarousels());
-  }, []);
+  }, [dispatch]);
 
   if (loading) {
     return (
       <View
-        style={{
-          height: 300,
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
+        style={styles.loaderContainer}
       >
         <ActivityIndicator size="large" color="#fff" />
       </View>
@@ -57,12 +53,30 @@ export function HomeCarousel() {
       decelerationRate="fast"
       showsHorizontalScrollIndicator={false}
       bounces={false}
-      ItemSeparatorComponent={() => <View style={{ width: SPACING }} />}
+      ItemSeparatorComponent={Separator}
       renderItem={({ item }) => (
-        <View style={{ width: ITEM_WIDTH }}>
+        <View style={[styles.itemContainer, { width: ITEM_WIDTH }]}>
           <CarouselItem item={item} />
         </View>
       )}
     />
   );
 }
+
+function Separator() {
+  return <View style={styles.separator} />;
+}
+
+const styles = {
+  loaderContainer: {
+    height: 300,
+    justifyContent: 'center',
+    alignItems: 'center',
+  } as const,
+  separator: {
+    width: 22,
+  } as const,
+  itemContainer: {
+    // Width is set dynamically from screen size.
+  } as const,
+};

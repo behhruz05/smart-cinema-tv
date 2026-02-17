@@ -15,10 +15,6 @@ interface Props {
 export const NewMovieCard = React.memo(({ movie, style }: Props) => {
   const [focused, setFocused] = useState(false);
 
-  const rating = movie?.imdb_rating
-    ? Number(movie.imdb_rating).toFixed(1)
-    : null;
-
   return (
     <Pressable
       focusable

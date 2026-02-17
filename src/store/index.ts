@@ -1,7 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import homeReducer from './slice/home.slice';
 import uiReducer from './slice/ui.slice';
-import authReducer from './slice/atuh.slice'
+import authReducer from './slice/auth.slice'
 import movieReducer from './slice/movie.slice';
 import reelReducer from './slice/reel.slice';
 

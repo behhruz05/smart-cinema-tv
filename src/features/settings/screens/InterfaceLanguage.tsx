@@ -17,7 +17,7 @@ export default function InterfaceLanguageScreen() {
   const isTV = Platform.isTV;
   const [focusedLang, setFocusedLang] = React.useState<string | null>(null);
   const [focusedTheme, setFocusedTheme] = React.useState<string | null>(null);
-  const isLight = resolvedTheme === 'light';
+  const isDarkMode = resolvedTheme === 'dark';
 
   const languages: Array<'uz' | 'ru' | 'en'> = ['uz', 'ru', 'en'];
 
@@ -32,12 +32,12 @@ export default function InterfaceLanguageScreen() {
     <ScrollView
       style={[
         styles.container,
-        isLight && styles.containerLight,
+        isDarkMode && styles.containerDark,
       ]}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={[styles.title, isLight && styles.titleLight]}>
+      <Text style={[styles.title, isDarkMode && styles.titleDark]}>
         {t('settings.language.select')}
       </Text>
 
@@ -54,21 +54,21 @@ export default function InterfaceLanguageScreen() {
               onPress={() => onChangeLanguage(lang)}
               style={[
                 styles.item,
-                isLight && styles.itemLight,
+                isDarkMode && styles.itemDark,
                 focusedLang === lang && styles.focusedItem,
-                isLight && focusedLang === lang && styles.focusedItemLight,
+                isDarkMode && focusedLang === lang && styles.focusedItemDark,
               ]}
             >
               <View
                 style={[
                   styles.checkbox,
-                  isLight && styles.checkboxLight,
+                  isDarkMode && styles.checkboxDark,
                   active && styles.checkboxActive,
                 ]}
               >
                 {active && <View style={styles.checkboxDot} />}
               </View>
-              <Text style={[styles.itemText, isLight && styles.itemTextLight]}>
+              <Text style={[styles.itemText, isDarkMode && styles.itemTextDark]}>
                 {t(`settings.language.${lang}`)}
               </Text>
             </Pressable>
@@ -76,7 +76,7 @@ export default function InterfaceLanguageScreen() {
         })}
       </View>
 
-      <Text style={[styles.title, styles.themeTitle, isLight && styles.titleLight]}>
+      <Text style={[styles.title, styles.themeTitle, isDarkMode && styles.titleDark]}>
         {t('settings.theme.select')}
       </Text>
 
@@ -92,21 +92,21 @@ export default function InterfaceLanguageScreen() {
               onPress={() => setThemeMode(mode)}
               style={[
                 styles.item,
-                isLight && styles.itemLight,
+                isDarkMode && styles.itemDark,
                 focusedTheme === mode && styles.focusedItem,
-                isLight && focusedTheme === mode && styles.focusedItemLight,
+                isDarkMode && focusedTheme === mode && styles.focusedItemDark,
               ]}
             >
               <View
                 style={[
                   styles.checkbox,
-                  isLight && styles.checkboxLight,
+                  isDarkMode && styles.checkboxDark,
                   active && styles.checkboxActive,
                 ]}
               >
                 {active && <View style={styles.checkboxDot} />}
               </View>
-              <Text style={[styles.itemText, isLight && styles.itemTextLight]}>
+              <Text style={[styles.itemText, isDarkMode && styles.itemTextDark]}>
                 {t(`settings.theme.${mode}`)}
               </Text>
             </Pressable>
@@ -122,8 +122,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#101010',
   },
-  containerLight: {
-    backgroundColor: '#f4f4f5',
+  containerDark: {
+    backgroundColor: '#111111',
   },
   content: {
     paddingBottom: 28,
@@ -133,16 +133,16 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginBottom: 10,
   },
-  titleLight: {
-    color: '#111827',
+  titleDark: {
+    color: '#ffffff',
   },
   subtitle: {
     color: '#a3a3a3',
     fontSize: 14,
     marginBottom: 20,
   },
-  subtitleLight: {
-    color: '#4b5563',
+  subtitleDark: {
+    color: '#a1a1a1',
   },
   list: {
     gap: 12,
@@ -154,32 +154,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    backgroundColor: '#1a1a1a',
     borderRadius: 10,
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  itemLight: {
-    backgroundColor: '#ffffff',
+  itemDark: {
+    backgroundColor: '#181818',
   },
   focusedItem: {
     borderColor: '#fff',
   },
-  focusedItemLight: {
-    borderColor: '#fff',
+  focusedItemDark: {
+    borderColor: '#ffffff',
   },
   checkbox: {
     width: 20,
     height: 20,
-    borderRadius: '50%',
+    borderRadius: 10,
     borderWidth: 2,
     borderColor: '#8b8b8b',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkboxLight: {
-    borderColor: '#6b7280',
+  checkboxDark: {
+    borderColor: '#9a9a9a',
   },
   checkboxActive: {
     borderColor: '#fff',
@@ -187,14 +188,14 @@ const styles = StyleSheet.create({
   checkboxDot: {
     width: 10,
     height: 10,
-    borderRadius: "50%",
+    borderRadius: 5,
     backgroundColor: '#fff',
   },
   itemText: {
     color: '#fff',
     fontSize: 16,
   },
-  itemTextLight: {
-    color: '#111827',
+  itemTextDark: {
+    color: '#ffffff',
   },
 });

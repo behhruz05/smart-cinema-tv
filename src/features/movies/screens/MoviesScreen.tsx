@@ -4,7 +4,6 @@ import {
   FlatList,
   View,
   StyleSheet,
-  Dimensions,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
@@ -56,7 +55,7 @@ export function MoviesScreen() {
           renderItem={({ item }) => (
             <MovieCard
               movie={item}
-              style={{ width: 320 }}
+              style={styles.wideMovieCard}
             />
           )}
         />
@@ -87,7 +86,7 @@ export function MoviesScreen() {
           renderItem={({ item }) => (
             <NewMovieCard
               movie={item}
-              style={{ width: 200 }}
+              style={styles.narrowMovieCard}
             />
           )}
         />
@@ -106,7 +105,7 @@ export function MoviesScreen() {
         />
       </Section>
 
-      <View style={{ height: 50 }} />
+      <View style={styles.bottomSpacer} />
     </ScrollView>
   );
 }
@@ -120,5 +119,14 @@ const styles = StyleSheet.create({
   horizontalList: {
     gap: 16,
     paddingVertical: 10,
+  },
+  wideMovieCard: {
+    width: 320,
+  },
+  narrowMovieCard: {
+    width: 200,
+  },
+  bottomSpacer: {
+    height: 50,
   },
 });

@@ -87,7 +87,7 @@ export const fetchGenreMovies = createAsyncThunk(
   }
 );
 
-const movieSclice = createSlice({
+const movieSlice = createSlice({
   name: 'movie',
   initialState,
   reducers: {
@@ -165,7 +165,7 @@ const movieSclice = createSlice({
   },
 });
 
-export const { setQuery, clearSearch,clearSearchResults, setSelectedGenre } =
-  movieSclice.actions;
+export const { setQuery, clearSearch, clearSearchResults, setSelectedGenre } =
+  movieSlice.actions;
 
-export default movieSclice.reducer;
+export default movieSlice.reducer;

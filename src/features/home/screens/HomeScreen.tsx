@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ScrollView, FlatList } from 'react-native';
+import { ScrollView, FlatList, StyleSheet } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import {
@@ -38,10 +38,7 @@ export function HomeScreen() {
 
   return (
     <ScrollView
-      style={{
-        backgroundColor: '#101010',
-        paddingHorizontal: 20,
-      }}
+      style={styles.container}
       showsVerticalScrollIndicator={false}
     >
       <HomeCarousel />
@@ -55,7 +52,7 @@ export function HomeScreen() {
           renderItem={({ item }) => (
             <MovieCard
               movie={item}
-              style={{ width: 320, marginRight: 16 }}
+              style={styles.wideMovieCard}
             />
           )}
         />
@@ -82,7 +79,7 @@ export function HomeScreen() {
           renderItem={({ item }) => (
             <NewMovieCard
               movie={item}
-              style={{ width: 200, marginRight: 16}}
+              style={styles.narrowMovieCard}
             />
           )}
         />
@@ -114,3 +111,18 @@ export function HomeScreen() {
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: '#101010',
+    paddingHorizontal: 20,
+  },
+  wideMovieCard: {
+    width: 320,
+    marginRight: 16,
+  },
+  narrowMovieCard: {
+    width: 200,
+    marginRight: 16,
+  },
+});

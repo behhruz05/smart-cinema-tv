@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
-  ActivityIndicator,
   Text,
   FlatList,
   Pressable,
@@ -16,7 +15,7 @@ import {
   setSelectedGenre,
 } from '../../../store/slice/movie.slice';
 
-export function MovieGanres() {
+export function MovieGenres() {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
 
@@ -41,7 +40,7 @@ export function MovieGanres() {
         horizontal
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ gap: 10 }}
+        contentContainerStyle={styles.list}
         renderItem={({ item, index }) => {
           const isActive = selectedGenre === item.id;
           const isFocused = focusedId === item.id;
@@ -86,6 +85,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     color: '#838383',
+  },
+  list: {
+    gap: 10,
   },
   popular: {
     paddingHorizontal: 14,

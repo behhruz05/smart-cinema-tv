@@ -10,13 +10,13 @@ export function MainLayout({
   children: React.ReactNode;
 }) {
   const { resolvedTheme } = useAuth();
-  const isLight = resolvedTheme === 'light';
+  const isDarkMode = resolvedTheme === 'dark';
 
   return (
     <View
       style={[
         styles.container,
-        isLight && { backgroundColor: '#f4f4f5' },
+        isDarkMode && styles.containerDark,
       ]}
     >
       <SidebarMenu />
@@ -33,6 +33,9 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     backgroundColor: '#101010',
+  },
+  containerDark: {
+    backgroundColor: '#111111',
   },
   content: {
     flex: 1,

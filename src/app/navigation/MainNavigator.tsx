@@ -8,11 +8,11 @@ import {
 
 
 import { HomeScreen } from '../../features/home/screens/HomeScreen';
-import { ProfileScreen } from '../../features/profile/sreens/ProfileScreen';
+import { ProfileScreen } from '../../features/profile/screens/ProfileScreen';
 import { SearchScreen } from '../../features/search/screens/SearchScreen';
-import { GenreScreen } from '../../features/ganre/screens/GenreScreen';
+import { GenreScreen } from '../../features/genre/screens/GenreScreen';
 import { ReelScreen } from '../../features/reel/screens/ReelScreen';
-import { MainLayout } from '../../shared/loyaut/MainLayout';
+import { MainLayout } from '../../shared/layout/MainLayout';
 import { MoviesScreen } from '../../features/movies/screens/MoviesScreen';
 import { SettingsMainScreen } from '../../features/settings/screens/SettingsMainScreen';
 
@@ -59,7 +59,7 @@ export function MainNavigator() {
     >
       <RootStack.Screen name="Main" component={MainWithLayout} />
       <RootStack.Screen name="Search" component={SearchScreen} />
-      <RootStack.Screen name="Ganre" component={GenreScreen} />
+      <RootStack.Screen name="Genre" component={GenreScreen} />
     </RootStack.Navigator>
   );
 }

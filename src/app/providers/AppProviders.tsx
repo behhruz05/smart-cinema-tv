@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Provider } from 'react-redux';
-import { AppState, useColorScheme } from 'react-native';
+import { AppState } from 'react-native';
 import { setLogoutHandler } from '../../features/auth/authBridge';
 import { tokenStorage } from '../../shared/lib/tokenStorage';
 import { appSettingsStorage } from '../../shared/lib/appSettingsStorage';
 import { store } from '../../store';
-import { fetchMe } from '../../store/slice/atuh.slice';
+import { fetchMe } from '../../store/slice/auth.slice';
 
 type AuthContextType = {
   token: string | null;
@@ -13,7 +13,7 @@ type AuthContextType = {
   setToken: (token: string | null) => Promise<void>;
   logout: () => Promise<void>;
   themeMode: 'dark' | 'system';
-  resolvedTheme: 'dark' | 'light';
+  resolvedTheme: 'dark' | 'system';
   setThemeMode: (mode: 'dark' | 'system') => Promise<void>;
 };
 
@@ -23,14 +23,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   const [token, setTokenState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [themeMode, setThemeModeState] = useState<'dark' | 'system'>('system');
-  const systemTheme = useColorScheme();
   const dispatch = store.dispatch;
-  const resolvedTheme: 'dark' | 'light' =
-    themeMode === 'system'
-      ? systemTheme === 'dark'
-        ? 'dark'
-        : 'light'
-      : 'dark';
+  const resolvedTheme: 'dark' | 'system' =
+    themeMode === 'dark' ? 'dark' : 'system';
 
 
   const setToken = async (newToken: string | null) => {
@@ -73,7 +68,7 @@ useEffect(() => {
   };
 
   bootstrap();
-}, []);
+}, [dispatch]);
 
   const setThemeMode = async (mode: 'dark' | 'system') => {
     setThemeModeState(mode);

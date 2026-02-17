@@ -10,16 +10,17 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { RootState, AppDispatch } from '../../../store';
+import { Movie } from '../../../types/search';
 import {
   fetchSearchMovies,
   fetchPopularMovies,
   clearSearch,
   setSelectedGenre,
 } from '../../../store/slice/movie.slice';
-import { Header } from '../../../shared/loyaut/Header';
+import { Header } from '../../../shared/layout/Header';
 import { SearchNotFound } from '../components/SearchNotFound';
-import { MovieGanres } from '../components/MovieGenres';
-import { SearchResultCard } from '../components/SearchResulatCard';
+import { MovieGenres } from '../components/MovieGenres';
+import { SearchResultCard } from '../components/SearchResultCard';
 
 const { width } = Dimensions.get('window');
 
@@ -52,7 +53,7 @@ export function SearchScreen() {
     if (popular.length === 0) {
       dispatch(fetchPopularMovies());
     }
-  }, [dispatch]);
+  }, [dispatch, popular.length]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -71,7 +72,7 @@ export function SearchScreen() {
     }
   }, [isSearching, dispatch]);
 
-  const renderMovies = (data: any[]) => (
+  const renderMovies = (data: Movie[]) => (
     <FlatList
       data={data}
       numColumns={NUM_COLUMNS}
@@ -93,7 +94,7 @@ export function SearchScreen() {
 
       {!isSearching && (
         <>
-          <MovieGanres />
+          <MovieGenres />
 
           {selectedGenre ? (
             genreStatus === 'loading' ? (

@@ -5,22 +5,29 @@ import {
   FlatList,
   Pressable,
   StyleSheet,
-  Platform,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { AppDispatch, RootState } from '../../store';
 import { fetchGenres } from '../../store/slice/movie.slice';
+import { RootStackParamList } from '../../types/navigations';
 
 interface Props {
   activeGenreId?: string;
 }
 
+interface GenreItem {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export const GenreSection = ({ activeGenreId }: Props) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [focusedId, setFocusedId] = useState<string | null>(null);
 
   const { genres } = useSelector(
@@ -31,8 +38,8 @@ export const GenreSection = ({ activeGenreId }: Props) => {
     dispatch(fetchGenres());
   }, [dispatch]);
 
-  const handlePress = (genre: any) => {
-    navigation.navigate('Ganre', {
+  const handlePress = (genre: GenreItem) => {
+    navigation.navigate('Genre', {
       genreId: genre.id,
       genreName: genre.name,
       slug: genre.slug,
@@ -96,7 +103,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2C2C2C',
     borderRadius: 12,
     borderWidth: 2,
-borderColor: 'transparent'
+    borderColor: 'transparent',
   },
   focusedItem: {
     borderColor: '#fff',

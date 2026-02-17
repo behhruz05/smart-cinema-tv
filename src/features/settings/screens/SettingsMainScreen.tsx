@@ -20,7 +20,7 @@ export function SettingsMainScreen() {
   const { t } = useTranslation();
   const { resolvedTheme } = useAuth();
   const isTV = Platform.isTV;
-  const isLight = resolvedTheme === 'light';
+  const isDarkMode = resolvedTheme === 'dark';
 
   const [active, setActive] = useState<string>('InterfaceLanguage');
   const [focused, setFocused] = useState<string | null>(null);
@@ -53,9 +53,9 @@ export function SettingsMainScreen() {
   };
 
   return (
-    <View style={[styles.container, isLight && styles.containerLight]}>
+    <View style={[styles.container, isDarkMode && styles.containerDark]}>
       {/* LEFT SIDEBAR */}
-      <View style={[styles.sidebar, isLight && styles.sidebarLight]}>
+      <View style={[styles.sidebar, isDarkMode && styles.sidebarDark]}>
         {items.map((item, index) => {
           const isActive = active === item.route;
           const isFocused = focused === item.route;
@@ -76,16 +76,16 @@ export function SettingsMainScreen() {
               }}
               style={[
                 styles.menuItem,
-                isLight && styles.menuItemLight,
+                isDarkMode && styles.menuItemDark,
                 isActive && styles.activeItem,
                 isFocused && styles.focusedItem,
-                isLight && isFocused && styles.focusedItemLight,
+                isDarkMode && isFocused && styles.focusedItemDark,
               ]}
             >
               <Text
                 style={[
                   styles.menuText,
-                  isLight && styles.menuTextLight,
+                  isDarkMode && styles.menuTextDark,
                   isActive && styles.activeText,
                 ]}
               >
@@ -97,7 +97,7 @@ export function SettingsMainScreen() {
       </View>
 
       {/* RIGHT CONTENT */}
-      <View style={[styles.content, isLight && styles.contentLight]}>
+      <View style={[styles.content, isDarkMode && styles.contentDark]}>
         {renderContent()}
       </View>
 
@@ -116,17 +116,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#101010',
     paddingVertical: 20,
   },
-  containerLight: {
-    backgroundColor: '#f4f4f5',
+  containerDark: {
+    backgroundColor: '#111111',
   },
 
   sidebar: {
     width: 300,
     paddingHorizontal: 20,
   },
-  sidebarLight: {
+  sidebarDark: {
     borderRightWidth: 1,
-    borderRightColor: '#e5e7eb',
+    borderRightColor: '#2a2a2a',
   },
 
   menuItem: {
@@ -137,8 +137,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  menuItemLight: {
-    backgroundColor: '#ffffff',
+  menuItemDark: {
+    backgroundColor: '#181818',
   },
 
   activeItem: {
@@ -153,23 +153,23 @@ const styles = StyleSheet.create({
   focusedItem: {
     borderColor: '#ffffff',
   },
-  focusedItemLight: {
-    borderColor: '#2563eb',
+  focusedItemDark: {
+    borderColor: '#ffffff',
   },
 
   menuText: {
     color: '#ffffff',
     fontSize: 16,
   },
-  menuTextLight: {
-    color: '#111827',
+  menuTextDark: {
+    color: '#ffffff',
   },
 
   content: {
     flex: 1,
     paddingHorizontal: 40,
   },
-  contentLight: {
-    backgroundColor: '#f4f4f5',
+  contentDark: {
+    backgroundColor: '#111111',
   },
 });

@@ -54,7 +54,7 @@ export function SidebarMenu() {
   );
 
   const [focused, setFocused] = useState<string | null>(null);
-  const isLight = resolvedTheme === 'light';
+  const isDarkMode = resolvedTheme === 'dark';
 
   const widthAnim = useRef(
     new Animated.Value(COLLAPSED_WIDTH)
@@ -79,7 +79,7 @@ export function SidebarMenu() {
         useNativeDriver: false,
       }),
     ]).start();
-  }, [isOpen]);
+  }, [isOpen, textOpacity, widthAnim]);
 
   const currentRoute = useNavigationState((state: any) => {
     const route = state.routes[state.index];
@@ -94,7 +94,7 @@ export function SidebarMenu() {
     if (currentRoute === 'Home') {
       setFocused('Home');
     }
-  }, []);
+  }, [currentRoute]);
 
   const navigateTo = (screen: string) => {
     navigation.navigate('Main', {
@@ -106,7 +106,7 @@ export function SidebarMenu() {
     <Animated.View
       style={[
         styles.container,
-        isLight && styles.containerLight,
+        isDarkMode && styles.containerDark,
         { width: widthAnim },
       ]}
     >
@@ -121,7 +121,7 @@ export function SidebarMenu() {
           style={[
             styles.logoWrapper,
             focused === 'Logo' && styles.focusedItem,
-            isLight && focused === 'Logo' && styles.focusedItemLight,
+            isDarkMode && focused === 'Logo' && styles.focusedItemDark,
           ]}
         >
           <Image source={Logo} style={styles.logo} />
@@ -145,20 +145,20 @@ export function SidebarMenu() {
               onPress={() => navigateTo(item.id)}
               style={[
                 styles.item,
-                isLight && styles.itemLight,
+                isDarkMode && styles.itemDark,
                 active && styles.activeItem,
                 isFocused && styles.focusedItem,
-                isLight && isFocused && styles.focusedItemLight,
+                isDarkMode && isFocused && styles.focusedItemDark,
               ]}
             >
               <IconComponent
                 color={
                   active || isFocused
-                    ? isLight
-                      ? '#111827'
+                    ? isDarkMode
+                      ? '#ffffff'
                       : '#fff'
-                    : isLight
-                      ? '#6b7280'
+                    : isDarkMode
+                      ? '#9a9a9a'
                       : '#777'
                 }
                 size={18}
@@ -172,11 +172,11 @@ export function SidebarMenu() {
                     {
                       color:
                         active || isFocused
-                          ? isLight
-                            ? '#111827'
+                          ? isDarkMode
+                            ? '#ffffff'
                             : '#fff'
-                          : isLight
-                            ? '#6b7280'
+                          : isDarkMode
+                            ? '#9a9a9a'
                             : '#777',
                     },
                   ]}
@@ -198,12 +198,12 @@ export function SidebarMenu() {
           onPress={() => navigateTo('Settings')}
           style={[
             styles.item,
-            isLight && styles.itemLight,
+            isDarkMode && styles.itemDark,
             currentRoute === 'Settings' && styles.activeItem,
             focused === 'Settings' && styles.focusedItem,
-            isLight &&
+            isDarkMode &&
               focused === 'Settings' &&
-              styles.focusedItemLight,
+              styles.focusedItemDark,
           ]}
         >
           <SettingsIcon
@@ -211,11 +211,11 @@ export function SidebarMenu() {
             color={
               currentRoute === 'Settings' ||
               focused === 'Settings'
-                ? isLight
-                  ? '#111827'
+                ? isDarkMode
+                  ? '#ffffff'
                   : '#fff'
-                : isLight
-                  ? '#6b7280'
+                : isDarkMode
+                  ? '#9a9a9a'
                   : '#777'
             }
             filled={currentRoute === 'Settings'}
@@ -229,11 +229,11 @@ export function SidebarMenu() {
                   color:
                     currentRoute === 'Settings' ||
                     focused === 'Settings'
-                      ? isLight
-                        ? '#111827'
+                      ? isDarkMode
+                        ? '#ffffff'
                         : '#fff'
-                      : isLight
-                        ? '#6b7280'
+                      : isDarkMode
+                        ? '#9a9a9a'
                         : '#777',
                 },
               ]}
@@ -255,10 +255,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     justifyContent: 'space-between',
   },
-  containerLight: {
-    backgroundColor: '#f4f4f5',
+  containerDark: {
+    backgroundColor: '#111111',
     borderRightWidth: 1,
-    borderRightColor: '#e5e7eb',
+    borderRightColor: '#2a2a2a',
   },
 
   logoSection: {
@@ -298,8 +298,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  itemLight: {
-    backgroundColor: '#ffffff',
+  itemDark: {
+    backgroundColor: '#181818',
   },
 
   activeItem: {
@@ -310,9 +310,9 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     backgroundColor: '#1A1A1A',
   },
-  focusedItemLight: {
-    borderColor: '#2563eb',
-    backgroundColor: '#ffffff',
+  focusedItemDark: {
+    borderColor: '#ffffff',
+    backgroundColor: '#181818',
   },
 
   title: {

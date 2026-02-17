@@ -18,6 +18,8 @@
     "enter_password": "Parolni kiriting",
     "login_button": "Kirish",
     "login_loading": "Kirilmoqda...",
+    "or_enter_code": "yoki TV kodini kiriting",
+    "code_hint": "Kodni televizorda tasdiqlang yoki to'liq kiriting",
     "fill_fields": "Barcha maydonlarni to'ldiring",
     "login_error": "Kirishda xatolik"
   },

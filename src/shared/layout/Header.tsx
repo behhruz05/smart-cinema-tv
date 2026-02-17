@@ -55,7 +55,7 @@ export function Header() {
   });
 
   const isSearch = currentRoute === 'Search';
-  const isLight = resolvedTheme === 'light';
+  const isDarkMode = resolvedTheme === 'dark';
 
   const animatedWidth = useRef(new Animated.Value(320)).current;
   const scaleSearch = useRef(new Animated.Value(1)).current;
@@ -69,7 +69,7 @@ export function Header() {
       easing: Easing.out(Easing.ease),
       useNativeDriver: false,
     }).start();
-  }, [isSearch]);
+  }, [animatedWidth, isSearch]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -86,7 +86,7 @@ export function Header() {
   };
 
   return (
-    <View style={[styles.container, isLight && styles.containerLight]}>
+    <View style={[styles.container, isDarkMode && styles.containerDark]}>
       <View style={styles.left}>
         {isSearch ? (
           <Animated.View
@@ -106,20 +106,20 @@ export function Header() {
               onPress={() => navigation.goBack()}
               style={[
                 styles.back,
-                isLight && styles.cardLight,
+                isDarkMode && styles.cardDark,
                 focused === 'back' && styles.focusedButton,
-                isLight && focused === 'back' && styles.focusedButtonLight,
+                isDarkMode && focused === 'back' && styles.focusedButtonDark,
               ]}
             >
-              <BackIcon size={20} color={isLight ? '#6b7280' : '#888'} />
-              <Text style={[styles.backText, isLight && styles.textMutedLight]}>{t('common.back')}</Text>
+              <BackIcon size={20} color={isDarkMode ? '#9a9a9a' : '#888'} />
+              <Text style={[styles.backText, isDarkMode && styles.textMutedDark]}>{t('common.back')}</Text>
             </Pressable>
           </Animated.View>
         ) : (
           <View style={styles.timeWeatherRow}>
-            <Text style={[styles.dateTime, isLight && styles.textPrimaryLight]}>{currentTime}</Text>
-            <Text style={[styles.separator, isLight && styles.textMutedLight]}>|</Text>
-            <Text style={[styles.weather, isLight && styles.textPrimaryLight]}>
+            <Text style={[styles.dateTime, isDarkMode && styles.textPrimaryDark]}>{currentTime}</Text>
+            <Text style={[styles.separator, isDarkMode && styles.textMutedDark]}>|</Text>
+            <Text style={[styles.weather, isDarkMode && styles.textPrimaryDark]}>
               {weather?.icon ?? '☁️'} {weather?.temp ?? '--°'}
             </Text>
           </View>
@@ -130,16 +130,16 @@ export function Header() {
         <Animated.View
           style={[
             styles.searchContainer,
-            isLight && styles.cardLight,
+            isDarkMode && styles.cardDark,
             {
               width: animatedWidth,
               transform: [{ scale: scaleSearch }],
             },
             focused === 'search' && styles.focusedButton,
-            isLight && focused === 'search' && styles.focusedButtonLight,
+            isDarkMode && focused === 'search' && styles.focusedButtonDark,
           ]}
         >
-          <SearchIcon size={18} color={isLight ? '#6b7280' : '#888'} />
+          <SearchIcon size={18} color={isDarkMode ? '#9a9a9a' : '#888'} />
 
           {isSearch ? (
             <TextInput
@@ -148,13 +148,13 @@ export function Header() {
                 dispatch(setQuery(text))
               }
               placeholder={t('common.search')}
-              placeholderTextColor={isLight ? '#6b7280' : '#888'}
-              style={[styles.input, isLight && styles.inputLight]}
+              placeholderTextColor={isDarkMode ? '#9a9a9a' : '#888'}
+              style={[styles.input, isDarkMode && styles.inputDark]}
               autoFocus
             />
           ) : (
             <Pressable
-              style={{ flex: 1 }}
+              style={styles.searchPressArea}
               focusable={isTV}
               onFocus={() => {
                 setFocused('search');
@@ -166,13 +166,13 @@ export function Header() {
               }}
               onPress={() => navigation.navigate('Search')}
             >
-              <Text style={[styles.searchPlaceholder, isLight && styles.textMutedLight]}>
+              <Text style={[styles.searchPlaceholder, isDarkMode && styles.textMutedDark]}>
                 {query || t('common.search')}
               </Text>
             </Pressable>
           )}
 
-          <VoiceIcon size={18} color={isLight ? '#6b7280' : '#888'} />
+          <VoiceIcon size={18} color={isDarkMode ? '#9a9a9a' : '#888'} />
         </Animated.View>
 
         {!isSearch && (
@@ -196,24 +196,24 @@ export function Header() {
               }
               style={[
                 styles.avatar,
-                isLight && styles.cardLight,
+                isDarkMode && styles.cardDark,
                 (focused === 'avatar' ||
                   currentRoute === 'Profile') &&
                   styles.focusedButton,
-                isLight &&
+                isDarkMode &&
                   (focused === 'avatar' || currentRoute === 'Profile') &&
-                  styles.focusedButtonLight,
+                  styles.focusedButtonDark,
               ]}
             >
               <UserIcon
                 size={18}
                 color={
                   currentRoute === 'Profile'
-                    ? isLight
-                      ? '#111827'
+                    ? isDarkMode
+                      ? '#ffffff'
                       : '#fff'
-                    : isLight
-                      ? '#6b7280'
+                    : isDarkMode
+                      ? '#9a9a9a'
                       : '#888'
                 }
               />
@@ -232,8 +232,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
-  containerLight: {
-    backgroundColor: '#f4f4f5',
+  containerDark: {
+    backgroundColor: '#111111',
   },
   left: {
     flexDirection: 'row',
@@ -280,13 +280,16 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 14,
   },
+  searchPressArea: {
+    flex: 1,
+  },
   input: {
     flex: 1,
     color: '#fff',
     fontSize: 14,
   },
-  inputLight: {
-    color: '#111827',
+  inputDark: {
+    color: '#ffffff',
   },
   avatar: {
     alignItems: 'center',
@@ -316,16 +319,16 @@ const styles = StyleSheet.create({
   focusedButton: {
     borderColor: '#fff',
   },
-  focusedButtonLight: {
-    borderColor: '#2563eb',
+  focusedButtonDark: {
+    borderColor: '#ffffff',
   },
-  cardLight: {
-    backgroundColor: '#ffffff',
+  cardDark: {
+    backgroundColor: '#181818',
   },
-  textPrimaryLight: {
-    color: '#111827',
+  textPrimaryDark: {
+    color: '#ffffff',
   },
-  textMutedLight: {
-    color: '#6b7280',
+  textMutedDark: {
+    color: '#9a9a9a',
   },
 });

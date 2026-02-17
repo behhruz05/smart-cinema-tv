@@ -17,7 +17,7 @@ export default function PlaybackScreen() {
   const { t } = useTranslation();
   const { resolvedTheme } = useAuth();
   const isTV = Platform.isTV;
-  const isLight = resolvedTheme === 'light';
+  const isDarkMode = resolvedTheme === 'dark';
 
   const [autoplayNext, setAutoplayNext] = useState(false);
   const [quality, setQuality] = useState<QualityType>('auto');
@@ -63,7 +63,7 @@ export default function PlaybackScreen() {
     <View
       style={[
         styles.checkbox,
-        isLight && styles.checkboxLight,
+        isDarkMode && styles.checkboxDark,
         active && styles.checkboxActive,
       ]}
     >
@@ -75,18 +75,18 @@ export default function PlaybackScreen() {
     <ScrollView
       style={[
         styles.container,
-        isLight && styles.containerLight,
+        isDarkMode && styles.containerDark,
       ]}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={[styles.title, isLight && styles.titleLight]}>
+      <Text style={[styles.title, isDarkMode && styles.titleDark]}>
         {t('settings.playback')}
       </Text>
       <Text
         style={[
           styles.subtitle,
-          isLight && styles.subtitleLight,
+          isDarkMode && styles.subtitleDark,
         ]}
       >
         {t('settings.playback_desc')}
@@ -100,14 +100,14 @@ export default function PlaybackScreen() {
         onPress={toggleAutoplay}
         style={[
           styles.row,
-          isLight && styles.rowLight,
+          isDarkMode && styles.rowDark,
           focused === 'autoplay' && styles.focused,
-          isLight &&
+          isDarkMode &&
             focused === 'autoplay' &&
-            styles.focusedLight,
+            styles.focusedDark,
         ]}
       >
-        <Text style={[styles.label, isLight && styles.labelLight]}>
+        <Text style={[styles.label, isDarkMode && styles.labelDark]}>
           {t('settings.autoplay_next')}
         </Text>
         {renderCheck(autoplayNext)}
@@ -116,7 +116,7 @@ export default function PlaybackScreen() {
       <Text
         style={[
           styles.sectionTitle,
-          isLight && styles.sectionTitleLight,
+          isDarkMode && styles.sectionTitleDark,
         ]}
       >
         {t('settings.video_quality')}
@@ -124,7 +124,7 @@ export default function PlaybackScreen() {
       <Text
         style={[
           styles.sectionSubtitle,
-          isLight && styles.subtitleLight,
+          isDarkMode && styles.subtitleDark,
         ]}
       >
         {t('settings.video_quality_desc')}
@@ -141,17 +141,17 @@ export default function PlaybackScreen() {
             onPress={() => setVideoQuality(item)}
             style={[
               styles.row,
-              isLight && styles.rowLight,
+              isDarkMode && styles.rowDark,
               focused === `quality-${item}` && styles.focused,
-              isLight &&
+              isDarkMode &&
                 focused === `quality-${item}` &&
-                styles.focusedLight,
+                styles.focusedDark,
             ]}
           >
             <Text
               style={[
                 styles.label,
-                isLight && styles.labelLight,
+                isDarkMode && styles.labelDark,
               ]}
             >
               {t(`settings.quality_${item}`)}
@@ -169,8 +169,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#101010',
   },
-  containerLight: {
-    backgroundColor: '#f4f4f5',
+  containerDark: {
+    backgroundColor: '#111111',
   },
   content: {
     paddingBottom: 24,
@@ -180,15 +180,15 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginBottom: 8,
   },
-  titleLight: {
-    color: '#111827',
+  titleDark: {
+    color: '#ffffff',
   },
   subtitle: {
     color: '#a3a3a3',
     marginBottom: 20,
   },
-  subtitleLight: {
-    color: '#4b5563',
+  subtitleDark: {
+    color: '#a1a1a1',
   },
   sectionTitle: {
     color: '#fff',
@@ -196,8 +196,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 4,
   },
-  sectionTitleLight: {
-    color: '#111827',
+  sectionTitleDark: {
+    color: '#ffffff',
   },
   sectionSubtitle: {
     color: '#a3a3a3',
@@ -216,42 +216,42 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     gap: 12,
   },
-  rowLight: {
-    backgroundColor: '#ffffff',
+  rowDark: {
+    backgroundColor: '#181818',
   },
   focused: {
     borderColor: '#fff',
   },
-  focusedLight: {
-    borderColor: '#2563eb',
+  focusedDark: {
+    borderColor: '#ffffff',
   },
   label: {
     color: '#fff',
     fontSize: 16,
     flex: 1,
   },
-  labelLight: {
-    color: '#111827',
+  labelDark: {
+    color: '#ffffff',
   },
   checkbox: {
     width: 20,
     height: 20,
-    borderRadius: '50%',
+    borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#A1A1A1A1',
+    borderColor: '#8b8b8b',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkboxLight: {
-    borderColor: '#fff',
+  checkboxDark: {
+    borderColor: '#9a9a9a',
   },
   checkboxActive: {
-    borderColor: '#fff',
+    borderColor: '#ffffff',
   },
   checkboxDot: {
     width: 10,
     height: 10,
-    borderRadius: '50%',
-    backgroundColor: '#fff',
+    borderRadius: 5,
+    backgroundColor: '#ffffff',
   },
 });

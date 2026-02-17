@@ -2,12 +2,13 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { toggleLikeReel } from '../../../store/slice/reel.slice';
+import { AppDispatch } from '../../../store';
 import { Reel } from '../../../service/reel.service';
 import { HeartIcon } from '../../../shared/icons/HeartIcon';
 import { ShareIcon } from '../../../shared/icons/ShareIcon';
 
 export function ReelAction({ reel }: { reel: Reel }) {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   return (
     <View style={styles.container}>

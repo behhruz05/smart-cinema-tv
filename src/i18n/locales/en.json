@@ -18,6 +18,8 @@
     "enter_password": "Enter password",
     "login_button": "Sign in",
     "login_loading": "Signing in...",
+    "or_enter_code": "or enter TV code",
+    "code_hint": "Confirm on TV or enter the full code",
     "fill_fields": "Fill all fields",
     "login_error": "Login error"
   },

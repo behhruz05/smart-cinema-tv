@@ -1,11 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   StyleSheet,
   FlatList,
   Dimensions,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../../store';
@@ -21,18 +19,9 @@ export function ReelScreen() {
     (state: RootState) => state.reel
   );
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-
   useEffect(() => {
     dispatch(fetchReels({ page: 1, per_page: 10 }));
   }, [dispatch]);
-
-  const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const index = Math.round(
-      event.nativeEvent.contentOffset.y / height
-    );
-    setCurrentIndex(index);
-  };
 
   if (loading && !reels.length) {
     return <ReelLoader />;
@@ -46,8 +35,6 @@ export function ReelScreen() {
         pagingEnabled
         snapToInterval={height}
         decelerationRate="fast"
-        onScroll={onScroll}
-        scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         getItemLayout={(_, index) => ({
           length: height,
