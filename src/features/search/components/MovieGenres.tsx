@@ -109,6 +109,5 @@ const styles = StyleSheet.create({
   },
   focusedGenre: {
     borderColor: '#fff',
-    transform: [{ scale: 1.01 }],
   },
 });

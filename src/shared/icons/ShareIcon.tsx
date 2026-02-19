@@ -1,5 +1,5 @@
-import React from "react";
-import Svg, { Path } from "react-native-svg";
+import React from 'react';
+import Svg, { Path } from 'react-native-svg';
 
 interface IconProps {
   color?: string;
@@ -7,16 +7,15 @@ interface IconProps {
 }
 
 export function ShareIcon({
-  color = "#fff",
+  color = '#fff',
   size = 24,
 }: IconProps) {
   return (
-<Svg
-  width={size}
-  height={size}
-  viewBox="0 0 24 24"
-  style={{ transform: [{ scale: 0.8 }] }}
->
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+    >
       <Path
         d="M1 18.5088
         C1 13.1679 4.90169 8.77098 9.99995 7.84598

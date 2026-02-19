@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ImageBackground,
   Pressable,
+  Platform,
 } from 'react-native';
 import { Carousel } from '../../../types/home';
 import { PlayIcon } from '../../../shared/icons/PlayIcon';
@@ -20,6 +21,10 @@ export function CarouselItem({ item }: Props) {
   const { t } = useTranslation();
   const movie = item.movie;
   const navigation = useNavigation<any>();
+  const isTV = Platform.isTV;
+  const [focusedButton, setFocusedButton] = React.useState<
+    null | 'watch' | 'details' | 'save'
+  >(null);
 
   return (
     <ImageBackground
@@ -43,21 +48,46 @@ export function CarouselItem({ item }: Props) {
         </View>
 
         <View style={styles.actions}>
-          <Pressable style={styles.playBtn}
+          <Pressable
+            style={[
+              styles.playBtn,
+              focusedButton === 'watch' && styles.focusedButton,
+            ]}
+            focusable={isTV}
+            hasTVPreferredFocus={isTV}
+            onFocus={() => setFocusedButton('watch')}
+            onBlur={() => setFocusedButton(null)}
             onPress={() =>
-    navigation.navigate('MovieDetail', {
-      movieId: movie.id,
-    })
-  }>
+              navigation.navigate('MovieDetail', {
+                movieId: movie.id,
+              })
+            }
+          >
             <PlayIcon size={18} color="#000" />
             <Text style={styles.playText}>{t('home.carousel.watch')}</Text>
           </Pressable>
 
-          <Pressable style={styles.moreBtn}>
+          <Pressable
+            style={[
+              styles.moreBtn,
+              focusedButton === 'details' && styles.focusedButton,
+            ]}
+            focusable={isTV}
+            onFocus={() => setFocusedButton('details')}
+            onBlur={() => setFocusedButton(null)}
+          >
             <Text style={styles.moreText}>{t('home.carousel.details')}</Text>
           </Pressable>
 
-          <Pressable style={styles.savedBtn}>
+          <Pressable
+            style={[
+              styles.savedBtn,
+              focusedButton === 'save' && styles.focusedButton,
+            ]}
+            focusable={isTV}
+            onFocus={() => setFocusedButton('save')}
+            onBlur={() => setFocusedButton(null)}
+          >
             <SavedIcon size={20} color="#fff" />
           </Pressable>
         </View>
@@ -118,6 +148,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     marginRight: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   playText: {
     color: '#000',
@@ -130,6 +162,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     marginRight: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   moreText: {
     color: '#fff',
@@ -138,5 +172,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.1)',
     padding: 10,
     borderRadius: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  focusedButton: {
+    borderWidth: 2,
+    borderColor: '#fff',
   },
 });

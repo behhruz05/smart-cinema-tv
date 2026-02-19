@@ -82,11 +82,19 @@ export function SidebarMenu() {
   }, [isOpen, textOpacity, widthAnim]);
 
   const currentRoute = useNavigationState((state: any) => {
-    const route = state.routes[state.index];
-    if (route.state) {
-      return route.state.routes[route.state.index].name;
-    }
-    return route.name;
+    const getDeepestRouteName = (navState: any): string => {
+      const activeRoute =
+        navState.routes[navState.index ?? 0];
+
+      if (activeRoute?.state) {
+        return getDeepestRouteName(activeRoute.state);
+      }
+
+      return activeRoute?.name ?? 'Home';
+    };
+
+    const activeName = getDeepestRouteName(state);
+    return activeName === 'Main' ? 'Home' : activeName;
   });
 
   // 🔥 FIRST RENDER HOME FOCUS FIX

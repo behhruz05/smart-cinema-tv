@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   ImageBackground,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -8,29 +9,25 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 
-import { MovieDetail } from '../../../types/search';
 import { PlayIcon } from '../../../shared/icons/PlayIcon';
 import { BackIcon } from '../../../shared/icons/BackIcon';
 import { SavedIcon } from '../../../shared/icons/SaverIcon';
-
-interface MovieDetailHeroProps {
-  movie: MovieDetail;
-  title: string;
-  description: string;
-  durationLabel: string;
-  backLabel: string;
-  watchLabel: string;
-  onBack: () => void;
-}
+import { MovieDetailHeroProps } from '../types/movieDetail.types';
 
 export function MovieDetailHero({
   movie,
   title,
   description,
+  durationLabel,
   backLabel,
   watchLabel,
   onBack,
 }: MovieDetailHeroProps) {
+  const isTV = Platform.isTV;
+  const [focusedControl, setFocusedControl] = React.useState<
+    null | 'back' | 'watch' | 'save'
+  >(null);
+
   return (
     <View style={styles.wrapper}>
       <ImageBackground
@@ -50,7 +47,17 @@ export function MovieDetailHero({
         />
 
         {/* Back */}
-        <Pressable style={styles.backBtn} onPress={onBack}>
+        <Pressable
+          style={[
+            styles.backBtn,
+            focusedControl === 'back' && styles.focusedControl,
+          ]}
+          focusable={isTV}
+          hasTVPreferredFocus={isTV}
+          onFocus={() => setFocusedControl('back')}
+          onBlur={() => setFocusedControl(null)}
+          onPress={onBack}
+        >
           <BackIcon size={16} color="#fff" />
           <Text style={styles.backText}>{backLabel}</Text>
         </Pressable>
@@ -66,6 +73,7 @@ export function MovieDetailHero({
 
           <View style={styles.metaRow}>
             <Text style={styles.metaText}>{movie.year}</Text>
+            <Text style={styles.metaText}>{durationLabel}</Text>
 
             {movie.genres?.map((genre) => (
               <View key={genre.id} style={styles.genreChip}>
@@ -77,12 +85,28 @@ export function MovieDetailHero({
           </View>
 
           <View style={styles.actionRow}>
-            <Pressable style={styles.primaryBtn}>
+            <Pressable
+              style={[
+                styles.primaryBtn,
+                focusedControl === 'watch' && styles.focusedControl,
+              ]}
+              focusable={isTV}
+              onFocus={() => setFocusedControl('watch')}
+              onBlur={() => setFocusedControl(null)}
+            >
               <PlayIcon size={18} color="#000" />
               <Text style={styles.primaryBtnText}>{watchLabel}</Text>
             </Pressable>
 
-            <Pressable style={styles.secondaryBtn}>
+            <Pressable
+              style={[
+                styles.secondaryBtn,
+                focusedControl === 'save' && styles.focusedControl,
+              ]}
+              focusable={isTV}
+              onFocus={() => setFocusedControl('save')}
+              onBlur={() => setFocusedControl(null)}
+            >
               <SavedIcon size={22} color="#fff" />
             </Pressable>
           </View>
@@ -118,6 +142,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
 
   backText: {
@@ -196,6 +222,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 26,
     paddingVertical: 10,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
 
   primaryBtnText: {
@@ -211,5 +239,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  focusedControl: {
+    borderWidth: 2,
+    borderColor: '#ffffff',
   },
 });

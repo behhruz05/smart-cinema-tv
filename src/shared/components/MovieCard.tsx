@@ -48,11 +48,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 2,
     borderColor: 'transparent',
-    transform: [{ scale: 1 }],
   },
   focusedCard: {
     borderColor: '#fff',
-    transform: [{ scale: 1.05 }],
   },
   image: {
     width: '100%',

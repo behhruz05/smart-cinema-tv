@@ -1,19 +1,6 @@
 import React from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
-import { MovieDetail } from '../../../types/search';
-
-interface MovieDetailFactsProps {
-  movie: MovieDetail;
-  description: string;
-  descriptionTitle: string;
-  countryTitle: string;
-  subtitlesTitle: string;
-  qualitiesTitle: string;
-  castTitle: string;
-  directorsTitle: string;
-  audioTitle: string;
-  noDataLabel: string;
-}
+import { MovieDetailFactsProps } from '../types/movieDetail.types';
 
 function joinOrFallback(items: string[], fallback: string) {
   if (!items.length) return fallback;
@@ -66,7 +53,7 @@ export function MovieDetailFacts({
         </View>
       </View>
 
-      {/* <View style={styles.grid}>
+      <View style={styles.grid}>
         <View style={styles.gridCol}>
           <Text style={styles.colTitle}>{castTitle}</Text>
           <Text style={styles.colValue}>
@@ -97,7 +84,7 @@ export function MovieDetailFacts({
             {joinOrFallback(qualities, noDataLabel)}
           </Text>
         </View>
-      </View> */}
+      </View>
     </View>
   );
 }

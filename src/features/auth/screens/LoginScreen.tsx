@@ -385,6 +385,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 20,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   buttonFocused: {
     borderWidth: 2,
@@ -428,7 +430,7 @@ const styles = StyleSheet.create({
     height: 46,
     borderRadius: 8,
     backgroundColor: '#1c1c1c',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: '#2a2a2a',
     color: '#fff',
     textAlign: 'center',

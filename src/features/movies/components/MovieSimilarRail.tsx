@@ -1,12 +1,7 @@
 import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
-import { Movie } from '../../../types/search';
 import { NewMovieCard } from '../../../shared/components/NewMovieCard';
-
-interface MovieSimilarRailProps {
-  title: string;
-  movies: Movie[];
-}
+import { MovieSimilarRailProps } from '../types/movieDetail.types';
 
 export function MovieSimilarRail({
   title,

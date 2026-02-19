@@ -58,9 +58,6 @@ export function Header() {
   const isDarkMode = resolvedTheme === 'dark';
 
   const animatedWidth = useRef(new Animated.Value(320)).current;
-  const scaleSearch = useRef(new Animated.Value(1)).current;
-  const scaleAvatar = useRef(new Animated.Value(1)).current;
-  const scaleBack = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.timing(animatedWidth, {
@@ -78,30 +75,18 @@ export function Header() {
     return () => clearInterval(interval);
   }, []);
 
-  const animateScale = (value: Animated.Value, to: number) => {
-    Animated.spring(value, {
-      toValue: to,
-      useNativeDriver: false,
-    }).start();
-  };
-
   return (
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
       <View style={styles.left}>
         {isSearch ? (
-          <Animated.View
-            style={{ transform: [{ scale: scaleBack }] }}
-          >
             <Pressable
               focusable={isTV}
               hasTVPreferredFocus
               onFocus={() => {
                 setFocused('back');
-                animateScale(scaleBack, 1);
               }}
               onBlur={() => {
                 setFocused(null);
-                animateScale(scaleBack, 1);
               }}
               onPress={() => navigation.goBack()}
               style={[
@@ -114,7 +99,6 @@ export function Header() {
               <BackIcon size={20} color={isDarkMode ? '#9a9a9a' : '#888'} />
               <Text style={[styles.backText, isDarkMode && styles.textMutedDark]}>{t('common.back')}</Text>
             </Pressable>
-          </Animated.View>
         ) : (
           <View style={styles.timeWeatherRow}>
             <Text style={[styles.dateTime, isDarkMode && styles.textPrimaryDark]}>{currentTime}</Text>
@@ -133,7 +117,6 @@ export function Header() {
             isDarkMode && styles.cardDark,
             {
               width: animatedWidth,
-              transform: [{ scale: scaleSearch }],
             },
             focused === 'search' && styles.focusedButton,
             isDarkMode && focused === 'search' && styles.focusedButtonDark,
@@ -158,11 +141,9 @@ export function Header() {
               focusable={isTV}
               onFocus={() => {
                 setFocused('search');
-                animateScale(scaleSearch, 1);
               }}
               onBlur={() => {
                 setFocused(null);
-                animateScale(scaleSearch, 1);
               }}
               onPress={() => navigation.navigate('Search')}
             >
@@ -176,18 +157,13 @@ export function Header() {
         </Animated.View>
 
         {!isSearch && (
-          <Animated.View
-            style={{ transform: [{ scale: scaleAvatar }] }}
-          >
             <Pressable
               focusable={isTV}
               onFocus={() => {
                 setFocused('avatar');
-                animateScale(scaleAvatar, 1);
               }}
               onBlur={() => {
                 setFocused(null);
-                animateScale(scaleAvatar, 1);
               }}
               onPress={() =>
                 navigation.navigate('Main', {
@@ -218,7 +194,6 @@ export function Header() {
                 }
               />
             </Pressable>
-          </Animated.View>
         )}
       </View>
     </View>

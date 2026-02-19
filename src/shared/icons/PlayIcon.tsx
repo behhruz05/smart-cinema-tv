@@ -1,9 +1,5 @@
-import Svg, { Path } from "react-native-svg";
-
-interface IconProps {
-  color?: string;
-  size?: number;
-}
+import Svg, { Path } from 'react-native-svg';
+import { IconProps } from './types';
 
 export function PlayIcon({ color = "#fff", size = 26 }: IconProps) {
   return (

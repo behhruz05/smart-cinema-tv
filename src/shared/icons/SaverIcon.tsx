@@ -1,13 +1,8 @@
-import Svg, { Path } from "react-native-svg";
-
-interface IconProps {
-  color?: string;
-  size?: number;
-  filled?: boolean;
-}
+import Svg, { Path } from 'react-native-svg';
+import { IconProps } from './types';
 
 export function SavedIcon({
-  color = "#363853",
+  color = '#363853',
   size = 24,
   filled = false,
 }: IconProps) {
