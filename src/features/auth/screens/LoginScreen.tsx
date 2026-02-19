@@ -354,15 +354,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   inputWrapper: {
-    borderWidth: 1,
-    borderColor: '#333',
+    borderWidth: 2,
+    borderColor: 'transparent',
     borderRadius: 8,
     backgroundColor: '#141414',
     marginBottom: 20,
   },
   inputFocused: {
     borderColor: '#fff',
-    borderWidth: 2,
   },
   input: {
     paddingVertical: 14,

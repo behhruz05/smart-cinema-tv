@@ -15,6 +15,7 @@ import { ReelScreen } from '../../features/reel/screens/ReelScreen';
 import { MainLayout } from '../../shared/layout/MainLayout';
 import { MoviesScreen } from '../../features/movies/screens/MoviesScreen';
 import { SettingsMainScreen } from '../../features/settings/screens/SettingsMainScreen';
+import { MovieDetailScreen } from '../../features/movies/screens/MovieDetailScreen';
 
 const RootStack =
   createNativeStackNavigator<RootStackParamList>();
@@ -55,11 +56,11 @@ export function MainNavigator() {
       screenOptions={{
         headerShown: false,
         animation: 'none',
-      }}
-    >
+      }}>
       <RootStack.Screen name="Main" component={MainWithLayout} />
       <RootStack.Screen name="Search" component={SearchScreen} />
       <RootStack.Screen name="Genre" component={GenreScreen} />
+      <RootStack.Screen name="MovieDetail" component={MovieDetailScreen} />
     </RootStack.Navigator>
   );
 }

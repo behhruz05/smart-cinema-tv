@@ -6,6 +6,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { Movie } from '../../types/search';
+import { useNavigation } from '@react-navigation/native';
 
 interface Props {
   movie: Movie;
@@ -14,12 +15,18 @@ interface Props {
 
 export const NewMovieCard = React.memo(({ movie, style }: Props) => {
   const [focused, setFocused] = useState(false);
+  const navigation = useNavigation<any>();
 
   return (
     <Pressable
       focusable
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
+      onPress={() =>
+        navigation.navigate('MovieDetail', {
+          movieId: movie.id,
+        })
+      }
       style={[
         styles.card,
         style,

@@ -10,6 +10,7 @@ import { Carousel } from '../../../types/home';
 import { PlayIcon } from '../../../shared/icons/PlayIcon';
 import { SavedIcon } from '../../../shared/icons/SaverIcon';
 import { useTranslation } from 'react-i18next';
+import { useNavigation } from '@react-navigation/native';
 
 interface Props {
   item: Carousel;
@@ -18,6 +19,7 @@ interface Props {
 export function CarouselItem({ item }: Props) {
   const { t } = useTranslation();
   const movie = item.movie;
+  const navigation = useNavigation<any>();
 
   return (
     <ImageBackground
@@ -41,7 +43,12 @@ export function CarouselItem({ item }: Props) {
         </View>
 
         <View style={styles.actions}>
-          <Pressable style={styles.playBtn}>
+          <Pressable style={styles.playBtn}
+            onPress={() =>
+    navigation.navigate('MovieDetail', {
+      movieId: movie.id,
+    })
+  }>
             <PlayIcon size={18} color="#000" />
             <Text style={styles.playText}>{t('home.carousel.watch')}</Text>
           </Pressable>

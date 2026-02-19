@@ -17,4 +17,5 @@ export type RootStackParamList = {
     genreName: string;
     slug: string;
   };
+  MovieDetail: { movieId: string };
 };

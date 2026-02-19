@@ -1,7 +1,12 @@
 import { api } from '../shared/hooks/api';
-import { ApiResponse, Movie } from '../types/search';
+import {
+  ApiResponse,
+  Movie,
+  MovieDetail,
+} from '../types/search';
 
 type MovieListResponse = ApiResponse<Movie[]>;
+type MovieDetailResponse = ApiResponse<MovieDetail>;
 
 export const movieService = {
   getPopular(page = 1, per_page = 20, lang = 'uz') {
@@ -22,6 +27,20 @@ export const movieService = {
     });
   },
 
+  getMoviesByCountry(
+    countryId: string,
+    page = 1,
+    per_page = 20,
+    lang = 'uz',
+  ) {
+    return api<MovieListResponse>(
+      `/movies/by-country/${countryId}?page=${page}&per_page=${per_page}`,
+      {
+        headers: { 'Accept-Language': lang },
+      },
+    );
+  },
+
   searchMovies(query: string, page = 1, per_page = 20, lang = 'uz') {
     return api(
       `/movies/search?q=${query}&page=${page}&per_page=${per_page}`,
@@ -29,5 +48,11 @@ export const movieService = {
         headers: { 'Accept-Language': lang },
       }
     );
+  },
+
+  getMovieById(movieId: string, lang = 'uz') {
+    return api<MovieDetailResponse>(`/movies/${movieId}`, {
+      headers: { 'Accept-Language': lang },
+    });
   },
 };

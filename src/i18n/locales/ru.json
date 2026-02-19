@@ -67,6 +67,18 @@
   "reel": {
     "watch_movie": "Смотреть фильм"
   },
+  "movie_detail": {
+    "description": "Описание",
+    "country": "Страна",
+    "subtitles": "Субтитры",
+    "qualities": "Качества",
+    "last_position": "Последняя позиция:",
+    "similar": "Похожее",
+    "cast": "В главных ролях",
+    "directors": "Режиссёры",
+    "audio_tracks": "Аудиодорожки",
+    "not_available": "Нет данных"
+  },
   "settings": {
     "interface_language": "Интерфейс и язык",
     "playback": "Воспроизведение",

@@ -6,6 +6,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { Movie } from '../../types/search';
+import { useNavigation } from '@react-navigation/native';
 
 interface Props {
   movie: Movie;
@@ -14,12 +15,20 @@ interface Props {
 
 export const MovieCard = React.memo(({ movie, style }: Props) => {
   const [focused, setFocused] = useState(false);
+  const navigation = useNavigation<any>();
+
+  const handlePress = () => {
+    navigation.navigate('MovieDetail', {
+     movieId: movie.id,
+    });
+  };
 
   return (
     <Pressable
       focusable
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
+      onPress={handlePress}
       style={[
         styles.card,
         style,
@@ -39,25 +48,15 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 2,
     borderColor: 'transparent',
+    transform: [{ scale: 1 }],
   },
   focusedCard: {
     borderColor: '#fff',
+    transform: [{ scale: 1.05 }],
   },
   image: {
     width: '100%',
     height: 180,
     borderRadius: 14,
-  },
-  info: {
-    marginTop: 8,
-  },
-  title: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  meta: {
-    color: '#888',
-    fontSize: 12,
-    marginTop: 4,
   },
 });

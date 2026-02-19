@@ -67,6 +67,18 @@
   "reel": {
     "watch_movie": "Watch movie"
   },
+  "movie_detail": {
+    "description": "Description",
+    "country": "Country",
+    "subtitles": "Subtitles",
+    "qualities": "Qualities",
+    "last_position": "Last watched position:",
+    "similar": "Similar",
+    "cast": "Main cast",
+    "directors": "Directors",
+    "audio_tracks": "Audio tracks",
+    "not_available": "Not available"
+  },
   "settings": {
     "interface_language": "Interface and language",
     "playback": "Playback",

@@ -67,6 +67,18 @@
   "reel": {
     "watch_movie": "Filmni ko'rish"
   },
+  "movie_detail": {
+    "description": "Tavsif",
+    "country": "Davlat",
+    "subtitles": "Subtitrlar",
+    "qualities": "Sifatlar",
+    "last_position": "Oxirgi ko'rilgan joy:",
+    "similar": "O'xshashlar",
+    "cast": "Bosh rollarda",
+    "directors": "Rejissyorlar",
+    "audio_tracks": "Audio yo'laklar",
+    "not_available": "Mavjud emas"
+  },
   "settings": {
     "interface_language": "Interfeys va til",
     "playback": "Ijro",

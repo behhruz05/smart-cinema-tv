@@ -1,5 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { searchService } from '../../service/search.service';
+import { movieService } from '../../service/movie.service';
+import { Movie, MovieDetail } from '../../types/search';
 
 interface Genre {
   id: string;
@@ -10,15 +12,20 @@ interface Genre {
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
 interface SearchState {
-  searchResults: any[];
-  popular: any[];
-  genreMovies: any[];
+  searchResults: Movie[];
+  popular: Movie[];
+  genreMovies: Movie[];
+  relatedMovies: Movie[];
   genres: Genre[];
   selectedGenre: string | null;
 
   popularStatus: Status;
   searchStatus: Status;
   genreStatus: Status;
+
+  selectedMovie: MovieDetail | null;
+  detailStatus: Status;
+  relatedStatus: Status;
 
   query: string;
   error: string | null;
@@ -28,12 +35,17 @@ const initialState: SearchState = {
   searchResults: [],
   popular: [],
   genreMovies: [],
+  relatedMovies: [],
   genres: [],
   selectedGenre: null,
 
   popularStatus: 'idle',
   searchStatus: 'idle',
   genreStatus: 'idle',
+
+  selectedMovie: null,
+  detailStatus: 'idle',
+  relatedStatus: 'idle',
 
   query: '',
   error: null,
@@ -87,6 +99,47 @@ export const fetchGenreMovies = createAsyncThunk(
   }
 );
 
+export const fetchMovieById = createAsyncThunk(
+  'movie/detail',
+  async ({
+    movieId,
+    lang,
+  }: {
+    movieId: string;
+    lang: 'uz' | 'ru' | 'en';
+  }) => {
+    const res = await movieService.getMovieById(
+      movieId,
+      lang,
+    );
+    return res.data;
+  }
+);
+
+export const fetchMoviesByCountry = createAsyncThunk(
+  'movie/byCountry',
+  async ({
+    countryId,
+    lang,
+    page = 1,
+    per_page = 20,
+  }: {
+    countryId: string;
+    lang: 'uz' | 'ru' | 'en';
+    page?: number;
+    per_page?: number;
+  }) => {
+    const res = await movieService.getMoviesByCountry(
+      countryId,
+      page,
+      per_page,
+      lang,
+    );
+    return res.data;
+  },
+);
+
+
 const movieSlice = createSlice({
   name: 'movie',
   initialState,
@@ -124,6 +177,27 @@ const movieSlice = createSlice({
       .addCase(fetchPopularMovies.rejected, (state) => {
         state.popularStatus = 'error';
       })
+
+      .addCase(fetchMovieById.pending, (state) => {
+  state.detailStatus = 'loading';
+})
+.addCase(fetchMovieById.fulfilled, (state, action) => {
+  state.selectedMovie = action.payload;
+  state.detailStatus = 'success';
+})
+      .addCase(fetchMovieById.rejected, (state) => {
+  state.detailStatus = 'error';
+})
+      .addCase(fetchMoviesByCountry.pending, (state) => {
+  state.relatedStatus = 'loading';
+})
+      .addCase(fetchMoviesByCountry.fulfilled, (state, action) => {
+  state.relatedMovies = action.payload;
+  state.relatedStatus = 'success';
+})
+      .addCase(fetchMoviesByCountry.rejected, (state) => {
+  state.relatedStatus = 'error';
+})
 
 .addCase(fetchSearchMovies.pending, (state) => {
   state.searchStatus = 'loading';
