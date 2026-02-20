@@ -6,6 +6,8 @@ import {
   Dimensions,
   ActivityIndicator,
   findNodeHandle,
+  Platform,
+  Pressable,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../../store';
@@ -24,10 +26,14 @@ type ReelListItem =
 
 export function ReelScreen() {
   const dispatch = useDispatch<AppDispatch>();
+  const isTV = Platform.isTV;
   const listRef = useRef<FlatList<ReelListItem>>(null);
   const likeHandles = useRef<Record<number, number>>({});
+  const emptyHandle = useRef<number | null>(null);
+  const focusedIndexRef = useRef(0);
+  const isProgrammaticScrollingRef = useRef(false);
+  const programmaticScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [focusVersion, setFocusVersion] = useState(0);
-  const [focusedIndex, setFocusedIndex] = useState(0);
 
   const {
     reels,
@@ -51,6 +57,14 @@ export function ReelScreen() {
     dispatch(fetchReels({ page: 1, per_page: 10 }));
   }, [dispatch]);
 
+  useEffect(() => {
+    return () => {
+      if (programmaticScrollTimerRef.current) {
+        clearTimeout(programmaticScrollTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleLoadMore = () => {
     if (loading || loadingMore || !hasMore) return;
     dispatch(fetchReels({ page: page + 1, per_page: 10 }));
@@ -65,8 +79,19 @@ export function ReelScreen() {
 
   const handleLikeFocus = (index: number) => {
     if (index >= reels.length) return;
-    if (index === focusedIndex) return;
-    setFocusedIndex(index);
+    if (index === focusedIndexRef.current) return;
+    if (isProgrammaticScrollingRef.current) return;
+
+    focusedIndexRef.current = index;
+    isProgrammaticScrollingRef.current = true;
+    if (programmaticScrollTimerRef.current) {
+      clearTimeout(programmaticScrollTimerRef.current);
+    }
+    programmaticScrollTimerRef.current = setTimeout(() => {
+      isProgrammaticScrollingRef.current = false;
+      programmaticScrollTimerRef.current = null;
+    }, 320);
+
     listRef.current?.scrollToIndex({
       index,
       animated: true,
@@ -96,6 +121,7 @@ export function ReelScreen() {
           item.type === 'empty' ? item.id : item.reel.id.toString()
         }
         pagingEnabled
+        scrollEnabled={!isTV}
         snapToInterval={height}
         snapToAlignment="start"
         disableIntervalMomentum
@@ -117,6 +143,17 @@ export function ReelScreen() {
             animated: true,
           });
         }}
+        onMomentumScrollEnd={event => {
+          const nextIndex = Math.round(
+            event.nativeEvent.contentOffset.y / height,
+          );
+          focusedIndexRef.current = Math.max(0, nextIndex);
+          isProgrammaticScrollingRef.current = false;
+          if (programmaticScrollTimerRef.current) {
+            clearTimeout(programmaticScrollTimerRef.current);
+            programmaticScrollTimerRef.current = null;
+          }
+        }}
         onEndReachedThreshold={0.6}
         onEndReached={handleLoadMore}
         ListFooterComponent={
@@ -128,16 +165,42 @@ export function ReelScreen() {
         }
         renderItem={({ item, index }) =>
           item.type === 'empty' ? (
-            <View style={[styles.emptyScreen, { height }]}>
+            <Pressable
+              ref={node => {
+                const handle = findNodeHandle(node);
+                if (!handle || emptyHandle.current === handle) return;
+                emptyHandle.current = handle;
+                setFocusVersion(v => v + 1);
+              }}
+              focusable={isTV}
+              {...(isTV
+                ? ({
+                    nextFocusUp: likeHandles.current[reels.length - 1],
+                  } as any)
+                : null)}
+              onFocus={() => {
+                focusedIndexRef.current = index;
+                listRef.current?.scrollToIndex({
+                  index,
+                  animated: true,
+                  viewPosition: 0,
+                });
+              }}
+              style={[styles.emptyScreen, { height }]}
+            >
               <ReelEmpty />
-            </View>
+            </Pressable>
           ) : (
             <ReelCard
               reel={item.reel}
               index={index}
-              preferredFocus={index === focusedIndex}
+              preferredFocus={index === 0}
               nextFocusUp={likeHandles.current[index - 1]}
-              nextFocusDown={likeHandles.current[index + 1]}
+              nextFocusDown={
+                index === reels.length - 1
+                  ? emptyHandle.current ?? undefined
+                  : likeHandles.current[index + 1]
+              }
               onLikeFocus={handleLikeFocus}
               setLikeRef={handleLikeRef}
             />

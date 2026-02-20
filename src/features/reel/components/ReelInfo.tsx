@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Reel } from '../../../service/reel.service';
 import { getAppLanguage } from '../../../i18n';
 import { PlayIcon } from '../../../shared/icons/PlayIcon';
+import { useNavigation } from '@react-navigation/native';
 
 interface ReelInfoProps {
   reel: Reel;
@@ -18,6 +19,7 @@ export function ReelInfo({
 }: ReelInfoProps) {
   const { t, i18n } = useTranslation();
   const isTV = Platform.isTV;
+  const navigation = useNavigation<any>();
   const [focusedWatch, setFocusedWatch] = React.useState(false);
   const tvDirectionalFocusProps = isTV
     ? ({
@@ -62,6 +64,11 @@ export function ReelInfo({
           styles.watchBtn,
           focusedWatch && styles.watchBtnFocused,
         ]}
+        onPress={() =>
+               navigation.navigate('MovieDetail', {
+                movieId: reel.linked_movies[0]?.id,
+              })
+        }
       >
         <PlayIcon size={16} />
         <Text style={styles.watchText}>
@@ -77,6 +84,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
+    width: '90%'
   },
   avatar: {
     width: 42,

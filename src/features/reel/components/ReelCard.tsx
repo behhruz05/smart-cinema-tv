@@ -85,9 +85,9 @@ const styles = StyleSheet.create({
   },
 
   center: {
-    width: width * 0.32,
-    height: height * 0.72,
-    borderRadius: 16,
+    width: width * 0.28,
+    height: height * 0.76,
+    borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 2,
     borderColor: '#1f1f1f',
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   poster: {
     width: '100%',
     height: '100%',
-    borderRadius: 16,
+    borderRadius: 12,
   },
 
   actionSide: {
