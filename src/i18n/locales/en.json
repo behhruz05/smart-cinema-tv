@@ -65,7 +65,11 @@
     "season_episode": "Season {{season}}, Episode {{episode}}"
   },
   "reel": {
-    "watch_movie": "Watch movie"
+    "watch_movie": "Watch movie",
+    "share": "Share",
+    "empty_title": "No reels yet",
+    "empty_subtitle": "New reels will appear here.",
+    "no_more": "No more reels"
   },
   "movie_detail": {
     "description": "Description",
@@ -78,6 +82,14 @@
     "directors": "Directors",
     "audio_tracks": "Audio tracks",
     "not_available": "Not available"
+  },
+  "tv_channels": {
+    "title": "TV channels",
+    "all": "All",
+    "schedule": "Program schedule",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "live": "Live"
   },
   "settings": {
     "interface_language": "Interface and language",

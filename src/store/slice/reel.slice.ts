@@ -5,6 +5,9 @@ interface ReelState {
   reels: Reel[];
   trending: Reel[];
   loading: boolean;
+  loadingMore: boolean;
+  hasMore: boolean;
+  page: number;
   error: string | null;
 }
 
@@ -12,6 +15,9 @@ const initialState: ReelState = {
   reels: [],
   trending: [],
   loading: false,
+  loadingMore: false,
+  hasMore: true,
+  page: 1,
   error: null,
 };
 
@@ -42,20 +48,48 @@ export const toggleLikeReel = createAsyncThunk(
 const reelSlice = createSlice({
   name: 'reel',
   initialState,
-  reducers: {},
+  reducers: {
+    resetReels(state) {
+      state.reels = [];
+      state.page = 1;
+      state.hasMore = true;
+      state.loadingMore = false;
+      state.error = null;
+    },
+  },
   extraReducers: builder => {
     builder
 
       // FETCH REELS
       .addCase(fetchReels.pending, state => {
-        state.loading = true;
+        if (state.page > 1) {
+          state.loadingMore = true;
+        } else {
+          state.loading = true;
+        }
       })
       .addCase(fetchReels.fulfilled, (state, action) => {
-        state.reels = action.payload;
+        const page = action.meta.arg.page ?? 1;
+        const perPage = action.meta.arg.per_page ?? 10;
+
+        if (page > 1) {
+          const nextItems = action.payload.filter(
+            incoming =>
+              !state.reels.some(existing => existing.id === incoming.id),
+          );
+          state.reels = [...state.reels, ...nextItems];
+        } else {
+          state.reels = action.payload;
+        }
+
+        state.page = page;
+        state.hasMore = action.payload.length >= perPage;
         state.loading = false;
+        state.loadingMore = false;
       })
       .addCase(fetchReels.rejected, (state, action) => {
         state.loading = false;
+        state.loadingMore = false;
         state.error = action.error.message || 'Reels error';
       })
 
@@ -82,4 +116,5 @@ const reelSlice = createSlice({
   },
 });
 
+export const { resetReels } = reelSlice.actions;
 export default reelSlice.reducer;

@@ -16,6 +16,7 @@ import { MainLayout } from '../../shared/layout/MainLayout';
 import { MoviesScreen } from '../../features/movies/screens/MoviesScreen';
 import { SettingsMainScreen } from '../../features/settings/screens/SettingsMainScreen';
 import { MovieDetailScreen } from '../../features/movies/screens/MovieDetailScreen';
+import { TvChannelsScreen } from '../../features/tv-channels/screens/TvChannelsScreen';
 
 const RootStack =
   createNativeStackNavigator<RootStackParamList>();
@@ -33,7 +34,7 @@ function ContentNavigator() {
       }}
     >
       <ContentStack.Screen name="Home" component={HomeScreen} />
-      <ContentStack.Screen name="TV" component={HomeScreen} />
+      <ContentStack.Screen name="TV" component={TvChannelsScreen} />
       <ContentStack.Screen name="Movies" component={MoviesScreen} />
       <ContentStack.Screen name="Reels" component={ReelScreen} />
       <ContentStack.Screen name="Profile" component={ProfileScreen} />

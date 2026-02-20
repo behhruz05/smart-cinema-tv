@@ -6,11 +6,33 @@ import { ReelAction } from './ReelAction';
 
 const { height, width } = Dimensions.get('window');
 
-export function ReelCard({ reel }: { reel: Reel }) {
+interface ReelCardProps {
+  reel: Reel;
+  index: number;
+  preferredFocus: boolean;
+  nextFocusUp?: number;
+  nextFocusDown?: number;
+  onLikeFocus: (index: number) => void;
+  setLikeRef: (index: number, node: any) => void;
+}
+
+export const ReelCard = React.memo(function ReelCard({
+  reel,
+  index,
+  preferredFocus,
+  nextFocusUp,
+  nextFocusDown,
+  onLikeFocus,
+  setLikeRef,
+}: ReelCardProps) {
   return (
     <View style={styles.screen}>
       <View style={styles.infoSide}>
-        <ReelInfo reel={reel} />
+        <ReelInfo
+          reel={reel}
+          nextFocusUp={nextFocusUp}
+          nextFocusDown={nextFocusDown}
+        />
       </View>
 
       <View style={styles.reelWrapper}>
@@ -23,14 +45,21 @@ export function ReelCard({ reel }: { reel: Reel }) {
         </View>
 
         <View style={styles.actionSide}>
-          <ReelAction reel={reel} />
+          <ReelAction
+            reel={reel}
+            preferredFocus={preferredFocus}
+            nextFocusUp={nextFocusUp}
+            nextFocusDown={nextFocusDown}
+            onLikeFocus={() => onLikeFocus(index)}
+            setLikeRef={node => setLikeRef(index, node)}
+          />
         </View>
       </View>
 
       <View style={styles.rightSpacer} />
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   screen: {
@@ -40,13 +69,14 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     justifyContent: 'center',
     backgroundColor: '#101010',
-    paddingBottom: 120,
+    paddingBottom: 110,
     paddingHorizontal: 20,
   },
 
   infoSide: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
+    paddingBottom: 8,
   },
 
   reelWrapper: {
@@ -55,10 +85,12 @@ const styles = StyleSheet.create({
   },
 
   center: {
-    width: width * 0.3,
-    height: height * 0.75,
+    width: width * 0.32,
+    height: height * 0.72,
     borderRadius: 16,
     overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#1f1f1f',
   },
 
   poster: {
@@ -68,7 +100,7 @@ const styles = StyleSheet.create({
   },
 
   actionSide: {
-    marginLeft: 16,
+    marginLeft: 12,
     alignItems: 'center',
   },
 

@@ -1,4 +1,5 @@
 import { api } from '../shared/hooks/api';
+import { getAppLanguage } from '../i18n';
 
 interface ReelsResponse {
   success: boolean;
@@ -32,19 +33,21 @@ export interface Reel {
 }
 
 export const reelService = {
-  async getReels(page = 1, per_page = 20) {
+  async getReels(page = 1, per_page = 20, lang = getAppLanguage()) {
     return api<ReelsResponse>(
       `/reels?page=${page}&per_page=${per_page}`,
       {
+        headers: { 'Accept-Language': lang },
         skipAuth: true,
       }
     );
   },
 
-  async getTrending(limit = 20) {
+  async getTrending(limit = 20, lang = getAppLanguage()) {
     return api<TrendingResponse>(
       `/reels/trending?limit=${limit}`,
       {
+        headers: { 'Accept-Language': lang },
         skipAuth: true,
       }
     );

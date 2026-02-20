@@ -14,6 +14,16 @@ const resources = {
   en: { translation: en },
 };
 
+export type AppLanguage = 'uz' | 'ru' | 'en';
+
+export function getAppLanguage(
+  lng: string | undefined = i18n.resolvedLanguage || i18n.language,
+): AppLanguage {
+  if (lng?.startsWith('ru')) return 'ru';
+  if (lng?.startsWith('en')) return 'en';
+  return 'uz';
+}
+
 async function initI18n() {
   let savedLanguage = 'uz'; 
 

@@ -65,7 +65,11 @@
     "season_episode": "{{season}}-mavsum, {{episode}}-qism"
   },
   "reel": {
-    "watch_movie": "Filmni ko'rish"
+    "watch_movie": "Filmni ko'rish",
+    "share": "Ulashish",
+    "empty_title": "Reels hozircha yo'q",
+    "empty_subtitle": "Yangi reels shu yerda chiqadi.",
+    "no_more": "Boshqa reels yo'q"
   },
   "movie_detail": {
     "description": "Tavsif",
@@ -78,6 +82,14 @@
     "directors": "Rejissyorlar",
     "audio_tracks": "Audio yo'laklar",
     "not_available": "Mavjud emas"
+  },
+  "tv_channels": {
+    "title": "TV kanallar",
+    "all": "Barchasi",
+    "schedule": "Dasturlar jadvali",
+    "today": "Bugun",
+    "tomorrow": "Ertaga",
+    "live": "Jonli efir"
   },
   "settings": {
     "interface_language": "Interfeys va til",

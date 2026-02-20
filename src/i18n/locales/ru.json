@@ -65,7 +65,11 @@
     "season_episode": "{{season}} сезон, {{episode}} серия"
   },
   "reel": {
-    "watch_movie": "Смотреть фильм"
+    "watch_movie": "Смотреть фильм",
+    "share": "Поделиться",
+    "empty_title": "Больше рилсов пока нет.",
+    "empty_subtitle": "Загляните позже — мы уже готовим новые.",
+    "no_more": "Больше reels нет"
   },
   "movie_detail": {
     "description": "Описание",
@@ -78,6 +82,14 @@
     "directors": "Режиссёры",
     "audio_tracks": "Аудиодорожки",
     "not_available": "Нет данных"
+  },
+  "tv_channels": {
+    "title": "TV каналы",
+    "all": "Все",
+    "schedule": "Расписание программы",
+    "today": "Сегодня",
+    "tomorrow": "Завтра",
+    "live": "Прямой эфир"
   },
   "settings": {
     "interface_language": "Интерфейс и язык",

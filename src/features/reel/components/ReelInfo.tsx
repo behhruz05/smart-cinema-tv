@@ -1,20 +1,50 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform, Image } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Reel } from '../../../service/reel.service';
+import { getAppLanguage } from '../../../i18n';
+import { PlayIcon } from '../../../shared/icons/PlayIcon';
 
-export function ReelInfo({ reel }: { reel: Reel }) {
+interface ReelInfoProps {
+  reel: Reel;
+  nextFocusUp?: number;
+  nextFocusDown?: number;
+}
+
+export function ReelInfo({
+  reel,
+  nextFocusUp,
+  nextFocusDown,
+}: ReelInfoProps) {
   const { t, i18n } = useTranslation();
-  const title = i18n.language === 'ru' ? reel.title_ru : reel.title_uz || reel.title_ru;
-  const description =
-    i18n.language === 'ru'
-      ? reel.description_ru
-      : reel.description_uz || reel.description_ru;
+  const isTV = Platform.isTV;
+  const [focusedWatch, setFocusedWatch] = React.useState(false);
+  const tvDirectionalFocusProps = isTV
+    ? ({
+        nextFocusUp,
+        nextFocusDown,
+      } as any)
+    : null;
+  const lang = getAppLanguage(i18n.resolvedLanguage || i18n.language);
+  const title = lang === 'ru'
+    ? reel.title_ru || reel.title_uz || reel.title_en
+    : lang === 'en'
+      ? reel.title_en || reel.title_uz || reel.title_ru
+      : reel.title_uz || reel.title_ru || reel.title_en;
+  const description = lang === 'ru'
+    ? reel.description_ru || reel.description_uz || reel.description_en
+    : lang === 'en'
+      ? reel.description_en || reel.description_uz || reel.description_ru
+      : reel.description_uz || reel.description_ru || reel.description_en;
 
   return (
-    <View style={styles.container}>
+    <View>
       <View style={styles.profileRow}>
-        <View style={styles.avatar} />
+        <Image
+          source={{ uri: reel.poster_url }}
+          style={styles.avatar}
+          resizeMode="cover"
+        />
         <View style={styles.infoContainer}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle} numberOfLines={3}>
@@ -23,9 +53,19 @@ export function ReelInfo({ reel }: { reel: Reel }) {
         </View>
       </View>
 
-      <Pressable style={styles.watchBtn}>
+      <Pressable
+        focusable={!isTV}
+        {...tvDirectionalFocusProps}
+        onFocus={() => setFocusedWatch(true)}
+        onBlur={() => setFocusedWatch(false)}
+        style={[
+          styles.watchBtn,
+          focusedWatch && styles.watchBtnFocused,
+        ]}
+      >
+        <PlayIcon size={16} />
         <Text style={styles.watchText}>
-          {'\u25b6'} {t('reel.watch_movie')}
+          {t('reel.watch_movie')}
         </Text>
       </Pressable>
     </View>
@@ -33,9 +73,6 @@ export function ReelInfo({ reel }: { reel: Reel }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    justifyContent: 'center',
-  },
   profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -45,7 +82,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#fff',
+    backgroundColor: '#2a2a2a',
     marginRight: 12,
   },
   infoContainer: {
@@ -69,6 +106,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     marginTop: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    flexDirection: 'row',
+    gap: 10
+  },
+  watchBtnFocused: {
+    borderColor: '#ffffff',
   },
   watchText: {
     color: '#fff',
