@@ -30,8 +30,8 @@ import { SettingsIcon } from '../icons/SettingIcon';
 
 const Logo = require('../../assets/imgs/Group.png');
 
-const COLLAPSED_WIDTH = 90;
-const EXPANDED_WIDTH = 220;
+const COLLAPSED_WIDTH = 70;
+const EXPANDED_WIDTH = 180;
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -64,7 +64,6 @@ export function SidebarMenu() {
     new Animated.Value(0)
   ).current;
 
-  // 🔥 Sidebar animation
   useEffect(() => {
     Animated.parallel([
       Animated.timing(widthAnim, {
@@ -97,7 +96,6 @@ export function SidebarMenu() {
     return activeName === 'Main' ? 'Home' : activeName;
   });
 
-  // 🔥 FIRST RENDER HOME FOCUS FIX
   useEffect(() => {
     if (currentRoute === 'Home') {
       setFocused('Home');
@@ -259,7 +257,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#101010',
     paddingVertical: 20,
-    paddingHorizontal: 20,
+    paddingHorizontal: 14,
     overflow: 'hidden',
     justifyContent: 'space-between',
   },
@@ -298,10 +296,10 @@ const styles = StyleSheet.create({
   item: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 44,
+    height: 40,
     marginBottom: 16,
     borderRadius: 8,
-    paddingHorizontal: 14,
+    paddingHorizontal: 10,
     backgroundColor: '#1A1A1A',
     borderWidth: 2,
     borderColor: 'transparent',

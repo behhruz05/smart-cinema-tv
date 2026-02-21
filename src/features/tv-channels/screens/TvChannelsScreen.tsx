@@ -330,7 +330,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 10,
     marginBottom: 8,
-    backgroundColor: '#0f0f0f',
     borderWidth: 2,
     borderColor: 'transparent',
   },
@@ -353,7 +352,7 @@ const styles = StyleSheet.create({
   },
   detailsColumn: {
     flex: 1,
-    backgroundColor: '#0d0d0d',
+    backgroundColor: '#101010',
     borderRadius: 14,
     padding: 14,
   },

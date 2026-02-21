@@ -39,7 +39,6 @@ export function Header() {
   const { query } = useSelector((state: RootState) => state.movie);
   const weather = useWeather();
   const isTV = Platform.isTV;
-
   const [focused, setFocused] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(
     formatCurrentHeaderDateTime()
@@ -71,7 +70,7 @@ export function Header() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(formatCurrentHeaderDateTime());
-    }, 60000);
+    }, 1000);
     return () => clearInterval(interval);
   }, []);
 

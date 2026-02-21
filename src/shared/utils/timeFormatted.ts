@@ -34,17 +34,22 @@ export const formatDurationClock = (seconds: number): string => {
 
 export const formatCurrentHeaderDateTime = (): string => {
   const date = new Date();
+  const monthsRaw = i18n.t('time.months_short', { returnObjects: true }) as unknown;
+  const weekDaysRaw = i18n.t('time.weekdays_short', { returnObjects: true }) as unknown;
+  const months = Array.isArray(monthsRaw)
+    ? (monthsRaw as string[])
+    : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const weekDays = Array.isArray(weekDaysRaw)
+    ? (weekDaysRaw as string[])
+    : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const pad = (n: number) => String(n).padStart(2, '0');
-  const months = i18n.t('time.months_short', {
-    returnObjects: true,
-  }) as string[];
-  const weekDays = i18n.t('time.weekdays_short', {
-    returnObjects: true,
-  }) as string[];
 
-  const weekDay = weekDays[date.getDay()];
+  const weekDayIndex = date.getDay();
+  const monthIndex = date.getMonth();
+
+  const weekDay = weekDays[weekDayIndex] ?? weekDays[0];
   const day = date.getDate();
-  const month = months[date.getMonth()];
+  const month = months[monthIndex] ?? months[0];
   const hours = pad(date.getHours());
   const minutes = pad(date.getMinutes());
 
