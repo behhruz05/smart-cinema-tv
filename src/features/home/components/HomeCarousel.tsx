@@ -120,7 +120,7 @@ export function HomeCarousel() {
         })}
         onMomentumScrollEnd={event => {
           currentIndexRef.current = Math.round(
-            event.nativeEvent.contentOffset.x / ITEM_INTERVAL,
+            event.nativeEvent.contentOffset.x / itemIntervalRef.current,
           );
         }}
         ItemSeparatorComponent={Separator}

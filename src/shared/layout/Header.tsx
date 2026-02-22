@@ -40,6 +40,13 @@ export function Header() {
   const weather = useWeather();
   const isTV = Platform.isTV;
   const [focused, setFocused] = useState<string | null>(null);
+  const backRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (isTV && isSearch) {
+      backRef.current?.focus();
+    }
+  }, [isTV, isSearch]);
   const [currentTime, setCurrentTime] = useState(
     formatCurrentHeaderDateTime()
   );
@@ -79,8 +86,8 @@ export function Header() {
       <View style={styles.left}>
         {isSearch ? (
             <Pressable
+              ref={backRef}
               focusable={isTV}
-              hasTVPreferredFocus
               onFocus={() => {
                 setFocused('back');
               }}

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { ScrollView, FlatList, StyleSheet } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
@@ -36,6 +36,41 @@ export function HomeScreen() {
     dispatch(fetchReels({ page: 1, per_page: 20 }));
   }, [dispatch]);
 
+  const renderPopular = useCallback(
+    ({ item }: { item: (typeof popular)[0] }) => (
+      <MovieCard movie={item} style={styles.wideMovieCard} />
+    ),
+    [],
+  );
+
+  const renderHistory = useCallback(
+    ({ item }: { item: (typeof history)[0] }) => (
+      <WatchHistory item={item} />
+    ),
+    [],
+  );
+
+  const renderLatest = useCallback(
+    ({ item }: { item: (typeof latest)[0] }) => (
+      <NewMovieCard movie={item} style={styles.narrowMovieCard} />
+    ),
+    [],
+  );
+
+  const renderReel = useCallback(
+    ({ item }: { item: (typeof reels)[0] }) => (
+      <ReelCard item={item} />
+    ),
+    [],
+  );
+
+  const renderChannel = useCallback(
+    ({ item }: { item: (typeof channels)[0] }) => (
+      <ChannelCard item={item} />
+    ),
+    [],
+  );
+
   return (
     <ScrollView
       style={styles.container}
@@ -49,12 +84,7 @@ export function HomeScreen() {
           showsHorizontalScrollIndicator={false}
           data={popular}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <MovieCard
-              movie={item}
-              style={styles.wideMovieCard}
-            />
-          )}
+          renderItem={renderPopular}
         />
       </Section>
 
@@ -64,9 +94,7 @@ export function HomeScreen() {
           showsHorizontalScrollIndicator={false}
           data={history}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <WatchHistory item={item} />
-          )}
+          renderItem={renderHistory}
         />
       </Section>
 
@@ -76,12 +104,7 @@ export function HomeScreen() {
           showsHorizontalScrollIndicator={false}
           data={latest}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <NewMovieCard
-              movie={item}
-              style={styles.narrowMovieCard}
-            />
-          )}
+          renderItem={renderLatest}
         />
       </Section>
 
@@ -91,9 +114,7 @@ export function HomeScreen() {
           showsHorizontalScrollIndicator={false}
           data={reels}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <ReelCard item={item} />
-          )}
+          renderItem={renderReel}
         />
       </Section>
 
@@ -103,9 +124,7 @@ export function HomeScreen() {
           showsHorizontalScrollIndicator={false}
           data={channels}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <ChannelCard item={item} />
-          )}
+          renderItem={renderChannel}
         />
       </Section>
     </ScrollView>
