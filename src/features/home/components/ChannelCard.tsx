@@ -6,11 +6,11 @@ interface Props {
   item: TvChannel;
 }
 
-export const ChannelCard = ({ item }: Props) => (
+export const ChannelCard = React.memo(({ item }: Props) => (
   <View style={styles.image}>
     <Text style={styles.text}>{item.name}</Text>
   </View>
-);
+));
 
 const styles = StyleSheet.create({
   image: {

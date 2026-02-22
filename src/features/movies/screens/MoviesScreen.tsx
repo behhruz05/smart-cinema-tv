@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
   ScrollView,
   FlatList,
@@ -40,6 +40,34 @@ export function MoviesScreen() {
     dispatch(fetchReels({ page: 1, per_page: 20 }));
   }, [dispatch]);
 
+  const renderPopular = useCallback(
+    ({ item }: { item: (typeof popular)[0] }) => (
+      <MovieCard movie={item} style={styles.wideMovieCard} />
+    ),
+    [],
+  );
+
+  const renderHistory = useCallback(
+    ({ item }: { item: (typeof history)[0] }) => (
+      <WatchHistory item={item} />
+    ),
+    [],
+  );
+
+  const renderLatest = useCallback(
+    ({ item }: { item: (typeof latest)[0] }) => (
+      <NewMovieCard movie={item} style={styles.narrowMovieCard} />
+    ),
+    [],
+  );
+
+  const renderReel = useCallback(
+    ({ item }: { item: (typeof reels)[0] }) => (
+      <ReelCard item={item} />
+    ),
+    [],
+  );
+
   return (
     <ScrollView
       style={styles.container}
@@ -52,12 +80,7 @@ export function MoviesScreen() {
           data={popular}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.horizontalList}
-          renderItem={({ item }) => (
-            <MovieCard
-              movie={item}
-              style={styles.wideMovieCard}
-            />
-          )}
+          renderItem={renderPopular}
         />
       </Section>
 
@@ -70,9 +93,7 @@ export function MoviesScreen() {
           data={history}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.horizontalList}
-          renderItem={({ item }) => (
-            <WatchHistory item={item} />
-          )}
+          renderItem={renderHistory}
         />
       </Section>
 
@@ -83,12 +104,7 @@ export function MoviesScreen() {
           data={latest}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.horizontalList}
-          renderItem={({ item }) => (
-            <NewMovieCard
-              movie={item}
-              style={styles.narrowMovieCard}
-            />
-          )}
+          renderItem={renderLatest}
         />
       </Section>
 
@@ -99,9 +115,7 @@ export function MoviesScreen() {
           data={reels}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.horizontalList}
-          renderItem={({ item }) => (
-            <ReelCard item={item} />
-          )}
+          renderItem={renderReel}
         />
       </Section>
 

@@ -10,7 +10,7 @@ interface Props {
   item: Reel;
 }
 
-export const ReelCard = ({ item }: Props) => {
+export const ReelCard = React.memo(({ item }: Props) => {
   const [focused, setFocused] = useState(false);
 
   return (
@@ -29,7 +29,7 @@ export const ReelCard = ({ item }: Props) => {
       />
     </Pressable>
   );
-};
+});
 
 const styles = StyleSheet.create({
   card: {

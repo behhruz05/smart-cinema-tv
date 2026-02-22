@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
   View,
   FlatList,
@@ -72,6 +72,13 @@ export function SearchScreen() {
     }
   }, [isSearching, dispatch]);
 
+  const renderItem = useCallback(
+    ({ item }: { item: Movie }) => (
+      <SearchResultCard movie={item} style={{ width: ITEM_WIDTH }} />
+    ),
+    [],
+  );
+
   const renderMovies = (data: Movie[]) => (
     <FlatList
       data={data}
@@ -79,12 +86,7 @@ export function SearchScreen() {
       keyExtractor={(item) => item.id.toString()}
       columnWrapperStyle={styles.row}
       contentContainerStyle={styles.list}
-      renderItem={({ item }) => (
-        <SearchResultCard
-          movie={item}
-          style={{ width: ITEM_WIDTH }}
-        />
-      )}
+      renderItem={renderItem}
     />
   );
 

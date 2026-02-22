@@ -21,6 +21,7 @@ export function ReelInfo({
   const isTV = Platform.isTV;
   const navigation = useNavigation<any>();
   const [focusedWatch, setFocusedWatch] = React.useState(false);
+  const skipNextPressRef = React.useRef(false);
   const tvDirectionalFocusProps = isTV
     ? ({
         nextFocusUp,
@@ -38,6 +39,21 @@ export function ReelInfo({
     : lang === 'en'
       ? reel.description_en || reel.description_uz || reel.description_ru
       : reel.description_uz || reel.description_ru || reel.description_en;
+  const handleWatchPress = React.useCallback(() => {
+    const movieId = reel.linked_movies?.[0]?.id;
+    if (!movieId) return;
+    navigation.navigate('MovieDetail', { movieId });
+  }, [navigation, reel.linked_movies]);
+
+  const handleWatchKeyDown = React.useCallback(
+    (event: any) => {
+      const key = event?.nativeEvent?.key;
+      if (key !== 'Enter' && key !== 'Select' && key !== ' ') return;
+      skipNextPressRef.current = true;
+      handleWatchPress();
+    },
+    [handleWatchPress],
+  );
 
   return (
     <View>
@@ -56,19 +72,22 @@ export function ReelInfo({
       </View>
 
       <Pressable
-        focusable={!isTV}
+        focusable={isTV}
         {...tvDirectionalFocusProps}
         onFocus={() => setFocusedWatch(true)}
         onBlur={() => setFocusedWatch(false)}
+        onKeyDown={handleWatchKeyDown}
         style={[
           styles.watchBtn,
           focusedWatch && styles.watchBtnFocused,
         ]}
-        onPress={() =>
-               navigation.navigate('MovieDetail', {
-                movieId: reel.linked_movies[0]?.id,
-              })
-        }
+        onPress={() => {
+          if (skipNextPressRef.current) {
+            skipNextPressRef.current = false;
+            return;
+          }
+          handleWatchPress();
+        }}
       >
         <PlayIcon size={16} />
         <Text style={styles.watchText}>

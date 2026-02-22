@@ -40,7 +40,7 @@ export function Header() {
   const weather = useWeather();
   const isTV = Platform.isTV;
   const [focused, setFocused] = useState<string | null>(null);
-  const backRef = useRef<React.ElementRef<typeof Pressable> | null>(null);
+  const backRef = useRef<React.ComponentRef<typeof Pressable> | null>(null);
   const [currentTime, setCurrentTime] = useState(
     formatCurrentHeaderDateTime()
   );

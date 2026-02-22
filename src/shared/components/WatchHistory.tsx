@@ -19,7 +19,7 @@ interface Props {
   onPress?: (item: WatchHistoryItem) => void;
 }
 
-export const WatchHistory = ({ item, onPress }: Props) => {
+export const WatchHistory = React.memo(({ item, onPress }: Props) => {
   const { t, i18n } = useTranslation();
   const [focused, setFocused] = useState(false);
 
@@ -92,7 +92,7 @@ export const WatchHistory = ({ item, onPress }: Props) => {
         )}
     </Pressable>
   );
-};
+});
 
 const styles = StyleSheet.create({
   card: {

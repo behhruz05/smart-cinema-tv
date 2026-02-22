@@ -32,12 +32,26 @@ export function ReelAction({
   const dispatch = useDispatch<AppDispatch>();
   const isTV = Platform.isTV;
   const [focusedLike, setFocusedLike] = React.useState(false);
+  const skipNextPressRef = React.useRef(false);
   const tvDirectionalFocusProps = isTV
     ? ({
         nextFocusUp,
         nextFocusDown,
       } as any)
     : null;
+  const handleLikePress = React.useCallback(() => {
+    dispatch(toggleLikeReel(reel.id));
+  }, [dispatch, reel.id]);
+
+  const handleLikeKeyDown = React.useCallback(
+    (event: any) => {
+      const key = event?.nativeEvent?.key;
+      if (key !== 'Enter' && key !== 'Select' && key !== ' ') return;
+      skipNextPressRef.current = true;
+      handleLikePress();
+    },
+    [handleLikePress],
+  );
 
   return (
     <View style={styles.container}>
@@ -51,7 +65,14 @@ export function ReelAction({
           onLikeFocus?.();
         }}
         onBlur={() => setFocusedLike(false)}
-        onPress={() => dispatch(toggleLikeReel(reel.id))}
+        onKeyDown={handleLikeKeyDown}
+        onPress={() => {
+          if (skipNextPressRef.current) {
+            skipNextPressRef.current = false;
+            return;
+          }
+          handleLikePress();
+        }}
         style={styles.button}
       >
         <View
