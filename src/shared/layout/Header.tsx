@@ -40,13 +40,7 @@ export function Header() {
   const weather = useWeather();
   const isTV = Platform.isTV;
   const [focused, setFocused] = useState<string | null>(null);
-  const backRef = useRef<any>(null);
-
-  useEffect(() => {
-    if (isTV && isSearch) {
-      backRef.current?.focus();
-    }
-  }, [isTV, isSearch]);
+  const backRef = useRef<React.ElementRef<typeof Pressable> | null>(null);
   const [currentTime, setCurrentTime] = useState(
     formatCurrentHeaderDateTime()
   );
@@ -62,6 +56,12 @@ export function Header() {
 
   const isSearch = currentRoute === 'Search';
   const isDarkMode = resolvedTheme === 'dark';
+
+  useEffect(() => {
+    if (isTV && isSearch) {
+      backRef.current?.focus();
+    }
+  }, [isTV, isSearch]);
 
   const animatedWidth = useRef(new Animated.Value(320)).current;
 

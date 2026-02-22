@@ -22,6 +22,7 @@ export function MovieDetailHero({
   backLabel,
   watchLabel,
   onBack,
+  onWatch,
 }: MovieDetailHeroProps) {
   const isTV = Platform.isTV;
   const [focusedControl, setFocusedControl] = React.useState<
@@ -93,6 +94,7 @@ export function MovieDetailHero({
               focusable={isTV}
               onFocus={() => setFocusedControl('watch')}
               onBlur={() => setFocusedControl(null)}
+              onPress={onWatch}
             >
               <PlayIcon size={18} color="#000" />
               <Text style={styles.primaryBtnText}>{watchLabel}</Text>

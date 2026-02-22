@@ -91,6 +91,14 @@
     "tomorrow": "Завтра",
     "live": "Прямой эфир"
   },
+  "player": {
+    "subtitle_size": "Размер субтитров",
+    "language": "Язык",
+    "quality": "Качество",
+    "size_small": "Мелкий",
+    "size_default": "Стандартный",
+    "size_large": "Крупный"
+  },
   "settings": {
     "interface_language": "Интерфейс и язык",
     "playback": "Воспроизведение",

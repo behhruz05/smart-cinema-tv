@@ -1,15 +1,20 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { homeService } from '../../service/home.service';
 import { movieService } from '../../service/movie.service';
+import { Reel } from '../../service/reel.service';
 import { tvService } from '../../service/tv.service';
+import { Carousel } from '../../types/home';
+import { WatchHistoryItem } from '../../types/history';
+import { Movie } from '../../types/search';
+import { TvChannel } from '../../types/tv';
 
 interface HomeState {
-  carousels: any[];
-  popular: any[];
-  latest: any[];
-  history: any[];
-  reels: any[];
-  channels: any[];
+  carousels: Carousel[];
+  popular: Movie[];
+  latest: Movie[];
+  history: WatchHistoryItem[];
+  reels: Reel[];
+  channels: TvChannel[];
   loading: boolean;
   error: string | null;
 }

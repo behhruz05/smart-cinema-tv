@@ -10,6 +10,8 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 
@@ -25,6 +27,10 @@ import {
   setSelectedChannelId,
 } from '../../../store/slice/tv.slice';
 import { TvCategory, TvProgram } from '../../../types/tv';
+import { RootStackParamList } from '../../../types/navigations';
+
+type ScreenNavigationProp =
+  NativeStackNavigationProp<RootStackParamList>;
 
 function formatProgramTime(dateValue: string) {
   const date = new Date(dateValue);
@@ -55,6 +61,7 @@ function getDayChips() {
 
 export function TvChannelsScreen() {
   const { t, i18n } = useTranslation();
+  const navigation = useNavigation<ScreenNavigationProp>();
   const dispatch = useDispatch<AppDispatch>();
   const isTV = Platform.isTV;
   const [focusedCategoryId, setFocusedCategoryId] = useState<
@@ -230,13 +237,25 @@ export function TvChannelsScreen() {
             </View>
           ) : (
             <>
-              <View style={styles.previewCard}>
+              <Pressable
+                focusable={isTV}
+                onPress={() =>
+                  navigation.navigate('Player', {
+                    sourceUri: channelDetail.flussonic_stream_name,
+                    posterUri: channelDetail.logo_url,
+                    title: channelDetail.name,
+                    subtitle: currentProgram?.title || t('tv_channels.live'),
+                    isLive: true,
+                  })
+                }
+                style={styles.previewCard}
+              >
                 <Image
                   source={{ uri: channelDetail.logo_url }}
                   style={styles.previewLogo}
                   resizeMode="contain"
                 />
-              </View>
+              </Pressable>
 
               <Text style={styles.sectionTitle}>
                 {t('tv_channels.schedule')}

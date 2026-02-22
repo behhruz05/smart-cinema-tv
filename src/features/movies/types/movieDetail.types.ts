@@ -8,6 +8,7 @@ export interface MovieDetailHeroProps {
   backLabel: string;
   watchLabel: string;
   onBack: () => void;
+  onWatch: () => void;
 }
 
 export interface MovieDetailFactsProps {

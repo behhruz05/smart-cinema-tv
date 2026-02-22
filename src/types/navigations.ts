@@ -18,4 +18,12 @@ export type RootStackParamList = {
     slug: string;
   };
   MovieDetail: { movieId: string };
+  Player: {
+    sourceUri?: string;
+    posterUri?: string;
+    title: string;
+    subtitle?: string;
+    isLive?: boolean;
+    durationSeconds?: number;
+  };
 };

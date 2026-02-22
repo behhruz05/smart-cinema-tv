@@ -91,6 +91,14 @@
     "tomorrow": "Ertaga",
     "live": "Jonli efir"
   },
+  "player": {
+    "subtitle_size": "Subtitr hajmi",
+    "language": "Til",
+    "quality": "Sifat",
+    "size_small": "Kichik",
+    "size_default": "Standart",
+    "size_large": "Katta"
+  },
   "settings": {
     "interface_language": "Interfeys va til",
     "playback": "Ijro",

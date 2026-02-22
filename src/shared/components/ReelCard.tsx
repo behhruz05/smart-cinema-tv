@@ -4,8 +4,13 @@ import {
   StyleSheet,
   Pressable,
 } from 'react-native';
+import { Reel } from '../../service/reel.service';
 
-export const ReelCard = ({ item }: any) => {
+interface Props {
+  item: Reel;
+}
+
+export const ReelCard = ({ item }: Props) => {
   const [focused, setFocused] = useState(false);
 
   return (

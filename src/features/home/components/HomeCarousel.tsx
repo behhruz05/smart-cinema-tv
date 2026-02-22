@@ -10,11 +10,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { CarouselItem } from './CarouselItem';
 import { AppDispatch, RootState } from '../../../store';
 import { fetchCarousels } from '../../../store/slice/home.slice';
+import { Carousel } from '../../../types/home';
 
 export function HomeCarousel() {
   const dispatch = useDispatch<AppDispatch>();
   const { width } = useWindowDimensions();
-  const listRef = useRef<FlatList<any>>(null);
+  const listRef = useRef<FlatList<Carousel>>(null);
   const currentIndexRef = useRef(0);
   const itemIntervalRef = useRef(0);
   const realignTimeoutRef = useRef<ReturnType<

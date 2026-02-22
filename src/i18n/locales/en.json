@@ -91,6 +91,14 @@
     "tomorrow": "Tomorrow",
     "live": "Live"
   },
+  "player": {
+    "subtitle_size": "Subtitle size",
+    "language": "Language",
+    "quality": "Quality",
+    "size_small": "Small",
+    "size_default": "Default",
+    "size_large": "Large"
+  },
   "settings": {
     "interface_language": "Interface and language",
     "playback": "Playback",

@@ -4,9 +4,11 @@ import {
   Movie,
   MovieDetail,
 } from '../types/search';
+import { WatchHistoryItem } from '../types/history';
 
 type MovieListResponse = ApiResponse<Movie[]>;
 type MovieDetailResponse = ApiResponse<MovieDetail>;
+type HistoryListResponse = ApiResponse<WatchHistoryItem[]>;
 
 export const movieService = {
   getPopular(page = 1, per_page = 20, lang = 'uz') {
@@ -22,7 +24,7 @@ export const movieService = {
   },
 
   getHistory(page = 1, per_page = 20, lang = 'uz') {
-    return api<MovieListResponse>(`/history/continue-watching?page=${page}&per_page=${per_page}`, {
+    return api<HistoryListResponse>(`/history/continue-watching?page=${page}&per_page=${per_page}`, {
       headers: { 'Accept-Language': lang },
     });
   },

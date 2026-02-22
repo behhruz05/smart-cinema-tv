@@ -11,6 +11,7 @@ import {
   useNavigation,
   useRoute,
 } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -28,11 +29,12 @@ type ScreenRouteProp = RouteProp<
   RootStackParamList,
   'MovieDetail'
 >;
+type ScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function MovieDetailScreen() {
   const { t, i18n } = useTranslation();
   const route = useRoute<ScreenRouteProp>();
-  const navigation = useNavigation();
+  const navigation = useNavigation<ScreenNavigationProp>();
   const dispatch = useDispatch<AppDispatch>();
   const { movieId } = route.params;
 
@@ -128,6 +130,16 @@ export function MovieDetailScreen() {
         backLabel={t('common.back')}
         watchLabel={t('home.carousel.watch')}
         onBack={() => navigation.goBack()}
+        onWatch={() =>
+          navigation.navigate('Player', {
+            sourceUri: movie.files?.[0]?.flussonic_vod_path,
+            posterUri: movie.poster_url,
+            title,
+            subtitle: durationLabel,
+            isLive: false,
+            durationSeconds: movie.duration_seconds,
+          })
+        }
       />
 
       <MovieDetailFacts
