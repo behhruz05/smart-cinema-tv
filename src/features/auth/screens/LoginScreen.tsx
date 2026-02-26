@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Image,
   Pressable,
   StyleSheet,
@@ -8,17 +9,29 @@ import {
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import QRCode from 'react-native-qrcode-svg';
 
 import { authApi } from '../services/auth.api';
 import { useAuth } from '../../../app/providers/AppProviders';
 import { EyeIcon, EyeOffIcon } from '../../../shared/icons/EyeIcon';
 import { fetchMe } from '../../../store/slice/auth.slice';
 import { store } from '../../../store';
+import { deviceStorage } from '../../../shared/lib/deviceStorage';
 
 const Logo = require('../../../assets/imgs/Group.png');
 const SplineBg = require('../../../assets/imgs/Spline.png');
-const QrCode = require('../../../assets/imgs/QR-code.png');
+const QrCenterLogo = require('../../../assets/imgs/QrCode.png');
+
 const TV_CODE_LENGTH = 6;
+
+type SessionState = 'loading' | 'pending' | 'expired' | 'error';
+
+interface TVSession {
+  session_id: string;
+  code: string;
+  qr_data: string;
+  expires_in: number;
+}
 
 export function LoginScreen() {
   const { t } = useTranslation();
@@ -34,19 +47,61 @@ export function LoginScreen() {
     null | 'login' | 'password' | 'submit'
   >(null);
 
-  const [tvCode, setTvCode] = useState<string[]>(
-    Array.from({ length: TV_CODE_LENGTH }, () => ''),
-  );
-  const [focusedCodeIndex, setFocusedCodeIndex] =
-    useState<number | null>(null);
-  const codeInputRefs = useRef<Array<TextInput | null>>([]);
+  // TV session
+  const [session, setSession] = useState<TVSession | null>(null);
+  const [sessionState, setSessionState] =
+    useState<SessionState>('loading');
 
-  const deviceInfo = {
-    device_id: `TV-${Math.random().toString(36).slice(2)}`,
-    device_type: 'tv' as const,
-    device_name: 'Android TV',
-    notification_id: null,
-  };
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
+  const deviceIdRef = useRef<string>('');
+
+  const stopPolling = useCallback(() => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+  }, []);
+
+  const createSession = useCallback(async () => {
+    setSessionState('loading');
+    setSession(null);
+    stopPolling();
+    try {
+      const deviceId = await deviceStorage.getOrCreate();
+      deviceIdRef.current = deviceId;
+      const data = await authApi.createTVSession(deviceId, 'Android TV');
+      setSession(data);
+      setSessionState('pending');
+
+      pollIntervalRef.current = setInterval(async () => {
+        try {
+          const status = await authApi.checkTVStatus(data.session_id);
+          if (status.status === 'confirmed' && status.tokens) {
+            stopPolling();
+            await setToken(status.tokens.access_token);
+            dispatch(fetchMe());
+          } else if (status.status === 'expired') {
+            stopPolling();
+            setSessionState('expired');
+          }
+        } catch {
+          // ignore transient poll errors
+        }
+      }, 4000);
+    } catch {
+      setSessionState('error');
+    }
+  }, [dispatch, setToken, stopPolling]);
+
+  useEffect(() => {
+    createSession();
+    return () => {
+      stopPolling();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const detectLoginType = (
     value: string,
@@ -55,25 +110,6 @@ export function LoginScreen() {
       return 'phone';
     }
     return 'username';
-  };
-
-  const onCodeChange = (
-    value: string,
-    index: number,
-  ) => {
-    if (!/^[0-9]?$/.test(value)) return;
-
-    const next = [...tvCode];
-    next[index] = value;
-    setTvCode(next);
-
-    if (value && index < TV_CODE_LENGTH - 1) {
-      codeInputRefs.current[index + 1]?.focus();
-    }
-
-    if (!value && index > 0) {
-      codeInputRefs.current[index - 1]?.focus();
-    }
   };
 
   const onLogin = async () => {
@@ -87,13 +123,17 @@ export function LoginScreen() {
     setError('');
 
     try {
+      const deviceId =
+        deviceIdRef.current || (await deviceStorage.getOrCreate());
       const payload = {
         login_type: loginType,
-        username:
-          loginType === 'username' ? login : null,
+        username: loginType === 'username' ? login : null,
         phone: loginType === 'phone' ? login : null,
         password,
-        ...deviceInfo,
+        device_id: deviceId,
+        device_type: 'tv' as const,
+        device_name: 'Android TV',
+        notification_id: null,
       };
 
       const token = await authApi.login(payload);
@@ -104,6 +144,61 @@ export function LoginScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Split session.code into individual digits for display
+  const codeDigits = session?.code
+    ? session.code.split('')
+    : Array(TV_CODE_LENGTH).fill('');
+
+  const renderQrSection = () => {
+    if (sessionState === 'loading') {
+      return (
+        <View style={styles.qrBox}>
+          <ActivityIndicator size="large" color="#dc2626" />
+        </View>
+      );
+    }
+
+    if (sessionState === 'expired' || sessionState === 'error') {
+      return (
+        <Pressable
+          focusable
+          onPress={createSession}
+          style={styles.qrBox}>
+          <Text style={styles.qrRetryText}>
+            {sessionState === 'expired'
+              ? t('login.session_expired')
+              : t('login.session_error')}
+          </Text>
+          <Text style={styles.qrRetryHint}>{t('login.refresh')}</Text>
+        </Pressable>
+      );
+    }
+
+    if (session?.qr_data) {
+      return (
+        <View style={styles.qrBox}>
+          <QRCode
+            value={session.qr_data}
+            size={176}
+            color="#000000"
+            backgroundColor="#ffffff"
+            logo={QrCenterLogo}
+            logoSize={44}
+            logoMargin={8}
+            logoBackgroundColor="#ffffff"
+            logoBorderRadius={10}
+          />
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.qrBox}>
+        <ActivityIndicator size="large" color="#dc2626" />
+      </View>
+    );
   };
 
   return (
@@ -122,7 +217,7 @@ export function LoginScreen() {
             {t('login.subtitle')}
           </Text>
 
-          <Image source={QrCode} style={styles.qrBox} />
+          {renderQrSection()}
         </View>
 
         <View style={styles.rightColumn}>
@@ -135,10 +230,8 @@ export function LoginScreen() {
             onBlur={() => setFocusedField(null)}
             style={[
               styles.inputWrapper,
-              focusedField === 'login' &&
-                styles.inputFocused,
-            ]}
-          >
+              focusedField === 'login' && styles.inputFocused,
+            ]}>
             <TextInput
               style={styles.input}
               value={login}
@@ -153,16 +246,12 @@ export function LoginScreen() {
           </Text>
           <Pressable
             focusable
-            onFocus={() =>
-              setFocusedField('password')
-            }
+            onFocus={() => setFocusedField('password')}
             onBlur={() => setFocusedField(null)}
             style={[
               styles.inputWrapper,
-              focusedField === 'password' &&
-                styles.inputFocused,
-            ]}
-          >
+              focusedField === 'password' && styles.inputFocused,
+            ]}>
             <TextInput
               style={styles.input}
               value={password}
@@ -174,10 +263,7 @@ export function LoginScreen() {
             <Pressable
               focusable={false}
               style={styles.iconRight}
-              onPress={() =>
-                setShowPassword(!showPassword)
-              }
-            >
+              onPress={() => setShowPassword(!showPassword)}>
               {showPassword ? (
                 <EyeOffIcon size={20} color="#9ca3af" />
               ) : (
@@ -198,11 +284,9 @@ export function LoginScreen() {
             onBlur={() => setFocusedField(null)}
             style={[
               styles.button,
-              focusedField === 'submit' &&
-                styles.buttonFocused,
+              focusedField === 'submit' && styles.buttonFocused,
               loading && styles.buttonDisabled,
-            ]}
-          >
+            ]}>
             <Text style={styles.buttonText}>
               {loading
                 ? t('login.login_loading')
@@ -220,63 +304,19 @@ export function LoginScreen() {
 
           <View style={styles.codeWrapper}>
             <View style={styles.codeRow}>
-              {tvCode.slice(0, 3).map((digit, index) => (
-                <TextInput
-                  key={index}
-                  ref={ref => {
-                    codeInputRefs.current[index] = ref;
-                  }}
-                  style={[
-                    styles.codeBox,
-                    focusedCodeIndex === index &&
-                      styles.codeBoxFocused,
-                  ]}
-                  value={digit}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  onFocus={() =>
-                    setFocusedCodeIndex(index)
-                  }
-                  onBlur={() =>
-                    setFocusedCodeIndex(null)
-                  }
-                  onChangeText={value =>
-                    onCodeChange(value, index)
-                  }
-                />
+              {codeDigits.slice(0, 3).map((digit, index) => (
+                <View key={index} style={styles.codeBox}>
+                  <Text style={styles.codeBoxText}>{digit}</Text>
+                </View>
               ))}
 
               <Text style={styles.dash}>-</Text>
 
-              {tvCode.slice(3).map((digit, index) => {
-                const realIndex = index + 3;
-                return (
-                  <TextInput
-                    key={realIndex}
-                    ref={ref => {
-                      codeInputRefs.current[realIndex] = ref;
-                    }}
-                    style={[
-                      styles.codeBox,
-                      focusedCodeIndex ===
-                        realIndex &&
-                        styles.codeBoxFocused,
-                    ]}
-                    value={digit}
-                    keyboardType="number-pad"
-                    maxLength={1}
-                    onFocus={() =>
-                      setFocusedCodeIndex(realIndex)
-                    }
-                    onBlur={() =>
-                      setFocusedCodeIndex(null)
-                    }
-                    onChangeText={value =>
-                      onCodeChange(value, realIndex)
-                    }
-                  />
-                );
-              })}
+              {codeDigits.slice(3).map((digit, index) => (
+                <View key={index + 3} style={styles.codeBox}>
+                  <Text style={styles.codeBoxText}>{digit}</Text>
+                </View>
+              ))}
             </View>
 
             <Text style={styles.codeHint}>
@@ -341,6 +381,23 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     marginTop: 30,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  qrRetryText: {
+    color: '#f87171',
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 8,
+    
+  },
+  qrRetryHint: {
+    color: '#9ca3af',
+    fontSize: 12,
+    textAlign: 'center',
   },
   rightColumn: {
     width: '55%',
@@ -432,14 +489,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#1c1c1c',
     borderWidth: 2,
     borderColor: '#2a2a2a',
-    color: '#fff',
-    textAlign: 'center',
-    fontSize: 19,
-    padding: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  codeBoxFocused: {
-    borderColor: '#fff',
-    borderWidth: 2,
+  codeBoxText: {
+    color: '#fff',
+    fontSize: 19,
+    fontWeight: '600',
   },
   dash: {
     color: '#9ca3af',

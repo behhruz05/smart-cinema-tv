@@ -21,7 +21,14 @@
     "or_enter_code": "yoki TV kodini kiriting",
     "code_hint": "Kodni televizorda tasdiqlang yoki to'liq kiriting",
     "fill_fields": "Barcha maydonlarni to'ldiring",
-    "login_error": "Kirishda xatolik"
+    "login_error": "Kirishda xatolik",
+    "loading_session": "Yuklanmoqda...",
+    "session_error": "Xatolik yuz berdi",
+    "session_expired": "Sessiya tugadi",
+    "session_confirmed": "Muvaffaqiyatli kirildi!",
+    "refresh": "Yangilash",
+    "tv_code_label": "Yoki ushbu kodni kiriting",
+    "code_expires": "Kod {{time}} da tugaydi"
   },
   "genre": {
     "title": "Janrlar",

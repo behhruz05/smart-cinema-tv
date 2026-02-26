@@ -21,7 +21,14 @@
     "or_enter_code": "or enter TV code",
     "code_hint": "Confirm on TV or enter the full code",
     "fill_fields": "Fill all fields",
-    "login_error": "Login error"
+    "login_error": "Login error",
+    "loading_session": "Loading...",
+    "session_error": "An error occurred",
+    "session_expired": "Session expired",
+    "session_confirmed": "Signed in successfully!",
+    "refresh": "Refresh",
+    "tv_code_label": "Or enter this code",
+    "code_expires": "Code expires in {{time}}"
   },
   "genre": {
     "title": "Genres",

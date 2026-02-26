@@ -21,7 +21,14 @@
     "or_enter_code": "или введите код для TV",
     "code_hint": "Подтвердите код на телевизоре или введите его полностью",
     "fill_fields": "Заполните все поля",
-    "login_error": "Ошибка входа"
+    "login_error": "Ошибка входа",
+    "loading_session": "Загрузка...",
+    "session_error": "Произошла ошибка",
+    "session_expired": "Сессия истекла",
+    "session_confirmed": "Вход выполнен успешно!",
+    "refresh": "Обновить",
+    "tv_code_label": "Или введите этот код",
+    "code_expires": "Код истекает через {{time}}"
   },
   "genre": {
     "title": "Жанры",
