@@ -13,6 +13,9 @@ import {
 } from '../utils/timeFormatted';
 import { useTranslation } from 'react-i18next';
 import { WatchHistoryItem } from '../../types/history';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../types/navigations';
 
 interface Props {
   item: WatchHistoryItem;
@@ -22,6 +25,8 @@ interface Props {
 export const WatchHistory = React.memo(({ item, onPress }: Props) => {
   const { t, i18n } = useTranslation();
   const [focused, setFocused] = useState(false);
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const duration = formatDurationHM(
     item.total_duration_seconds
@@ -41,12 +46,42 @@ export const WatchHistory = React.memo(({ item, onPress }: Props) => {
 
   const isSeries =
     item.type === 'series' ||
+    item.type === 'episode' ||
     !!item.episode_number;
+
+  const handleDefaultPress = () => {
+    const contentId =
+      item.content_id || item.movie_id || item.episode_id || item.id;
+
+    if (item.type === 'movie') {
+      navigation.navigate('MovieDetail', {
+        movieId: contentId,
+      });
+      return;
+    }
+
+    if (contentId) {
+      navigation.navigate('Player', {
+        episodeId: contentId,
+        posterUri: item.poster_url,
+        title: item.title_uz || item.title_ru || item.title_en || '',
+        subtitle: '',
+        isLive: false,
+        durationSeconds: item.total_duration_seconds,
+      });
+    }
+  };
 
   return (
     <Pressable
       focusable
-      onPress={() => onPress?.(item)}
+      onPress={() => {
+        if (onPress) {
+          onPress(item);
+          return;
+        }
+        handleDefaultPress();
+      }}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
       style={styles.card}

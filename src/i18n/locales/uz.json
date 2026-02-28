@@ -114,7 +114,9 @@
     "loading_stream": "Video yuklanmoqda...",
     "stream_unavailable": "Video oqimini ochib bo'lmadi",
     "live": "JONLI",
-    "retry": "Qayta urinish"
+    "retry": "Qayta urinish",
+    "seek_mode_hint": "Progressni boshqarish uchun OK bosing",
+    "seek_mode_active": "Chap/O'ng suring, OK tasdiqlaydi"
   },
   "settings": {
     "interface_language": "Interfeys va til",

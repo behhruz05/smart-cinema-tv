@@ -114,7 +114,9 @@
     "loading_stream": "Loading video...",
     "stream_unavailable": "Unable to open video stream",
     "live": "LIVE",
-    "retry": "Retry"
+    "retry": "Retry",
+    "seek_mode_hint": "Press OK to control progress",
+    "seek_mode_active": "Left/Right seek, OK to apply"
   },
   "settings": {
     "interface_language": "Interface and language",

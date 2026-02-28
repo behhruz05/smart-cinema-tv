@@ -18,8 +18,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootStackParamList } from '../../../types/navigations';
 import { AppDispatch, RootState } from '../../../store';
 import {
+  checkMovieFavorite,
   fetchMovieById,
   fetchMoviesByCountry,
+  toggleMovieFavorite,
 } from '../../../store/slice/movie.slice';
 import { MovieDetailHero } from '../components/MovieDetailHero';
 import { MovieDetailFacts } from '../components/MovieDetailFacts';
@@ -43,6 +45,7 @@ export function MovieDetailScreen() {
     detailStatus,
     relatedMovies,
     relatedStatus,
+    favoriteStatus,
   } = useSelector((state: RootState) => state.movie);
 
   const lang = i18n.language.startsWith('ru')
@@ -53,6 +56,7 @@ export function MovieDetailScreen() {
 
   useEffect(() => {
     dispatch(fetchMovieById({ movieId, lang }));
+    dispatch(checkMovieFavorite({ movieId, lang }));
   }, [dispatch, lang, movieId]);
 
   useEffect(() => {
@@ -128,6 +132,8 @@ export function MovieDetailScreen() {
         durationLabel={durationLabel}
         backLabel={t('common.back')}
         watchLabel={t('home.carousel.watch')}
+        isFavorite={Boolean(movie.is_favorite)}
+        isFavoriteLoading={favoriteStatus === 'loading'}
         onBack={() => navigation.goBack()}
         onWatch={() =>
           navigation.navigate('Player', {
@@ -139,6 +145,15 @@ export function MovieDetailScreen() {
             durationSeconds: movie.duration_seconds,
           })
         }
+        onToggleFavorite={() => {
+          dispatch(
+            toggleMovieFavorite({
+              movieId: movie.id,
+              lang,
+              shouldFavorite: !movie.is_favorite,
+            }),
+          );
+        }}
       />
 
       <MovieDetailFacts

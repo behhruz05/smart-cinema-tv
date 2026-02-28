@@ -9,6 +9,20 @@ import { WatchHistoryItem } from '../types/history';
 type MovieListResponse = ApiResponse<Movie[]>;
 type MovieDetailResponse = ApiResponse<MovieDetail>;
 type HistoryListResponse = ApiResponse<WatchHistoryItem[]>;
+type FavoriteCheckResponse = ApiResponse<{ is_favorite: boolean }>;
+type FavoriteMovieItem = {
+  id: string;
+  movie_id: string;
+  movie: Movie;
+  created_at: string;
+};
+type FavoriteMovieListResponse = ApiResponse<{
+  items: FavoriteMovieItem[];
+  total: number;
+  page: number;
+  page_size: number;
+  has_next: boolean;
+}>;
 
 export const movieService = {
   getPopular(page = 1, per_page = 20, lang = 'uz') {
@@ -23,8 +37,8 @@ export const movieService = {
     });
   },
 
-  getHistory(page = 1, per_page = 20, lang = 'uz') {
-    return api<HistoryListResponse>(`/history/continue-watching?page=${page}&per_page=${per_page}`, {
+  getHistory(limit = 20, lang = 'uz') {
+    return api<HistoryListResponse>(`/history/continue-watching?limit=${limit}`, {
       headers: { 'Accept-Language': lang },
     });
   },
@@ -56,5 +70,40 @@ export const movieService = {
     return api<MovieDetailResponse>(`/movies/${movieId}`, {
       headers: { 'Accept-Language': lang },
     });
+  },
+
+  addMovieToFavorites(movieId: string, lang = 'uz') {
+    return api<ApiResponse<FavoriteMovieItem>>(
+      `/favorites/movies/${movieId}`,
+      {
+        method: 'POST',
+        headers: { 'Accept-Language': lang },
+      },
+    );
+  },
+
+  removeMovieFromFavorites(movieId: string, lang = 'uz') {
+    return api(`/favorites/movies/${movieId}`, {
+      method: 'DELETE',
+      headers: { 'Accept-Language': lang },
+    });
+  },
+
+  checkMovieFavorite(movieId: string, lang = 'uz') {
+    return api<FavoriteCheckResponse>(
+      `/favorites/movies/${movieId}/check`,
+      {
+        headers: { 'Accept-Language': lang },
+      },
+    );
+  },
+
+  getFavoriteMovies(page = 1, page_size = 20, lang = 'uz') {
+    return api<FavoriteMovieListResponse>(
+      `/favorites/movies?page=${page}&page_size=${page_size}`,
+      {
+        headers: { 'Accept-Language': lang },
+      },
+    );
   },
 };

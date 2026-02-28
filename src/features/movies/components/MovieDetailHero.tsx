@@ -21,8 +21,11 @@ export function MovieDetailHero({
   durationLabel,
   backLabel,
   watchLabel,
+  isFavorite,
+  isFavoriteLoading = false,
   onBack,
   onWatch,
+  onToggleFavorite,
 }: MovieDetailHeroProps) {
   const isTV = Platform.isTV;
   const [focusedControl, setFocusedControl] = React.useState<
@@ -104,12 +107,19 @@ export function MovieDetailHero({
               style={[
                 styles.secondaryBtn,
                 focusedControl === 'save' && styles.focusedControl,
+                isFavorite && styles.activeSaveBtn,
               ]}
               focusable={isTV}
               onFocus={() => setFocusedControl('save')}
               onBlur={() => setFocusedControl(null)}
+              onPress={onToggleFavorite}
+              disabled={isFavoriteLoading}
             >
-              <SavedIcon size={22} color="#fff" />
+              <SavedIcon
+                size={22}
+                color="#fff"
+                filled={isFavorite}
+              />
             </Pressable>
           </View>
         </View>
@@ -243,6 +253,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
+  },
+  activeSaveBtn: {
+    borderColor: '#ffffff',
+    backgroundColor: 'rgba(255,255,255,0.22)',
   },
   focusedControl: {
     borderWidth: 2,

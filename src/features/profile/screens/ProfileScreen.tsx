@@ -1,27 +1,42 @@
-import React, { useEffect } from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { AppDispatch, RootState } from '../../../store';
 import { WatchHistory } from '../../../shared/components/WatchHistory';
 import { fetchHistory } from '../../../store/slice/home.slice';
 import { Section } from '../../../shared/components/Section';
+import { fetchFavoriteMovies } from '../../../store/slice/movie.slice';
+import { NewMovieCard } from '../../../shared/components/NewMovieCard';
 
 export function ProfileScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch<AppDispatch>();
   const { history } =
     useSelector((state: RootState) => state.home);
+  const { favoriteMovies } =
+    useSelector((state: RootState) => state.movie);
+  const lang = i18n.language.startsWith('ru')
+    ? 'ru'
+    : i18n.language.startsWith('en')
+      ? 'en'
+      : 'uz';
 
-  useEffect(() => {
-    dispatch(fetchHistory());
-  }, [dispatch]);
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(fetchHistory());
+      dispatch(
+        fetchFavoriteMovies({ page: 1, pageSize: 20, lang }),
+      );
+    }, [dispatch, lang]),
+  );
 
   return (
     <FlatList
@@ -49,8 +64,8 @@ export function ProfileScreen() {
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={false}
-              data={history}
-              keyExtractor={(item) => item.id}
+              data={history?.filter(item => Boolean(item?.id))}
+              keyExtractor={(item) => String(item.id)}
               renderItem={({ item }) => (
                 <WatchHistory item={item} />
               )}
@@ -58,14 +73,17 @@ export function ProfileScreen() {
           </Section>
 
           {/* Saved */}
-          <Section title={t('profile.saved')} data={history}>
+          <Section title={t('profile.saved')} data={favoriteMovies}>
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={false}
-              data={history}
-              keyExtractor={(item) => item.id}
+              data={favoriteMovies?.filter(item => Boolean(item?.id))}
+              keyExtractor={(item) => String(item.id)}
               renderItem={({ item }) => (
-                <WatchHistory item={item} />
+                <NewMovieCard
+                  movie={item}
+                  style={styles.savedCard}
+                />
               )}
             />
           </Section>
@@ -107,5 +125,9 @@ const styles = StyleSheet.create({
   userId: {
     color: '#888',
     marginTop: 6,
+  },
+  savedCard: {
+    width: 200,
+    marginRight: 16,
   },
 });

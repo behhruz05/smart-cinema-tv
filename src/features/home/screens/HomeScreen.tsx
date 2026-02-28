@@ -55,19 +55,29 @@ export function HomeScreen() {
       <WatchHistory
         item={item}
         onPress={(historyItem: WatchHistoryItem) => {
+          const contentId =
+            historyItem.content_id ||
+            historyItem.movie_id ||
+            historyItem.episode_id ||
+            historyItem.id;
+
           if (historyItem.type === 'movie') {
-            const movieId = historyItem.movie_id || historyItem.id;
-            navigation.navigate('MovieDetail', { movieId });
+            navigation.navigate('MovieDetail', {
+              movieId: contentId,
+            });
             return;
           }
-          const episodeId = historyItem.episode_id;
-          if (!episodeId) {
+          if (!contentId) {
             return;
           }
           navigation.navigate('Player', {
-            episodeId,
+            episodeId: contentId,
             posterUri: historyItem.poster_url,
-            title: historyItem.title_uz || historyItem.title_ru || '',
+            title:
+              historyItem.title_uz ||
+              historyItem.title_ru ||
+              historyItem.title_en ||
+              '',
             subtitle: '',
             isLive: false,
             durationSeconds: historyItem.total_duration_seconds,

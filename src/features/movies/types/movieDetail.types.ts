@@ -7,8 +7,11 @@ export interface MovieDetailHeroProps {
   durationLabel: string;
   backLabel: string;
   watchLabel: string;
+  isFavorite: boolean;
+  isFavoriteLoading?: boolean;
   onBack: () => void;
   onWatch: () => void;
+  onToggleFavorite: () => void;
 }
 
 export interface MovieDetailFactsProps {

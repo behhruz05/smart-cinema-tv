@@ -26,6 +26,8 @@ interface SearchState {
   selectedMovie: MovieDetail | null;
   detailStatus: Status;
   relatedStatus: Status;
+  favoriteStatus: Status;
+  favoriteMovies: Movie[];
 
   query: string;
   error: string | null;
@@ -46,6 +48,8 @@ const initialState: SearchState = {
   selectedMovie: null,
   detailStatus: 'idle',
   relatedStatus: 'idle',
+  favoriteStatus: 'idle',
+  favoriteMovies: [],
 
   query: '',
   error: null,
@@ -139,6 +143,90 @@ export const fetchMoviesByCountry = createAsyncThunk(
   },
 );
 
+export const checkMovieFavorite = createAsyncThunk(
+  'movie/checkFavorite',
+  async (
+    {
+      movieId,
+      lang,
+    }: {
+      movieId: string;
+      lang: 'uz' | 'ru' | 'en';
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      const res = await movieService.checkMovieFavorite(movieId, lang);
+      return {
+        movieId,
+        is_favorite: res.data.is_favorite,
+      };
+    } catch (e: any) {
+      return rejectWithValue(e.message);
+    }
+  },
+);
+
+export const toggleMovieFavorite = createAsyncThunk(
+  'movie/toggleFavorite',
+  async (
+    {
+      movieId,
+      lang,
+      shouldFavorite,
+    }: {
+      movieId: string;
+      lang: 'uz' | 'ru' | 'en';
+      shouldFavorite: boolean;
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      if (shouldFavorite) {
+        await movieService.addMovieToFavorites(movieId, lang);
+      } else {
+        await movieService.removeMovieFromFavorites(movieId, lang);
+      }
+
+      return {
+        movieId,
+        is_favorite: shouldFavorite,
+      };
+    } catch (e: any) {
+      return rejectWithValue(e.message);
+    }
+  },
+);
+
+export const fetchFavoriteMovies = createAsyncThunk(
+  'movie/fetchFavorites',
+  async (
+    {
+      page = 1,
+      pageSize = 20,
+      lang,
+    }: {
+      page?: number;
+      pageSize?: number;
+      lang: 'uz' | 'ru' | 'en';
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      const res = await movieService.getFavoriteMovies(
+        page,
+        pageSize,
+        lang,
+      );
+      return res.data.items
+        .map(item => item.movie)
+        .filter((item): item is Movie => Boolean(item && item.id));
+    } catch (e: any) {
+      return rejectWithValue(e.message);
+    }
+  },
+);
+
 
 const movieSlice = createSlice({
   name: 'movie',
@@ -213,6 +301,73 @@ const movieSlice = createSlice({
   }
   state.searchStatus = 'error';
 })
+
+      .addCase(checkMovieFavorite.fulfilled, (state, action) => {
+        if (
+          state.selectedMovie &&
+          state.selectedMovie.id === action.payload.movieId
+        ) {
+          state.selectedMovie.is_favorite = action.payload.is_favorite;
+        }
+      })
+
+      .addCase(toggleMovieFavorite.pending, (state, action) => {
+        state.favoriteStatus = 'loading';
+        if (
+          state.selectedMovie &&
+          state.selectedMovie.id === action.meta.arg.movieId
+        ) {
+          state.selectedMovie.is_favorite =
+            action.meta.arg.shouldFavorite;
+        }
+      })
+      .addCase(toggleMovieFavorite.fulfilled, (state, action) => {
+        state.favoriteStatus = 'success';
+        if (
+          state.selectedMovie &&
+          state.selectedMovie.id === action.payload.movieId
+        ) {
+          state.selectedMovie.is_favorite = action.payload.is_favorite;
+        }
+
+        if (action.payload.is_favorite) {
+          if (
+            state.selectedMovie &&
+            !state.favoriteMovies.some(
+              movie => movie.id === state.selectedMovie?.id,
+            )
+          ) {
+            state.favoriteMovies.unshift({
+              ...state.selectedMovie,
+            });
+          }
+        } else {
+          state.favoriteMovies = state.favoriteMovies.filter(
+            movie => movie.id !== action.payload.movieId,
+          );
+        }
+      })
+      .addCase(toggleMovieFavorite.rejected, (state, action) => {
+        state.favoriteStatus = 'error';
+        if (
+          state.selectedMovie &&
+          state.selectedMovie.id === action.meta.arg.movieId
+        ) {
+          state.selectedMovie.is_favorite =
+            !action.meta.arg.shouldFavorite;
+        }
+      })
+
+      .addCase(fetchFavoriteMovies.pending, (state) => {
+        state.favoriteStatus = 'loading';
+      })
+      .addCase(fetchFavoriteMovies.fulfilled, (state, action) => {
+        state.favoriteStatus = 'success';
+        state.favoriteMovies = action.payload;
+      })
+      .addCase(fetchFavoriteMovies.rejected, (state) => {
+        state.favoriteStatus = 'error';
+      })
 
 
       .addCase(fetchGenres.pending, (state) => {

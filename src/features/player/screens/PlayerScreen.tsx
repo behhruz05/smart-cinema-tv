@@ -33,11 +33,14 @@ type FocusedControlId =
   | 'play'
   | 'rewind'
   | 'forward'
+  | 'progress'
   | 'mute'
   | 'settings'
   | 'back'
   | 'retry';
 const MAX_STREAM_RELOADS = 2;
+const SEEK_STEP_SECONDS = 10;
+const CONTROLS_HIDE_DELAY_MS = 5000;
 
 function getVideoComponent(): React.ComponentType<any> | null {
   try {
@@ -99,6 +102,13 @@ export function PlayerScreen() {
   const streamReloadAttemptRef = useRef(0);
   const firstFrameReadyRef = useRef(false);
   const playbackFailureRef = useRef<(error?: any) => void>(() => {});
+  const isPausedRef = useRef(false);
+  const settingsVisibleRef = useRef(false);
+  const controlsVisibleRef = useRef(true);
+  const seekByRef = useRef<(delta: number) => void>(() => {});
+  const togglePlayPauseRef = useRef<() => void>(() => {});
+  const pingControlsRef = useRef<() => void>(() => {});
+  const seekIndicatorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
     movieId,
@@ -138,6 +148,7 @@ export function PlayerScreen() {
   const [subtitles, setSubtitles] = useState<StreamPayload['subtitles']>([]);
   const [audioTracks, setAudioTracks] = useState<StreamPayload['audio_tracks']>([]);
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [seekIndicatorVisible, setSeekIndicatorVisible] = useState(false);
 
   const VideoComponent = useMemo(() => getVideoComponent(), []);
   const TVEventHandlerClass = useMemo(() => getTVEventHandlerClass(), []);
@@ -148,6 +159,7 @@ export function PlayerScreen() {
   const hasVideoSource = Boolean(playbackUri && /^(https?:\/\/|rtmp:\/\/|file:\/\/)/i.test(playbackUri));
   const canSeek = !isLive && duration > 0;
   const progressPercent = canSeek ? Math.min(100, (currentTime / duration) * 100) : 100;
+  const progressThumbPercent = Math.min(100, Math.max(0, progressPercent));
   const appLanguage = getAppLanguage();
 
   useEffect(() => {
@@ -165,12 +177,12 @@ export function PlayerScreen() {
   const pingControls = useCallback(() => {
     setControlsVisible(true);
     if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
-    if (!settingsVisible && !isPaused) {
-      hideTimeoutRef.current = setTimeout(() => {
-        setControlsVisible(false);
-      }, 4500);
-    }
-  }, [isPaused, settingsVisible]);
+    hideTimeoutRef.current = setTimeout(() => {
+      if (settingsVisibleRef.current) return;
+      if (isPausedRef.current) return;
+      setControlsVisible(false);
+    }, CONTROLS_HIDE_DELAY_MS);
+  }, []);
 
   const clearStartupTimer = useCallback(() => {
     if (startupTimerRef.current) {
@@ -346,6 +358,18 @@ export function PlayerScreen() {
     firstFrameReadyRef.current = firstFrameReady;
   }, [firstFrameReady]);
 
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
+  useEffect(() => {
+    settingsVisibleRef.current = settingsVisible;
+  }, [settingsVisible]);
+
+  useEffect(() => {
+    controlsVisibleRef.current = controlsVisible;
+  }, [controlsVisible]);
+
   const seekBy = useCallback(
     (delta: number) => {
       if (!canSeek) return;
@@ -353,14 +377,34 @@ export function PlayerScreen() {
       setCurrentTime(next);
       currentTimeRef.current = next;
       playerRef.current?.seek?.(next);
+      setSeekIndicatorVisible(true);
+      if (seekIndicatorTimeoutRef.current) {
+        clearTimeout(seekIndicatorTimeoutRef.current);
+      }
+      seekIndicatorTimeoutRef.current = setTimeout(() => {
+        setSeekIndicatorVisible(false);
+      }, 1200);
+      setControlsVisible(true);
       pingControls();
     },
     [canSeek, duration, pingControls],
   );
 
+  useEffect(() => {
+    seekByRef.current = seekBy;
+  }, [seekBy]);
+
   const togglePlayPause = useCallback(() => {
     setIsPaused(prev => !prev);
     pingControls();
+  }, [pingControls]);
+
+  useEffect(() => {
+    togglePlayPauseRef.current = togglePlayPause;
+  }, [togglePlayPause]);
+
+  useEffect(() => {
+    pingControlsRef.current = pingControls;
   }, [pingControls]);
 
   const toggleSettings = useCallback(() => {
@@ -418,6 +462,9 @@ export function PlayerScreen() {
   useEffect(() => {
     return () => {
       clearStartupTimer();
+      if (seekIndicatorTimeoutRef.current) {
+        clearTimeout(seekIndicatorTimeoutRef.current);
+      }
       submitProgress(currentTimeRef.current, true);
     };
   }, [clearStartupTimer, submitProgress]);
@@ -427,57 +474,79 @@ export function PlayerScreen() {
 
     const handler = new TVEventHandlerClass();
     handler.enable(null, (_: any, event: { eventType?: string }) => {
-      const type = event?.eventType;
-      if (!type) return;
+      const rawType = event?.eventType;
+      if (!rawType) return;
+
+      const type =
+        rawType === 'swipeLeft'
+          ? 'left'
+          : rawType === 'swipeRight'
+            ? 'right'
+            : rawType === 'swipeUp'
+              ? 'up'
+              : rawType === 'swipeDown'
+                ? 'down'
+                : rawType === 'rewind'
+                  ? 'left'
+                  : rawType === 'fastForward'
+                    ? 'right'
+                    : rawType === 'back'
+                      ? 'menu'
+                      : rawType === 'escape'
+                        ? 'menu'
+                        : rawType === 'ok'
+                          ? 'select'
+                          : rawType === 'enter'
+                            ? 'select'
+                            : rawType;
+
+      if (!controlsVisibleRef.current) {
+        setControlsVisible(true);
+      }
+      pingControlsRef.current();
 
       if (type === 'playPause') {
-        togglePlayPause();
+        togglePlayPauseRef.current();
         return;
       }
 
       if (type === 'left') {
-        seekBy(-10);
+        if (settingsVisibleRef.current) {
+          setSettingsVisible(false);
+        }
+        seekByRef.current(-SEEK_STEP_SECONDS);
         return;
       }
 
       if (type === 'right') {
-        seekBy(10);
-        return;
-      }
-
-      if (type === 'up') {
-        setControlsVisible(true);
-        pingControls();
-        return;
-      }
-
-      if (type === 'down') {
-        if (!controlsVisible) {
-          setControlsVisible(true);
-          pingControls();
-          return;
+        if (settingsVisibleRef.current) {
+          setSettingsVisible(false);
         }
-        setSettingsVisible(prev => !prev);
-        pingControls();
+        seekByRef.current(SEEK_STEP_SECONDS);
+        return;
+      }
+
+      if (type === 'up' || type === 'down') {
+        if (settingsVisibleRef.current) {
+          setSettingsVisible(false);
+        }
+        setControlsVisible(true);
+        pingControlsRef.current();
         return;
       }
 
       if (type === 'select') {
-        if (!controlsVisible) {
-          setControlsVisible(true);
-          pingControls();
-          return;
+        if (controlsVisibleRef.current) {
+          togglePlayPauseRef.current();
         }
-        togglePlayPause();
         return;
       }
 
       if (type === 'menu') {
-        if (settingsVisible) {
-          setSettingsVisible(false);
-        } else {
-          navigation.goBack();
-        }
+        // Always show controls and toggle settings
+        setControlsVisible(true);
+        setSettingsVisible(prev => !prev);
+        pingControlsRef.current();
       }
     });
 
@@ -486,16 +555,7 @@ export function PlayerScreen() {
       tvHandlerRef.current?.disable?.();
       tvHandlerRef.current = null;
     };
-  }, [
-    TVEventHandlerClass,
-    controlsVisible,
-    isTV,
-    navigation,
-    pingControls,
-    seekBy,
-    settingsVisible,
-    togglePlayPause,
-  ]);
+  }, [TVEventHandlerClass, isTV]);
 
   return (
     <Pressable
@@ -562,6 +622,18 @@ export function PlayerScreen() {
             }
           }}
           onError={handlePlaybackFailure}
+          selectedTextTrack={
+            subtitleLanguage === 'off'
+              ? { type: 'disabled' }
+              : subtitleLanguage
+                ? { type: 'language', value: subtitleLanguage }
+                : undefined
+          }
+          selectedAudioTrack={
+            audioLanguage
+              ? { type: 'language', value: audioLanguage }
+              : undefined
+          }
           style={StyleSheet.absoluteFill}
         />
       ) : (
@@ -720,9 +792,23 @@ export function PlayerScreen() {
 
           <View style={styles.bottomWrap}>
             <View style={styles.progressRow}>
-              <View style={styles.progressTrack}>
+              <Pressable
+                focusable={isTV && canSeek}
+                onFocus={() => {
+                  setFocusedControl('progress');
+                  pingControls();
+                }}
+                onBlur={() => setFocusedControl(null)}
+                style={[
+                  styles.progressTrack,
+                  focusedControl === 'progress' && styles.progressTrackFocused,
+                ]}
+              >
                 <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
-              </View>
+                {canSeek && seekIndicatorVisible && (
+                  <View style={[styles.progressThumb, { left: `${progressThumbPercent}%` }]} />
+                )}
+              </Pressable>
             </View>
 
             <View style={styles.timeRow}>
@@ -734,7 +820,10 @@ export function PlayerScreen() {
               <View style={styles.leftActions}>
                 <Pressable
                   focusable={isTV}
-                  onFocus={() => setFocusedControl('play')}
+                  onFocus={() => {
+                    setFocusedControl('play');
+                    pingControls();
+                  }}
                   onBlur={() => setFocusedControl(null)}
                   onPress={togglePlayPause}
                   style={[styles.actionBtn, focusedControl === 'play' && styles.focusedControl]}
@@ -744,7 +833,10 @@ export function PlayerScreen() {
 
                 <Pressable
                   focusable={isTV}
-                  onFocus={() => setFocusedControl('rewind')}
+                  onFocus={() => {
+                    setFocusedControl('rewind');
+                    pingControls();
+                  }}
                   onBlur={() => setFocusedControl(null)}
                   onPress={() => seekBy(-10)}
                   style={[styles.actionBtn, focusedControl === 'rewind' && styles.focusedControl]}
@@ -754,7 +846,10 @@ export function PlayerScreen() {
 
                 <Pressable
                   focusable={isTV}
-                  onFocus={() => setFocusedControl('forward')}
+                  onFocus={() => {
+                    setFocusedControl('forward');
+                    pingControls();
+                  }}
                   onBlur={() => setFocusedControl(null)}
                   onPress={() => seekBy(10)}
                   style={[styles.actionBtn, focusedControl === 'forward' && styles.focusedControl]}
@@ -764,7 +859,10 @@ export function PlayerScreen() {
 
                 <Pressable
                   focusable={isTV}
-                  onFocus={() => setFocusedControl('mute')}
+                  onFocus={() => {
+                    setFocusedControl('mute');
+                    pingControls();
+                  }}
                   onBlur={() => setFocusedControl(null)}
                   onPress={() => {
                     setIsMuted(prev => !prev);
@@ -779,7 +877,10 @@ export function PlayerScreen() {
               <View style={styles.rightActions}>
                 <Pressable
                   focusable={isTV}
-                  onFocus={() => setFocusedControl('settings')}
+                  onFocus={() => {
+                    setFocusedControl('settings');
+                    pingControls();
+                  }}
                   onBlur={() => setFocusedControl(null)}
                   onPress={toggleSettings}
                   style={[styles.actionBtn, focusedControl === 'settings' && styles.focusedControl]}
@@ -911,15 +1012,28 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   progressTrack: {
-    height: 5,
+    height: 6,
     backgroundColor: 'rgba(255,255,255,0.24)',
     borderRadius: 4,
     overflow: 'hidden',
   },
+  progressTrackFocused: {
+    borderWidth: 1,
+    borderColor: '#ffffff',
+  },
   progressFill: {
-    height: 5,
+    height: 6,
     backgroundColor: '#ef4444',
     borderRadius: 4,
+  },
+  progressThumb: {
+    position: 'absolute',
+    top: -6,
+    marginLeft: -8,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#ef4444',
   },
   timeRow: {
     flexDirection: 'row',

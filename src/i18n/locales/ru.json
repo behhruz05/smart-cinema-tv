@@ -114,7 +114,9 @@
     "loading_stream": "Загрузка видео...",
     "stream_unavailable": "Не удалось открыть видеопоток",
     "live": "ПРЯМОЙ ЭФИР",
-    "retry": "Повторить"
+    "retry": "Повторить",
+    "seek_mode_hint": "Нажмите OK для управления прогрессом",
+    "seek_mode_active": "Влево/вправо перемотка, OK применить"
   },
   "settings": {
     "interface_language": "Интерфейс и язык",

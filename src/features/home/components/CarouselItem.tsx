@@ -12,19 +12,70 @@ import { PlayIcon } from '../../../shared/icons/PlayIcon';
 import { SavedIcon } from '../../../shared/icons/SaverIcon';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
+import { movieService } from '../../../service/movie.service';
 
 interface Props {
   item: Carousel;
 }
 
 function CarouselItemComponent({ item }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const movie = item.movie;
   const navigation = useNavigation<any>();
   const isTV = Platform.isTV;
   const [focusedButton, setFocusedButton] = React.useState<
     null | 'watch' | 'details' | 'save'
   >(null);
+  const [isFavorite, setIsFavorite] = React.useState(false);
+  const [favoriteLoading, setFavoriteLoading] = React.useState(false);
+
+  const lang = i18n.language.startsWith('ru')
+    ? 'ru'
+    : i18n.language.startsWith('en')
+      ? 'en'
+      : 'uz';
+
+  const title = i18n.language.startsWith('ru')
+    ? movie.title_ru || movie.title_uz
+    : i18n.language.startsWith('en')
+      ? movie.title_en || movie.title_uz
+      : movie.title_uz;
+
+  React.useEffect(() => {
+    let isMounted = true;
+    movieService
+      .checkMovieFavorite(movie.id, lang)
+      .then(res => {
+        if (isMounted) {
+          setIsFavorite(Boolean(res.data.is_favorite));
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, [movie.id, lang]);
+
+  const handleToggleFavorite = React.useCallback(async () => {
+    if (favoriteLoading) return;
+
+    const nextValue = !isFavorite;
+    setFavoriteLoading(true);
+    setIsFavorite(nextValue);
+
+    try {
+      if (nextValue) {
+        await movieService.addMovieToFavorites(movie.id, lang);
+      } else {
+        await movieService.removeMovieFromFavorites(movie.id, lang);
+      }
+    } catch {
+      setIsFavorite(!nextValue);
+    } finally {
+      setFavoriteLoading(false);
+    }
+  }, [favoriteLoading, isFavorite, movie.id, lang]);
 
   return (
     <ImageBackground
@@ -58,8 +109,13 @@ function CarouselItemComponent({ item }: Props) {
             onFocus={() => setFocusedButton('watch')}
             onBlur={() => setFocusedButton(null)}
             onPress={() =>
-              navigation.navigate('MovieDetail', {
+              navigation.navigate('Player', {
                 movieId: movie.id,
+                posterUri: item.poster_url || movie.poster_url,
+                title,
+                subtitle: String(movie.year),
+                isLive: false,
+                durationSeconds: movie.duration_seconds,
               })
             }
           >
@@ -75,6 +131,11 @@ function CarouselItemComponent({ item }: Props) {
             focusable={isTV}
             onFocus={() => setFocusedButton('details')}
             onBlur={() => setFocusedButton(null)}
+            onPress={() =>
+              navigation.navigate('MovieDetail', {
+                movieId: movie.id,
+              })
+            }
           >
             <Text style={styles.moreText}>{t('home.carousel.details')}</Text>
           </Pressable>
@@ -82,13 +143,20 @@ function CarouselItemComponent({ item }: Props) {
           <Pressable
             style={[
               styles.savedBtn,
+              isFavorite && styles.savedBtnActive,
               focusedButton === 'save' && styles.focusedButton,
             ]}
             focusable={isTV}
             onFocus={() => setFocusedButton('save')}
             onBlur={() => setFocusedButton(null)}
+            onPress={handleToggleFavorite}
+            disabled={favoriteLoading}
           >
-            <SavedIcon size={20} color="#fff" />
+            <SavedIcon
+              size={20}
+              color="#fff"
+              filled={isFavorite}
+            />
           </Pressable>
         </View>
       </View>
@@ -179,6 +247,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 2,
     borderColor: 'transparent',
+  },
+  savedBtnActive: {
+    borderColor: '#fff',
+    backgroundColor: 'rgba(255,255,255,0.22)',
   },
   focusedButton: {
     borderWidth: 2,
