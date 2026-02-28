@@ -8,22 +8,40 @@ import {
   Platform,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { changeAppLanguage } from '../../../i18n';
+import { useDispatch, useSelector } from 'react-redux';
+import { changeAppLanguage, normalizeAppLanguage } from '../../../i18n';
 import { useAuth } from '../../../app/providers/AppProviders';
+import { AppDispatch, RootState } from '../../../store';
+import { updateProfileLanguage } from '../../../store/slice/auth.slice';
 
 export default function InterfaceLanguageScreen() {
   const { t, i18n } = useTranslation();
+  const dispatch = useDispatch<AppDispatch>();
   const { themeMode, setThemeMode, resolvedTheme } = useAuth();
+  const userLanguage = useSelector((state: RootState) => state.auth.user?.language);
   const isTV = Platform.isTV;
   const [focusedLang, setFocusedLang] = React.useState<string | null>(null);
   const [focusedTheme, setFocusedTheme] = React.useState<string | null>(null);
+  const [savingLanguage, setSavingLanguage] = React.useState(false);
   const isDarkMode = resolvedTheme === 'dark';
 
   const languages: Array<'uz' | 'ru' | 'en'> = ['uz', 'ru', 'en'];
 
   const onChangeLanguage = async (lang: 'uz' | 'ru' | 'en') => {
-    if (i18n.language.startsWith(lang)) return;
-    await changeAppLanguage(lang);
+    if (savingLanguage) return;
+    const current = normalizeAppLanguage(userLanguage || i18n.language);
+    if (current === lang) return;
+
+    setSavingLanguage(true);
+    try {
+      await changeAppLanguage(lang);
+      const updatedUser = await dispatch(updateProfileLanguage(lang)).unwrap();
+      await changeAppLanguage(normalizeAppLanguage(updatedUser?.language || lang));
+    } catch {
+      await changeAppLanguage(current);
+    } finally {
+      setSavingLanguage(false);
+    }
   };
 
   const themeOptions: Array<'dark' | 'system'> = ['dark', 'system'];
@@ -43,12 +61,13 @@ export default function InterfaceLanguageScreen() {
 
       <View style={styles.list}>
         {languages.map((lang, index) => {
-          const active = i18n.language.startsWith(lang);
+          const active = normalizeAppLanguage(userLanguage || i18n.language) === lang;
           return (
             <Pressable
               key={lang}
               focusable={isTV}
               hasTVPreferredFocus={index === 0}
+              disabled={savingLanguage}
               onFocus={() => setFocusedLang(lang)}
               onBlur={() => setFocusedLang(null)}
               onPress={() => onChangeLanguage(lang)}

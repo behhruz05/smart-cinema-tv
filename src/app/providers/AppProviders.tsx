@@ -4,8 +4,10 @@ import { AppState } from 'react-native';
 import { setLogoutHandler } from '../../features/auth/authBridge';
 import { tokenStorage } from '../../shared/lib/tokenStorage';
 import { appSettingsStorage } from '../../shared/lib/appSettingsStorage';
+import { ErrorToast } from '../../shared/components/ErrorToast';
 import { store } from '../../store';
 import { fetchMe } from '../../store/slice/auth.slice';
+import { changeAppLanguage, normalizeAppLanguage } from '../../i18n';
 
 type AuthContextType = {
   token: string | null;
@@ -59,8 +61,8 @@ useEffect(() => {
 
       if (savedToken) {
         setTokenState(savedToken);
-
-        await dispatch(fetchMe());
+        const user = await dispatch(fetchMe()).unwrap();
+        await changeAppLanguage(normalizeAppLanguage(user?.language));
       }
     } finally {
       setIsLoading(false);
@@ -115,6 +117,7 @@ useEffect(() => {
         }}
       >
         {children}
+        <ErrorToast />
       </AuthContext.Provider>
     </Provider>
   );

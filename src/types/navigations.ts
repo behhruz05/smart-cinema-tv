@@ -19,6 +19,8 @@ export type RootStackParamList = {
   };
   MovieDetail: { movieId: string };
   Player: {
+    movieId?: string;
+    episodeId?: string;
     sourceUri?: string;
     posterUri?: string;
     title: string;

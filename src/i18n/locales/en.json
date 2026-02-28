@@ -7,7 +7,8 @@
   },
   "errors": {
     "loading": "Loading error",
-    "server": "Server error"
+    "server": "Server error",
+    "unauthorized": "Session expired. Please sign in again."
   },
   "login": {
     "title": "Sign in",
@@ -104,7 +105,16 @@
     "quality": "Quality",
     "size_small": "Small",
     "size_default": "Default",
-    "size_large": "Large"
+    "size_large": "Large",
+    "subtitles": "Subtitles",
+    "audio_tracks": "Audio tracks",
+    "off": "Off",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "loading_stream": "Loading video...",
+    "stream_unavailable": "Unable to open video stream",
+    "live": "LIVE",
+    "retry": "Retry"
   },
   "settings": {
     "interface_language": "Interface and language",

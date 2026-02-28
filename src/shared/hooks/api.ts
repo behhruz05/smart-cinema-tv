@@ -2,7 +2,7 @@ import { triggerLogout } from "../../features/auth/authBridge";
 import { tokenStorage } from "../lib/tokenStorage";
 import i18n from '../../i18n';
 
-const BASE_URL = 'https://api.alloplay.uz/api/v1';
+export const BASE_URL = 'https://api.alloplay.uz/api/v1';
 const TIMEOUT = 10000;
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -14,6 +14,24 @@ interface RequestOptions {
   retry?: number;
   signal?: AbortSignal;
   skipAuth?: boolean;
+}
+
+function isNetworkError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const message = error.message?.toLowerCase?.() ?? '';
+  return (
+    error.name === 'TypeError' &&
+    (message.includes('network request failed') || message.includes('failed to fetch'))
+  );
+}
+
+function safeParseResponse(text: string): any {
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
 }
 
 function fetchWithTimeout(
@@ -51,24 +69,25 @@ export async function api<T>(
 
   try {
     const token = skipAuth ? null : await tokenStorage.get();
+    const hasBody = body !== undefined && body !== null;
 
     const response = await fetchWithTimeout(
       `${BASE_URL}${endpoint}`,
       {
         method,
         headers: {
-          'Content-Type': 'application/json',
+          ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...headers,
         },
-        body: body ? JSON.stringify(body) : undefined,
+        body: hasBody ? JSON.stringify(body) : undefined,
       },
       TIMEOUT,
       signal
     );
 
     const text = await response.text();
-    const data = text ? JSON.parse(text) : null;
+    const data = safeParseResponse(text);
 
     if (response.status === 401 && !skipAuth) {
       await tokenStorage.remove();
@@ -93,6 +112,10 @@ export async function api<T>(
   } catch (e: any) {
     if (e.name === 'AbortError') {
       throw e;
+    }
+
+    if (isNetworkError(e)) {
+      throw new Error(i18n.t('errors.server'));
     }
 
     if (retry > 0) {

@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect } from 'react';
 import { ScrollView, FlatList, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import {
@@ -17,10 +19,15 @@ import { ChannelCard } from '../components/ChannelCard';
 import { HomeCarousel } from '../components/HomeCarousel';
 import { WatchHistory } from '../../../shared/components/WatchHistory';
 import { NewMovieCard } from '../../../shared/components/NewMovieCard';
+import { RootStackParamList } from '../../../types/navigations';
+import { WatchHistoryItem } from '../../../types/history';
+
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function HomeScreen() {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
+  const navigation = useNavigation<NavProp>();
 
   const { popular, latest, history, channels } =
     useSelector((state: RootState) => state.home);
@@ -45,9 +52,30 @@ export function HomeScreen() {
 
   const renderHistory = useCallback(
     ({ item }: { item: (typeof history)[0] }) => (
-      <WatchHistory item={item} />
+      <WatchHistory
+        item={item}
+        onPress={(historyItem: WatchHistoryItem) => {
+          if (historyItem.type === 'movie') {
+            const movieId = historyItem.movie_id || historyItem.id;
+            navigation.navigate('MovieDetail', { movieId });
+            return;
+          }
+          const episodeId = historyItem.episode_id;
+          if (!episodeId) {
+            return;
+          }
+          navigation.navigate('Player', {
+            episodeId,
+            posterUri: historyItem.poster_url,
+            title: historyItem.title_uz || historyItem.title_ru || '',
+            subtitle: '',
+            isLive: false,
+            durationSeconds: historyItem.total_duration_seconds,
+          });
+        }}
+      />
     ),
-    [],
+    [navigation],
   );
 
   const renderLatest = useCallback(

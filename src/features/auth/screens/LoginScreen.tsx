@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
+  Keyboard,
   Pressable,
   StyleSheet,
   Text,
@@ -17,6 +18,7 @@ import { EyeIcon, EyeOffIcon } from '../../../shared/icons/EyeIcon';
 import { fetchMe } from '../../../store/slice/auth.slice';
 import { store } from '../../../store';
 import { deviceStorage } from '../../../shared/lib/deviceStorage';
+import { changeAppLanguage, normalizeAppLanguage } from '../../../i18n';
 
 const Logo = require('../../../assets/imgs/Group.png');
 const SplineBg = require('../../../assets/imgs/Spline.png');
@@ -56,6 +58,8 @@ export function LoginScreen() {
     null,
   );
   const deviceIdRef = useRef<string>('');
+  const loginInputRef = useRef<TextInput | null>(null);
+  const passwordInputRef = useRef<TextInput | null>(null);
 
   const stopPolling = useCallback(() => {
     if (pollIntervalRef.current) {
@@ -81,7 +85,8 @@ export function LoginScreen() {
           if (status.status === 'confirmed' && status.tokens) {
             stopPolling();
             await setToken(status.tokens.access_token);
-            dispatch(fetchMe());
+            const user = await dispatch(fetchMe()).unwrap();
+            await changeAppLanguage(normalizeAppLanguage(user?.language));
           } else if (status.status === 'expired') {
             stopPolling();
             setSessionState('expired');
@@ -94,6 +99,10 @@ export function LoginScreen() {
       setSessionState('error');
     }
   }, [dispatch, setToken, stopPolling]);
+
+  useEffect(() => {
+    Keyboard.dismiss();
+  }, []);
 
   useEffect(() => {
     createSession();
@@ -113,6 +122,10 @@ export function LoginScreen() {
   };
 
   const onLogin = async () => {
+    loginInputRef.current?.blur();
+    passwordInputRef.current?.blur();
+    Keyboard.dismiss();
+
     if (!login || !password) {
       setError(t('login.fill_fields'));
       return;
@@ -138,7 +151,9 @@ export function LoginScreen() {
 
       const token = await authApi.login(payload);
       await setToken(token);
-      dispatch(fetchMe());
+      const user = await dispatch(fetchMe()).unwrap();
+      await changeAppLanguage(normalizeAppLanguage(user?.language));
+      Keyboard.dismiss();
     } catch {
       setError(t('login.login_error'));
     } finally {
@@ -233,6 +248,7 @@ export function LoginScreen() {
               focusedField === 'login' && styles.inputFocused,
             ]}>
             <TextInput
+              ref={loginInputRef}
               style={styles.input}
               value={login}
               onChangeText={setLogin}
@@ -253,6 +269,7 @@ export function LoginScreen() {
               focusedField === 'password' && styles.inputFocused,
             ]}>
             <TextInput
+              ref={passwordInputRef}
               style={styles.input}
               value={password}
               onChangeText={setPassword}
@@ -416,20 +433,28 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#141414',
     marginBottom: 20,
+    height: 52,
+    justifyContent: 'center',
   },
   inputFocused: {
     borderColor: '#fff',
   },
   input: {
-    paddingVertical: 14,
+    height: 48,
+    fontSize: 16,
+    lineHeight: 20,
+    paddingVertical: 0,
     paddingHorizontal: 14,
     paddingRight: 42,
     color: '#fff',
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   iconRight: {
     position: 'absolute',
     right: 12,
-    top: 14,
+    top: '50%',
+    marginTop: -10,
   },
   errorText: {
     color: '#f87171',

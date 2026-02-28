@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   ImageBackground,
   Platform,
   Pressable,
@@ -11,15 +12,22 @@ import LinearGradient from 'react-native-linear-gradient';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
+import { useDispatch } from 'react-redux';
 import { RootStackParamList } from '../../../types/navigations';
+import { showErrorToast } from '../../../store/slice/ui.slice';
+import { AppDispatch } from '../../../store';
+import { streamingApi, StreamPayload } from '../services/streaming.api';
+import { getAppLanguage } from '../../../i18n';
+import { tokenStorage } from '../../../shared/lib/tokenStorage';
+import { BackIcon } from '../../../shared/icons/BackIcon';
+import { PlayIcon } from '../../../shared/icons/PlayIcon';
+import { PauseIcon } from '../../../shared/icons/PauseIcon';
+import { SettingsIcon } from '../../../shared/icons/SettingIcon';
 
 type PlayerRouteProp = RouteProp<RootStackParamList, 'Player'>;
-type PlayerNavigationProp =
-  NativeStackNavigationProp<RootStackParamList>;
+type PlayerNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-type PlayerQuality = 'auto' | '4k' | '2k' | '1080' | '720';
 type SubtitleSize = 'small' | 'default' | 'large';
-type PlayerLanguage = 'ru' | 'uz' | 'en';
 type FocusedControlId =
   | null
   | 'play'
@@ -27,8 +35,9 @@ type FocusedControlId =
   | 'forward'
   | 'mute'
   | 'settings'
-  | 'schedule'
-  | 'back';
+  | 'back'
+  | 'retry';
+const MAX_STREAM_RELOADS = 2;
 
 function getVideoComponent(): React.ComponentType<any> | null {
   try {
@@ -63,21 +72,37 @@ function formatTimer(rawSeconds: number) {
     .padStart(2, '0')}`;
 }
 
+function extractHttpStatusCode(error?: any): number | null {
+  const text = String(error?.errorStackTrace || error?.cause?.message || '');
+  const match = text.match(/Response code:\s*(\d{3})/i);
+  if (!match) return null;
+  const parsed = Number(match[1]);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 export function PlayerScreen() {
   const { t } = useTranslation();
   const route = useRoute<PlayerRouteProp>();
   const navigation = useNavigation<PlayerNavigationProp>();
+  const dispatch = useDispatch<AppDispatch>();
+
   const isTV = Platform.isTV;
-  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(
-    null,
-  );
+  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tvHandlerRef = useRef<any>(null);
   const playerRef = useRef<any>(null);
+  const didSeekToResumeRef = useRef(false);
+  const currentTimeRef = useRef(0);
+  const lastProgressSentRef = useRef(0);
+  const lastProgressSentAtRef = useRef(0);
+  const streamRequestIdRef = useRef(0);
+  const streamReloadAttemptRef = useRef(0);
+  const firstFrameReadyRef = useRef(false);
+  const playbackFailureRef = useRef<(error?: any) => void>(() => {});
 
   const {
+    movieId,
+    episodeId,
     sourceUri,
     posterUri,
     title,
@@ -85,101 +110,317 @@ export function PlayerScreen() {
     isLive = false,
     durationSeconds = 0,
   } = route.params;
+  const shouldResolveRemoteStream = Boolean(movieId || episodeId);
 
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [muted, setMuted] = useState(false);
+  const [resolvedTitle, setResolvedTitle] = useState(title);
+  const [resolvedSourceUri, setResolvedSourceUri] = useState<string | null>(
+    shouldResolveRemoteStream ? null : (sourceUri || null),
+  );
+  const [playbackCandidates, setPlaybackCandidates] = useState<string[]>(
+    shouldResolveRemoteStream ? [] : (sourceUri ? [sourceUri] : []),
+  );
+  const [candidateIndex, setCandidateIndex] = useState(0);
+  const [duration, setDuration] = useState(Math.max(durationSeconds || 0, isLive ? 0 : 1));
+  const [currentTime, setCurrentTime] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [settingsVisible, setSettingsVisible] = useState(false);
-  const [focusedControl, setFocusedControl] =
-    useState<FocusedControlId>(null);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(
-    Math.max(durationSeconds || 0, isLive ? 0 : 1),
-  );
-  const [quality, setQuality] = useState<PlayerQuality>('auto');
+  const [focusedControl, setFocusedControl] = useState<FocusedControlId>(null);
+  const [loadingStream, setLoadingStream] = useState(!!(movieId || episodeId));
+  const [streamError, setStreamError] = useState<string | null>(null);
+  const [videoBuffering, setVideoBuffering] = useState(false);
+  const [firstFrameReady, setFirstFrameReady] = useState(false);
   const [subtitleSize, setSubtitleSize] = useState<SubtitleSize>('default');
-  const [language, setLanguage] = useState<PlayerLanguage>('ru');
+  const [focusedSettingChip, setFocusedSettingChip] = useState<string | null>(null);
+  const [subtitleLanguage, setSubtitleLanguage] = useState<string>('off');
+  const [audioLanguage, setAudioLanguage] = useState<string | null>(null);
+  const [subtitles, setSubtitles] = useState<StreamPayload['subtitles']>([]);
+  const [audioTracks, setAudioTracks] = useState<StreamPayload['audio_tracks']>([]);
+  const [authToken, setAuthToken] = useState<string | null>(null);
 
   const VideoComponent = useMemo(() => getVideoComponent(), []);
   const TVEventHandlerClass = useMemo(() => getTVEventHandlerClass(), []);
   const VideoElement = VideoComponent as any;
-  const hasVideoSource =
-    !!sourceUri &&
-    /^(https?:\/\/|rtmp:\/\/|file:\/\/)/i.test(sourceUri);
-  const canSeek = !isLive && duration > 0;
-  const progressPercent = canSeek
-    ? Math.min(100, (currentTime / duration) * 100)
-    : 100;
 
-  const pingControls = React.useCallback(() => {
+  const playbackUri =
+    playbackCandidates[candidateIndex] || resolvedSourceUri || sourceUri || null;
+  const hasVideoSource = Boolean(playbackUri && /^(https?:\/\/|rtmp:\/\/|file:\/\/)/i.test(playbackUri));
+  const canSeek = !isLive && duration > 0;
+  const progressPercent = canSeek ? Math.min(100, (currentTime / duration) * 100) : 100;
+  const appLanguage = getAppLanguage();
+
+  useEffect(() => {
+    let active = true;
+    tokenStorage.get().then((token) => {
+      if (active) {
+        setAuthToken(token);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const pingControls = useCallback(() => {
     setControlsVisible(true);
-    if (hideTimeoutRef.current) {
-      clearTimeout(hideTimeoutRef.current);
-    }
-    if (!settingsVisible && isPlaying) {
+    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    if (!settingsVisible && !isPaused) {
       hideTimeoutRef.current = setTimeout(() => {
         setControlsVisible(false);
       }, 4500);
     }
-  }, [isPlaying, settingsVisible]);
+  }, [isPaused, settingsVisible]);
 
-  const seekBy = React.useCallback((delta: number) => {
-    if (!canSeek) return;
-    const next = Math.max(0, Math.min(duration, currentTime + delta));
-    setCurrentTime(next);
-    if (playerRef.current?.seek) {
-      playerRef.current.seek(next);
+  const clearStartupTimer = useCallback(() => {
+    if (startupTimerRef.current) {
+      clearTimeout(startupTimerRef.current);
+      startupTimerRef.current = null;
     }
-    pingControls();
-  }, [canSeek, currentTime, duration, pingControls]);
+  }, []);
 
-  const togglePlayPause = React.useCallback(() => {
-    setIsPlaying(prev => !prev);
+  const finalizePlaybackError = useCallback(
+    (error?: any) => {
+      const statusCode = extractHttpStatusCode(error);
+      const message =
+        statusCode === 404
+          ? `${t('player.stream_unavailable')} (404)`
+          : statusCode === 401
+            ? `${t('player.stream_unavailable')} (401)`
+            : t('player.stream_unavailable');
+      if (__DEV__) {
+        console.log('Player stream error:', error);
+      }
+      setStreamError(message);
+      dispatch(showErrorToast(message));
+    },
+    [dispatch, t],
+  );
+
+  const submitProgress = useCallback(
+    async (positionSeconds: number, force = false) => {
+      if (isLive) return;
+      if (!movieId && !episodeId) return;
+      if (positionSeconds < 3) return;
+
+      const now = Date.now();
+      if (!force) {
+        if (Math.abs(positionSeconds - lastProgressSentRef.current) < 15) return;
+        if (now - lastProgressSentAtRef.current < 8000) return;
+      }
+
+      try {
+        if (movieId) {
+          await streamingApi.updateMovieProgress(movieId, positionSeconds);
+        } else if (episodeId) {
+          await streamingApi.updateEpisodeProgress(episodeId, positionSeconds);
+        }
+        lastProgressSentRef.current = positionSeconds;
+        lastProgressSentAtRef.current = now;
+      } catch {
+        // background sync failures should not interrupt playback
+      }
+    },
+    [episodeId, isLive, movieId],
+  );
+
+  const applyStreamPayload = useCallback(
+    (payload: StreamPayload) => {
+      if (!payload?.stream_url) {
+        throw new Error(t('player.stream_unavailable'));
+      }
+
+      const nextCandidates = [payload.stream_url].filter(
+        (item): item is string => Boolean(item),
+      );
+      if (sourceUri && !nextCandidates.includes(sourceUri)) {
+        nextCandidates.push(sourceUri);
+      }
+
+      setResolvedTitle(payload.title || title);
+      setResolvedSourceUri(payload.stream_url);
+      setPlaybackCandidates(nextCandidates);
+      setCandidateIndex(0);
+      setDuration(Math.max(payload.duration_seconds || durationSeconds || 0, isLive ? 0 : 1));
+
+      const resume = Math.max(0, payload.resume_position_seconds || 0);
+      setCurrentTime(resume);
+      currentTimeRef.current = resume;
+      didSeekToResumeRef.current = false;
+
+      const subtitleList = Array.isArray(payload.subtitles) ? payload.subtitles : [];
+      const audioList = Array.isArray(payload.audio_tracks) ? payload.audio_tracks : [];
+
+      setSubtitles(subtitleList);
+      setAudioTracks(audioList);
+
+      const defaultSubtitle = subtitleList.find(item => item.language === appLanguage)?.language || 'off';
+      const defaultAudio =
+        audioList.find(item => item.language === appLanguage)?.language ||
+        audioList[0]?.language ||
+        null;
+
+      setSubtitleLanguage(defaultSubtitle);
+      setAudioLanguage(defaultAudio);
+    },
+    [appLanguage, durationSeconds, isLive, sourceUri, t, title],
+  );
+
+  const loadStream = useCallback(async () => {
+    if (!movieId && !episodeId) return;
+
+    const requestId = Date.now();
+    streamRequestIdRef.current = requestId;
+    setLoadingStream(true);
+    setStreamError(null);
+
+    try {
+      const payload = movieId
+        ? await streamingApi.getMovieStream(movieId)
+        : await streamingApi.getEpisodeStream(episodeId!);
+
+      if (streamRequestIdRef.current !== requestId) return;
+      applyStreamPayload(payload);
+    } catch {
+      if (streamRequestIdRef.current !== requestId) return;
+      if (sourceUri) {
+        setResolvedSourceUri(sourceUri);
+        setPlaybackCandidates([sourceUri]);
+        setCandidateIndex(0);
+        setStreamError(null);
+      } else {
+        const message = t('player.stream_unavailable');
+        setStreamError(message);
+        dispatch(showErrorToast(message));
+      }
+    } finally {
+      if (streamRequestIdRef.current === requestId) {
+        setLoadingStream(false);
+      }
+    }
+  }, [applyStreamPayload, dispatch, episodeId, movieId, sourceUri, t]);
+
+  const handlePlaybackFailure = useCallback(
+    (error?: any) => {
+      if (__DEV__) {
+        console.log('Player failed candidate:', {
+          playbackUri,
+          candidateIndex,
+          playbackCandidates,
+        });
+      }
+      setVideoBuffering(false);
+      setLoadingStream(false);
+      clearStartupTimer();
+
+      if (candidateIndex + 1 < playbackCandidates.length) {
+        setCandidateIndex((prev) => prev + 1);
+        return;
+      }
+
+      if ((movieId || episodeId) && streamReloadAttemptRef.current < MAX_STREAM_RELOADS) {
+        streamReloadAttemptRef.current += 1;
+        loadStream();
+        return;
+      }
+
+      finalizePlaybackError(error);
+    },
+    [
+      candidateIndex,
+      clearStartupTimer,
+      episodeId,
+      finalizePlaybackError,
+      loadStream,
+      movieId,
+      playbackCandidates,
+      playbackUri,
+    ],
+  );
+
+  useEffect(() => {
+    playbackFailureRef.current = handlePlaybackFailure;
+  }, [handlePlaybackFailure]);
+
+  useEffect(() => {
+    firstFrameReadyRef.current = firstFrameReady;
+  }, [firstFrameReady]);
+
+  const seekBy = useCallback(
+    (delta: number) => {
+      if (!canSeek) return;
+      const next = Math.max(0, Math.min(duration, currentTimeRef.current + delta));
+      setCurrentTime(next);
+      currentTimeRef.current = next;
+      playerRef.current?.seek?.(next);
+      pingControls();
+    },
+    [canSeek, duration, pingControls],
+  );
+
+  const togglePlayPause = useCallback(() => {
+    setIsPaused(prev => !prev);
     pingControls();
   }, [pingControls]);
 
-  const toggleSettings = React.useCallback(() => {
+  const toggleSettings = useCallback(() => {
     setSettingsVisible(prev => !prev);
     pingControls();
   }, [pingControls]);
 
-  const toggleMute = React.useCallback(() => {
-    setMuted(prev => !prev);
+  useEffect(() => {
+    if (movieId || episodeId) {
+      setResolvedSourceUri(null);
+      setPlaybackCandidates([]);
+      setCandidateIndex(0);
+      loadStream();
+      return;
+    }
+    if (sourceUri) {
+      setResolvedSourceUri(sourceUri);
+      setPlaybackCandidates([sourceUri]);
+      setCandidateIndex(0);
+      setLoadingStream(false);
+      setStreamError(null);
+    }
+  }, [episodeId, loadStream, movieId, sourceUri]);
+
+  useEffect(() => {
+    setFirstFrameReady(false);
+    firstFrameReadyRef.current = false;
+    setVideoBuffering(Boolean(playbackUri));
+    clearStartupTimer();
+
+    if (!playbackUri) return;
+
+    startupTimerRef.current = setTimeout(() => {
+      if (!firstFrameReadyRef.current) {
+        playbackFailureRef.current(new Error('Playback startup timeout'));
+      }
+    }, 15000);
+
+    return () => {
+      clearStartupTimer();
+    };
+  }, [clearStartupTimer, playbackUri]);
+
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+  }, [currentTime]);
+
+  useEffect(() => {
     pingControls();
+    return () => {
+      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    };
   }, [pingControls]);
 
   useEffect(() => {
-    pingControls();
     return () => {
-      if (hideTimeoutRef.current) {
-        clearTimeout(hideTimeoutRef.current);
-      }
+      clearStartupTimer();
+      submitProgress(currentTimeRef.current, true);
     };
-  }, [isPlaying, pingControls, settingsVisible]);
-
-  useEffect(() => {
-    if (VideoComponent || isLive || !isPlaying) {
-      if (progressTimerRef.current) {
-        clearInterval(progressTimerRef.current);
-        progressTimerRef.current = null;
-      }
-      return;
-    }
-
-    progressTimerRef.current = setInterval(() => {
-      setCurrentTime(prev => {
-        if (!canSeek) return prev;
-        return Math.min(duration, prev + 1);
-      });
-    }, 1000);
-
-    return () => {
-      if (progressTimerRef.current) {
-        clearInterval(progressTimerRef.current);
-        progressTimerRef.current = null;
-      }
-    };
-  }, [VideoComponent, isLive, isPlaying, canSeek, duration]);
+  }, [clearStartupTimer, submitProgress]);
 
   useEffect(() => {
     if (!isTV || !TVEventHandlerClass) return;
@@ -211,26 +452,36 @@ export function PlayerScreen() {
       }
 
       if (type === 'down') {
-        if (controlsVisible) {
-          setSettingsVisible(prev => !prev);
-        } else {
+        if (!controlsVisible) {
           setControlsVisible(true);
           pingControls();
+          return;
         }
+        setSettingsVisible(prev => !prev);
+        pingControls();
+        return;
+      }
+
+      if (type === 'select') {
+        if (!controlsVisible) {
+          setControlsVisible(true);
+          pingControls();
+          return;
+        }
+        togglePlayPause();
         return;
       }
 
       if (type === 'menu') {
         if (settingsVisible) {
           setSettingsVisible(false);
-          pingControls();
         } else {
           navigation.goBack();
         }
       }
     });
-    tvHandlerRef.current = handler;
 
+    tvHandlerRef.current = handler;
     return () => {
       tvHandlerRef.current?.disable?.();
       tvHandlerRef.current = null;
@@ -255,36 +506,107 @@ export function PlayerScreen() {
       {VideoElement && hasVideoSource ? (
         <VideoElement
           ref={playerRef}
-          source={{ uri: sourceUri! }}
-          paused={!isPlaying}
-          muted={muted}
+          source={{
+            uri: playbackUri!,
+            headers: {
+              ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+              'Accept-Language': appLanguage,
+            },
+          }}
+          paused={isPaused}
+          muted={isMuted}
           resizeMode="cover"
           repeat={!isLive}
+          onLoadStart={() => {
+            setVideoBuffering(true);
+            setFirstFrameReady(false);
+          }}
           onLoad={(payload: any) => {
-            if (typeof payload?.duration === 'number' && payload.duration > 0) {
-              setDuration(payload.duration);
+            const videoDuration = typeof payload?.duration === 'number' ? payload.duration : 0;
+            if (videoDuration > 0 && !isLive) {
+              setDuration(videoDuration);
             }
+            setLoadingStream(false);
+            setVideoBuffering(false);
+            setFirstFrameReady(true);
+            setStreamError(null);
+            streamReloadAttemptRef.current = 0;
+            clearStartupTimer();
+
+            if (!didSeekToResumeRef.current && currentTimeRef.current > 0) {
+              didSeekToResumeRef.current = true;
+              playerRef.current?.seek?.(currentTimeRef.current);
+            }
+          }}
+          onReadyForDisplay={() => {
+            setLoadingStream(false);
+            setVideoBuffering(false);
+            setFirstFrameReady(true);
+            setStreamError(null);
+            streamReloadAttemptRef.current = 0;
+            clearStartupTimer();
+          }}
+          onBuffer={({ isBuffering }: { isBuffering: boolean }) => {
+            setVideoBuffering(Boolean(isBuffering));
           }}
           onProgress={(payload: any) => {
-            if (!isLive && typeof payload?.currentTime === 'number') {
-              setCurrentTime(payload.currentTime);
+            if (isLive || typeof payload?.currentTime !== 'number') return;
+            const next = payload.currentTime;
+            setCurrentTime(next);
+            currentTimeRef.current = next;
+            submitProgress(next);
+          }}
+          onEnd={() => {
+            if (!isLive) {
+              submitProgress(duration, true);
             }
           }}
+          onError={handlePlaybackFailure}
           style={StyleSheet.absoluteFill}
         />
       ) : (
-        <ImageBackground
-          source={{ uri: posterUri }}
-          style={StyleSheet.absoluteFill}
-          resizeMode="cover"
-        />
+        <>
+          <View style={[StyleSheet.absoluteFill, styles.posterFallback]} />
+          {posterUri ? (
+            <ImageBackground
+              source={{ uri: posterUri }}
+              style={StyleSheet.absoluteFill}
+              resizeMode="cover"
+            />
+          ) : null}
+        </>
       )}
 
       <LinearGradient
-        colors={['rgba(0,0,0,0.55)', 'transparent', 'rgba(0,0,0,0.75)']}
-        locations={[0, 0.55, 1]}
+        colors={['rgba(0,0,0,0.56)', 'rgba(0,0,0,0.1)', 'rgba(0,0,0,0.86)']}
+        locations={[0, 0.5, 1]}
         style={StyleSheet.absoluteFill}
       />
+
+      {!streamError && !firstFrameReady && (loadingStream || videoBuffering) && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#ffffff" />
+          <Text style={styles.loadingText}>{t('player.loading_stream')}</Text>
+        </View>
+      )}
+
+      {streamError && (
+        <View style={styles.errorOverlay}>
+          <Text style={styles.errorTitle}>{streamError}</Text>
+          <Pressable
+            focusable={isTV}
+            onFocus={() => setFocusedControl('retry')}
+            onBlur={() => setFocusedControl(null)}
+            onPress={loadStream}
+            style={[
+              styles.retryButton,
+              focusedControl === 'retry' && styles.focusedControl,
+            ]}
+          >
+            <Text style={styles.retryText}>{t('player.retry')}</Text>
+          </Pressable>
+        </View>
+      )}
 
       <View style={styles.topRow}>
         <Pressable
@@ -298,36 +620,42 @@ export function PlayerScreen() {
             focusedControl === 'back' && styles.focusedControl,
           ]}
         >
-          <Text style={styles.roundControlText}>×</Text>
+          <BackIcon size={22} color="#fff" filled />
         </Pressable>
 
         <View style={styles.titleWrap}>
-          <Text style={styles.title}>{title}</Text>
-          {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+          <Text style={styles.title} numberOfLines={1}>{resolvedTitle}</Text>
+          {!!subtitle && <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>}
         </View>
 
-        <Text style={styles.clock}>
-          {new Date().toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </Text>
+        <View style={styles.rightInfoWrap}>
+          {isLive ? <Text style={styles.liveChip}>{t('player.live')}</Text> : null}
+          <Text style={styles.clock}>
+            {new Date().toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </Text>
+        </View>
       </View>
 
-      {controlsVisible && (
+      {controlsVisible && !streamError && (
         <>
           {settingsVisible && (
             <View style={styles.settingsPanel}>
               <Text style={styles.panelTitle}>{t('player.subtitle_size')}</Text>
               <View style={styles.row}>
-                {(['default', 'small', 'large'] as SubtitleSize[]).map(item => (
+                {(['small', 'default', 'large'] as SubtitleSize[]).map(item => (
                   <Pressable
                     key={item}
                     focusable={isTV}
+                    onFocus={() => setFocusedSettingChip(`size-${item}`)}
+                    onBlur={() => setFocusedSettingChip(null)}
                     onPress={() => setSubtitleSize(item)}
                     style={[
                       styles.chip,
                       subtitleSize === item && styles.chipActive,
+                      focusedSettingChip === `size-${item}` && styles.focusedControl,
                     ]}
                   >
                     <Text style={styles.chipText}>{t(`player.size_${item}`)}</Text>
@@ -335,38 +663,55 @@ export function PlayerScreen() {
                 ))}
               </View>
 
-              <Text style={styles.panelTitle}>{t('player.quality')}</Text>
+              <Text style={styles.panelTitle}>{t('player.subtitles')}</Text>
               <View style={styles.row}>
-                {(['auto', '4k', '2k', '1080', '720'] as PlayerQuality[]).map(item => (
+                <Pressable
+                  focusable={isTV}
+                  onFocus={() => setFocusedSettingChip('subtitle-off')}
+                  onBlur={() => setFocusedSettingChip(null)}
+                  onPress={() => setSubtitleLanguage('off')}
+                  style={[
+                    styles.chip,
+                    subtitleLanguage === 'off' && styles.chipActive,
+                    focusedSettingChip === 'subtitle-off' && styles.focusedControl,
+                  ]}
+                >
+                  <Text style={styles.chipText}>{t('player.off')}</Text>
+                </Pressable>
+                {(subtitles || []).map(item => (
                   <Pressable
-                    key={item}
+                    key={item.id}
                     focusable={isTV}
-                    onPress={() => setQuality(item)}
+                    onFocus={() => setFocusedSettingChip(`subtitle-${item.id}`)}
+                    onBlur={() => setFocusedSettingChip(null)}
+                    onPress={() => setSubtitleLanguage(item.language)}
                     style={[
                       styles.chip,
-                      quality === item && styles.chipActive,
+                      subtitleLanguage === item.language && styles.chipActive,
+                      focusedSettingChip === `subtitle-${item.id}` && styles.focusedControl,
                     ]}
                   >
-                    <Text style={styles.chipText}>
-                      {item === 'auto' ? 'Auto' : item}
-                    </Text>
+                    <Text style={styles.chipText}>{item.language.toUpperCase()}</Text>
                   </Pressable>
                 ))}
               </View>
 
-              <Text style={styles.panelTitle}>{t('player.language')}</Text>
+              <Text style={styles.panelTitle}>{t('player.audio_tracks')}</Text>
               <View style={styles.row}>
-                {(['ru', 'uz', 'en'] as PlayerLanguage[]).map(item => (
+                {(audioTracks || []).map(item => (
                   <Pressable
-                    key={item}
+                    key={item.id}
                     focusable={isTV}
-                    onPress={() => setLanguage(item)}
+                    onFocus={() => setFocusedSettingChip(`audio-${item.id}`)}
+                    onBlur={() => setFocusedSettingChip(null)}
+                    onPress={() => setAudioLanguage(item.language)}
                     style={[
                       styles.chip,
-                      language === item && styles.chipActive,
+                      audioLanguage === item.language && styles.chipActive,
+                      focusedSettingChip === `audio-${item.id}` && styles.focusedControl,
                     ]}
                   >
-                    <Text style={styles.chipText}>{item.toUpperCase()}</Text>
+                    <Text style={styles.chipText}>{item.language.toUpperCase()}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -376,20 +721,13 @@ export function PlayerScreen() {
           <View style={styles.bottomWrap}>
             <View style={styles.progressRow}>
               <View style={styles.progressTrack}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    { width: `${progressPercent}%` },
-                  ]}
-                />
+                <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
               </View>
             </View>
 
             <View style={styles.timeRow}>
               <Text style={styles.timeText}>{formatTimer(currentTime)}</Text>
-              <Text style={styles.timeText}>
-                {isLive ? 'LIVE' : formatTimer(duration)}
-              </Text>
+              <Text style={styles.timeText}>{isLive ? t('player.live') : formatTimer(duration)}</Text>
             </View>
 
             <View style={styles.actionsRow}>
@@ -398,17 +736,10 @@ export function PlayerScreen() {
                   focusable={isTV}
                   onFocus={() => setFocusedControl('play')}
                   onBlur={() => setFocusedControl(null)}
-                  onPress={() => {
-                    togglePlayPause();
-                  }}
-                  style={[
-                    styles.actionBtn,
-                    focusedControl === 'play' && styles.focusedControl,
-                  ]}
+                  onPress={togglePlayPause}
+                  style={[styles.actionBtn, focusedControl === 'play' && styles.focusedControl]}
                 >
-                  <Text style={styles.actionText}>
-                    {isPlaying ? '⏸' : '▶'}
-                  </Text>
+                  {isPaused ? <PlayIcon size={22} color="#fff" /> : <PauseIcon size={22} color="#fff" />}
                 </Pressable>
 
                 <Pressable
@@ -416,12 +747,9 @@ export function PlayerScreen() {
                   onFocus={() => setFocusedControl('rewind')}
                   onBlur={() => setFocusedControl(null)}
                   onPress={() => seekBy(-10)}
-                  style={[
-                    styles.actionBtn,
-                    focusedControl === 'rewind' && styles.focusedControl,
-                  ]}
+                  style={[styles.actionBtn, focusedControl === 'rewind' && styles.focusedControl]}
                 >
-                  <Text style={styles.actionText}>⟲10</Text>
+                  <Text style={styles.actionText}>-10</Text>
                 </Pressable>
 
                 <Pressable
@@ -429,57 +757,34 @@ export function PlayerScreen() {
                   onFocus={() => setFocusedControl('forward')}
                   onBlur={() => setFocusedControl(null)}
                   onPress={() => seekBy(10)}
-                  style={[
-                    styles.actionBtn,
-                    focusedControl === 'forward' && styles.focusedControl,
-                  ]}
+                  style={[styles.actionBtn, focusedControl === 'forward' && styles.focusedControl]}
                 >
-                  <Text style={styles.actionText}>10⟳</Text>
+                  <Text style={styles.actionText}>+10</Text>
                 </Pressable>
 
                 <Pressable
                   focusable={isTV}
                   onFocus={() => setFocusedControl('mute')}
                   onBlur={() => setFocusedControl(null)}
-                  onPress={toggleMute}
-                  style={[
-                    styles.actionBtn,
-                    focusedControl === 'mute' && styles.focusedControl,
-                  ]}
+                  onPress={() => {
+                    setIsMuted(prev => !prev);
+                    pingControls();
+                  }}
+                  style={[styles.actionBtn, focusedControl === 'mute' && styles.focusedControl]}
                 >
-                  <Text style={styles.actionText}>{muted ? '🔇' : '🔊'}</Text>
+                  <Text style={styles.actionText}>{isMuted ? t('player.unmute') : t('player.mute')}</Text>
                 </Pressable>
               </View>
 
               <View style={styles.rightActions}>
                 <Pressable
                   focusable={isTV}
-                  onFocus={() => setFocusedControl('schedule')}
-                  onBlur={() => setFocusedControl(null)}
-                  onPress={() => setControlsVisible(false)}
-                  style={[
-                    styles.secondaryActionBtn,
-                    focusedControl === 'schedule' && styles.focusedControl,
-                  ]}
-                >
-                  <Text style={styles.secondaryActionText}>
-                    {t('tv_channels.schedule')}
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  focusable={isTV}
                   onFocus={() => setFocusedControl('settings')}
                   onBlur={() => setFocusedControl(null)}
-                  onPress={() => {
-                    toggleSettings();
-                  }}
-                  style={[
-                    styles.actionBtn,
-                    focusedControl === 'settings' && styles.focusedControl,
-                  ]}
+                  onPress={toggleSettings}
+                  style={[styles.actionBtn, focusedControl === 'settings' && styles.focusedControl]}
                 >
-                  <Text style={styles.actionText}>⚙</Text>
+                  <SettingsIcon size={18} color="#fff" />
                 </Pressable>
               </View>
             </View>
@@ -495,24 +800,79 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 9,
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#fff',
+    fontSize: 14,
+  },
+  posterFallback: {
+    backgroundColor: '#090909',
+  },
+  errorOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    zIndex: 10,
+  },
+  errorTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 14,
+  },
+  retryButton: {
+    minWidth: 140,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: 'rgba(20,20,20,0.8)',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+  },
+  retryText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   topRow: {
     position: 'absolute',
-    top: 20,
+    top: 18,
     left: 20,
     right: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     zIndex: 3,
+  },
+  roundControl: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(13,13,13,0.78)',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  focusedControl: {
+    borderColor: '#fff',
   },
   titleWrap: {
     flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
   },
   title: {
     color: '#fff',
-    fontSize: 30,
+    fontSize: 24,
     fontWeight: '700',
   },
   subtitle: {
@@ -520,24 +880,25 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontSize: 13,
   },
+  rightInfoWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   clock: {
     color: '#fff',
     fontSize: 14,
+    fontWeight: '500',
   },
-  roundControl: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(17,17,17,0.65)',
-    borderWidth: 2,
-    borderColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  roundControlText: {
+  liveChip: {
     color: '#fff',
-    fontSize: 24,
-    lineHeight: 26,
+    backgroundColor: '#b91c1c',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    fontSize: 12,
+    fontWeight: '700',
+    overflow: 'hidden',
   },
   bottomWrap: {
     position: 'absolute',
@@ -550,24 +911,25 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   progressTrack: {
-    height: 4,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    borderRadius: 3,
+    height: 5,
+    backgroundColor: 'rgba(255,255,255,0.24)',
+    borderRadius: 4,
     overflow: 'hidden',
   },
   progressFill: {
-    height: 4,
-    backgroundColor: '#f00020',
-    borderRadius: 3,
+    height: 5,
+    backgroundColor: '#ef4444',
+    borderRadius: 4,
   },
   timeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   timeText: {
     color: '#fff',
     fontSize: 13,
+    fontWeight: '600',
   },
   actionsRow: {
     flexDirection: 'row',
@@ -585,53 +947,36 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   actionBtn: {
-    minWidth: 44,
-    height: 44,
+    minWidth: 52,
+    height: 46,
     borderRadius: 12,
-    backgroundColor: 'rgba(17,17,17,0.75)',
+    backgroundColor: 'rgba(20,20,20,0.78)',
     borderWidth: 2,
     borderColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 10,
-  },
-  secondaryActionBtn: {
-    minWidth: 144,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: 'rgba(17,17,17,0.75)',
-    borderWidth: 2,
-    borderColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 14,
-  },
-  secondaryActionText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '500',
+    paddingHorizontal: 12,
   },
   actionText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 13,
     fontWeight: '700',
-  },
-  focusedControl: {
-    borderColor: '#fff',
   },
   settingsPanel: {
     position: 'absolute',
     right: 18,
-    bottom: 92,
-    width: 360,
+    bottom: 96,
+    width: 380,
     borderRadius: 14,
-    backgroundColor: 'rgba(40,40,40,0.88)',
+    backgroundColor: 'rgba(22,22,22,0.92)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
     padding: 16,
     zIndex: 4,
   },
   panelTitle: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     marginBottom: 10,
     marginTop: 4,
@@ -643,19 +988,20 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   chip: {
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: 'rgba(255,255,255,0.12)',
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: 8,
     borderRadius: 9,
     borderWidth: 1,
     borderColor: 'transparent',
   },
   chipActive: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     borderColor: '#fff',
   },
   chipText: {
     color: '#fff',
     fontSize: 12,
+    fontWeight: '600',
   },
 });

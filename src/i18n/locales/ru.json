@@ -7,7 +7,8 @@
   },
   "errors": {
     "loading": "Ошибка загрузки",
-    "server": "Ошибка сервера"
+    "server": "Ошибка сервера",
+    "unauthorized": "Сессия истекла. Войдите снова."
   },
   "login": {
     "title": "Вход в аккаунт",
@@ -104,7 +105,16 @@
     "quality": "Качество",
     "size_small": "Мелкий",
     "size_default": "Стандартный",
-    "size_large": "Крупный"
+    "size_large": "Крупный",
+    "subtitles": "Субтитры",
+    "audio_tracks": "Аудиодорожки",
+    "off": "Выключено",
+    "mute": "Без звука",
+    "unmute": "Со звуком",
+    "loading_stream": "Загрузка видео...",
+    "stream_unavailable": "Не удалось открыть видеопоток",
+    "live": "ПРЯМОЙ ЭФИР",
+    "retry": "Повторить"
   },
   "settings": {
     "interface_language": "Интерфейс и язык",

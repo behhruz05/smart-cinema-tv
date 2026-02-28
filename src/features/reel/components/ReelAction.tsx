@@ -6,9 +6,9 @@ import {
   Pressable,
   Platform,
 } from 'react-native';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { toggleLikeReel } from '../../../store/slice/reel.slice';
-import { AppDispatch } from '../../../store';
+import { AppDispatch, RootState } from '../../../store';
 import { Reel } from '../../../service/reel.service';
 import { HeartIcon } from '../../../shared/icons/HeartIcon';
 
@@ -31,6 +31,7 @@ export function ReelAction({
 }: ReelActionProps) {
   const dispatch = useDispatch<AppDispatch>();
   const isTV = Platform.isTV;
+  const likePending = useSelector((state: RootState) => !!state.reel.likePending[reel.id]);
   const [focusedLike, setFocusedLike] = React.useState(false);
   const skipNextPressRef = React.useRef(false);
   const tvDirectionalFocusProps = isTV
@@ -40,8 +41,9 @@ export function ReelAction({
       } as any)
     : null;
   const handleLikePress = React.useCallback(() => {
-    dispatch(toggleLikeReel(reel.id));
-  }, [dispatch, reel.id]);
+    if (likePending) return;
+    dispatch(toggleLikeReel({ reelId: reel.id, isLiked: reel.is_liked }));
+  }, [dispatch, likePending, reel.id, reel.is_liked]);
 
   const handleLikeKeyDown = React.useCallback(
     (event: any) => {
@@ -84,7 +86,7 @@ export function ReelAction({
               focusedLike && styles.iconBtnFocused,
             ]}
           >
-            <HeartIcon size={32}/>
+            <HeartIcon size={32} filled={reel.is_liked} />
           </View>
           <Text style={styles.count}>{reel.likes_count}</Text>
         </View>

@@ -8,11 +8,18 @@ import {
   findNodeHandle,
   Platform,
   Pressable,
+  ViewToken,
 } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../../store';
 import { Reel } from '../../../service/reel.service';
-import { fetchReels, resetReels } from '../../../store/slice/reel.slice';
+import {
+  fetchInitialReels,
+  fetchMoreReels,
+  resetReels,
+  setCurrentIndex,
+} from '../../../store/slice/reel.slice';
 import { ReelLoader } from '../components/ReelLoader';
 import { ReelCard } from '../components/ReelCard';
 import { ReelEmpty } from '../components/ReelEmpty';
@@ -26,6 +33,7 @@ type ReelListItem =
 
 export function ReelScreen() {
   const dispatch = useDispatch<AppDispatch>();
+  const isFocused = useIsFocused();
   const isTV = Platform.isTV;
   const listRef = useRef<FlatList<ReelListItem>>(null);
   const likeHandles = useRef<Record<number, number>>({});
@@ -34,13 +42,21 @@ export function ReelScreen() {
   const isProgrammaticScrollingRef = useRef(false);
   const programmaticScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [focusVersion, setFocusVersion] = useState(0);
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      const firstVisible = viewableItems[0];
+      if (typeof firstVisible?.index !== 'number') return;
+      dispatch(setCurrentIndex(firstVisible.index));
+    },
+  ).current;
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 75 }).current;
 
   const {
     reels,
     loading,
     loadingMore,
     hasMore,
-    page,
+    currentIndex,
   } = useSelector(
     (state: RootState) => state.reel,
   );
@@ -54,7 +70,7 @@ export function ReelScreen() {
 
   useEffect(() => {
     dispatch(resetReels());
-    dispatch(fetchReels({ page: 1, per_page: 10 }));
+    dispatch(fetchInitialReels());
   }, [dispatch]);
 
   useEffect(() => {
@@ -67,7 +83,7 @@ export function ReelScreen() {
 
   const handleLoadMore = () => {
     if (loading || loadingMore || !hasMore) return;
-    dispatch(fetchReels({ page: page + 1, per_page: 10 }));
+    dispatch(fetchMoreReels());
   };
 
   const handleLikeRef = (index: number, node: any) => {
@@ -83,6 +99,7 @@ export function ReelScreen() {
     if (isProgrammaticScrollingRef.current) return;
 
     focusedIndexRef.current = index;
+    dispatch(setCurrentIndex(index));
     isProgrammaticScrollingRef.current = true;
     if (programmaticScrollTimerRef.current) {
       clearTimeout(programmaticScrollTimerRef.current);
@@ -148,6 +165,7 @@ export function ReelScreen() {
             event.nativeEvent.contentOffset.y / height,
           );
           focusedIndexRef.current = Math.max(0, nextIndex);
+          dispatch(setCurrentIndex(nextIndex));
           isProgrammaticScrollingRef.current = false;
           if (programmaticScrollTimerRef.current) {
             clearTimeout(programmaticScrollTimerRef.current);
@@ -156,6 +174,8 @@ export function ReelScreen() {
         }}
         onEndReachedThreshold={0.6}
         onEndReached={handleLoadMore}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
         ListFooterComponent={
           loadingMore ? (
             <View style={styles.footerLoader}>
@@ -191,12 +211,14 @@ export function ReelScreen() {
               <ReelEmpty />
             </Pressable>
           ) : (
-            <ReelCard
-              reel={item.reel}
-              index={index}
-              preferredFocus={index === 0}
-              nextFocusUp={likeHandles.current[index - 1]}
-              nextFocusDown={
+              <ReelCard
+                reel={item.reel}
+                index={index}
+                isActive={index === currentIndex}
+                screenActive={isFocused}
+                preferredFocus={index === 0}
+                nextFocusUp={likeHandles.current[index - 1]}
+                nextFocusDown={
                 index === reels.length - 1
                   ? emptyHandle.current ?? undefined
                   : likeHandles.current[index + 1]

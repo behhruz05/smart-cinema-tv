@@ -116,7 +116,6 @@ export function MovieDetailScreen() {
   const similarMovies = relatedMovies.filter(
     relatedMovie => relatedMovie.id !== movie.id,
   );
-
   return (
     <ScrollView
       style={styles.container}
@@ -132,7 +131,7 @@ export function MovieDetailScreen() {
         onBack={() => navigation.goBack()}
         onWatch={() =>
           navigation.navigate('Player', {
-            sourceUri: movie.files?.[0]?.flussonic_vod_path,
+            movieId: movie.id,
             posterUri: movie.poster_url,
             title,
             subtitle: durationLabel,

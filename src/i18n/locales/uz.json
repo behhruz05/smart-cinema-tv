@@ -7,7 +7,8 @@
   },
   "errors": {
     "loading": "Yuklashda xatolik",
-    "server": "Server xatosi"
+    "server": "Server xatosi",
+    "unauthorized": "Sessiya tugadi. Qayta kiring."
   },
   "login": {
     "title": "Hisobga kirish",
@@ -104,7 +105,16 @@
     "quality": "Sifat",
     "size_small": "Kichik",
     "size_default": "Standart",
-    "size_large": "Katta"
+    "size_large": "Katta",
+    "subtitles": "Subtitrlar",
+    "audio_tracks": "Audio yo'laklar",
+    "off": "O'chirilgan",
+    "mute": "Ovoz o'chirish",
+    "unmute": "Ovoz yoqish",
+    "loading_stream": "Video yuklanmoqda...",
+    "stream_unavailable": "Video oqimini ochib bo'lmadi",
+    "live": "JONLI",
+    "retry": "Qayta urinish"
   },
   "settings": {
     "interface_language": "Interfeys va til",

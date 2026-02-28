@@ -1,6 +1,8 @@
 export interface WatchHistoryItem {
   type: 'movie' | 'series';
   id: string;
+  movie_id?: string;
+  episode_id?: string;
   title_uz?: string;
   title_ru?: string;
   poster_url: string;

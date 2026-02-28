@@ -1,12 +1,9 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import uz from './locales/uz.json';
 import ru from './locales/ru.json';
 import en from './locales/en.json';
-
-const LANGUAGE_KEY = 'app_language';
 
 const resources = {
   uz: { translation: uz },
@@ -16,32 +13,25 @@ const resources = {
 
 export type AppLanguage = 'uz' | 'ru' | 'en';
 
-export function getAppLanguage(
-  lng: string | undefined = i18n.resolvedLanguage || i18n.language,
-): AppLanguage {
+export function normalizeAppLanguage(lng?: string | null): AppLanguage {
   if (lng?.startsWith('ru')) return 'ru';
   if (lng?.startsWith('en')) return 'en';
   return 'uz';
 }
 
+export function getAppLanguage(
+  lng: string | undefined = i18n.resolvedLanguage || i18n.language,
+): AppLanguage {
+  return normalizeAppLanguage(lng);
+}
+
 async function initI18n() {
-  let savedLanguage = 'uz'; 
-
-  try {
-    const storedLang = await AsyncStorage.getItem(LANGUAGE_KEY);
-    if (storedLang) {
-      savedLanguage = storedLang;
-    }
-  } catch (e) {
-    console.log('Language load error', e);
-  }
-
   await i18n
     .use(initReactI18next)
     .init({
       compatibilityJSON: 'v4',
       resources,
-      lng: savedLanguage,
+      lng: 'uz',
       fallbackLng: 'uz',
       interpolation: {
         escapeValue: false,
@@ -50,8 +40,7 @@ async function initI18n() {
 }
 
 export async function changeAppLanguage(lang: 'uz' | 'ru' | 'en') {
-  await i18n.changeLanguage(lang);
-  await AsyncStorage.setItem(LANGUAGE_KEY, lang);
+  await i18n.changeLanguage(normalizeAppLanguage(lang));
 }
 
 export { initI18n };

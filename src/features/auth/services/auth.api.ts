@@ -22,6 +22,7 @@ export const authApi = {
       method: 'POST',
       body: payload,
       retry: 2,
+      skipAuth: true,
     });
 
     return res.data.tokens.access_token;
