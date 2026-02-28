@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -54,7 +54,10 @@ export function SidebarMenu() {
   );
 
   const [focused, setFocused] = useState<string | null>(null);
+  const [allowInitialPreferredFocus, setAllowInitialPreferredFocus] =
+    useState(true);
   const isDarkMode = resolvedTheme === 'dark';
+  const stableRouteRef = useRef('Home');
 
   const widthAnim = useRef(
     new Animated.Value(COLLAPSED_WIDTH)
@@ -95,12 +98,19 @@ export function SidebarMenu() {
     const activeName = getDeepestRouteName(state);
     return activeName === 'Main' ? 'Home' : activeName;
   });
+  const stableCurrentRoute = useMemo(() => {
+    if (currentRoute) {
+      stableRouteRef.current = currentRoute;
+    }
+    return stableRouteRef.current;
+  }, [currentRoute]);
 
   useEffect(() => {
-    if (currentRoute === 'Home') {
-      setFocused('Home');
-    }
-  }, [currentRoute]);
+    const id = setTimeout(() => {
+      setAllowInitialPreferredFocus(false);
+    }, 0);
+    return () => clearTimeout(id);
+  }, []);
 
   const navigateTo = (screen: string) => {
     navigation.navigate('Main', {
@@ -121,8 +131,12 @@ export function SidebarMenu() {
       <View style={styles.logoSection}>
         <Pressable
           focusable={isTV}
-          onFocus={() => setFocused('Logo')}
-          onBlur={() => setFocused(null)}
+          onFocus={() =>
+            setFocused(prev => (prev === 'Logo' ? prev : 'Logo'))
+          }
+          onBlur={() =>
+            setFocused(prev => (prev === 'Logo' ? null : prev))
+          }
           onPress={() => dispatch(toggleSidebar())}
           style={[
             styles.logoWrapper,
@@ -138,16 +152,24 @@ export function SidebarMenu() {
       <View style={styles.menuSection}>
         {icons.map((item, index) => {
           const IconComponent = item.Icon;
-          const active = currentRoute === item.id;
+          const active = stableCurrentRoute === item.id;
           const isFocused = focused === item.id;
 
           return (
             <Pressable
               key={item.id}
               focusable={isTV}
-              hasTVPreferredFocus={index === 0} // 🔥 always first item
-              onFocus={() => setFocused(item.id)}
-              onBlur={() => setFocused(null)}
+              hasTVPreferredFocus={
+                allowInitialPreferredFocus &&
+                index === 0 &&
+                stableCurrentRoute === 'Home'
+              }
+              onFocus={() =>
+                setFocused(prev => (prev === item.id ? prev : item.id))
+              }
+              onBlur={() =>
+                setFocused(prev => (prev === item.id ? null : prev))
+              }
               onPress={() => navigateTo(item.id)}
               style={[
                 styles.item,
@@ -199,13 +221,17 @@ export function SidebarMenu() {
       <View style={styles.bottomSection}>
         <Pressable
           focusable={isTV}
-          onFocus={() => setFocused('Settings')}
-          onBlur={() => setFocused(null)}
+          onFocus={() =>
+            setFocused(prev => (prev === 'Settings' ? prev : 'Settings'))
+          }
+          onBlur={() =>
+            setFocused(prev => (prev === 'Settings' ? null : prev))
+          }
           onPress={() => navigateTo('Settings')}
           style={[
             styles.item,
             isDarkMode && styles.itemDark,
-            currentRoute === 'Settings' && styles.activeItem,
+            stableCurrentRoute === 'Settings' && styles.activeItem,
             focused === 'Settings' && styles.focusedItem,
             isDarkMode &&
               focused === 'Settings' &&
@@ -215,7 +241,7 @@ export function SidebarMenu() {
           <SettingsIcon
             size={18}
             color={
-              currentRoute === 'Settings' ||
+              stableCurrentRoute === 'Settings' ||
               focused === 'Settings'
                 ? isDarkMode
                   ? '#ffffff'
@@ -224,7 +250,7 @@ export function SidebarMenu() {
                   ? '#9a9a9a'
                   : '#777'
             }
-            filled={currentRoute === 'Settings'}
+            filled={stableCurrentRoute === 'Settings'}
           />
 
           <Animated.View style={{ opacity: textOpacity }}>
@@ -233,7 +259,7 @@ export function SidebarMenu() {
                 styles.title,
                 {
                   color:
-                    currentRoute === 'Settings' ||
+                    stableCurrentRoute === 'Settings' ||
                     focused === 'Settings'
                       ? isDarkMode
                         ? '#ffffff'
@@ -310,6 +336,7 @@ const styles = StyleSheet.create({
 
   activeItem: {
     backgroundColor: '#1A1A1A',
+    borderColor: '#ffffff',
   },
 
   focusedItem: {

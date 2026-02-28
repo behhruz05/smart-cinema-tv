@@ -17,7 +17,7 @@ interface Props {
   item: Carousel;
 }
 
-export function CarouselItem({ item }: Props) {
+function CarouselItemComponent({ item }: Props) {
   const { t } = useTranslation();
   const movie = item.movie;
   const navigation = useNavigation<any>();
@@ -95,6 +95,11 @@ export function CarouselItem({ item }: Props) {
     </ImageBackground>
   );
 }
+
+export const CarouselItem = React.memo(
+  CarouselItemComponent,
+  (prev, next) => prev.item.id === next.item.id,
+);
 
 const styles = StyleSheet.create({
   banner: {

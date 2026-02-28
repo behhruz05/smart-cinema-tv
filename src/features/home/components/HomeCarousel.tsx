@@ -1,9 +1,18 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   View,
   FlatList,
   ActivityIndicator,
   LayoutChangeEvent,
+  ListRenderItem,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   useWindowDimensions,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -12,19 +21,15 @@ import { AppDispatch, RootState } from '../../../store';
 import { fetchCarousels } from '../../../store/slice/home.slice';
 import { Carousel } from '../../../types/home';
 
+const HOME_SCREEN_HORIZONTAL_PADDING = 40;
+const SPACING = 20;
+
 export function HomeCarousel() {
   const dispatch = useDispatch<AppDispatch>();
   const { width } = useWindowDimensions();
-  const listRef = useRef<FlatList<Carousel>>(null);
   const currentIndexRef = useRef(0);
-  const itemIntervalRef = useRef(0);
-  const realignTimeoutRef = useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
-  const SPACING = 22;
-  const HOME_SCREEN_HORIZONTAL_PADDING = 40;
   const fallbackWidth = Math.max(
     280,
     width - HOME_SCREEN_HORIZONTAL_PADDING,
@@ -32,7 +37,6 @@ export function HomeCarousel() {
 
   const ITEM_WIDTH = Math.max(280, containerWidth || fallbackWidth);
   const ITEM_INTERVAL = ITEM_WIDTH + SPACING;
-  itemIntervalRef.current = ITEM_INTERVAL;
 
   const { carousels, loading } = useSelector(
     (state: RootState) => state.home
@@ -44,53 +48,47 @@ export function HomeCarousel() {
 
   const onContainerLayout = (event: LayoutChangeEvent) => {
     const nextWidth = Math.round(event.nativeEvent.layout.width);
-    if (nextWidth && nextWidth !== containerWidth) {
-      setContainerWidth(nextWidth);
+    if (!nextWidth || nextWidth === containerWidth) {
+      return;
     }
+    setContainerWidth(nextWidth);
   };
 
   useEffect(() => {
     if (!carousels.length) return;
-    const safeIndex = Math.min(
+    currentIndexRef.current = Math.min(
       currentIndexRef.current,
-      Math.max(0, carousels.length - 1),
+      carousels.length - 1,
     );
-    currentIndexRef.current = safeIndex;
-
-    requestAnimationFrame(() => {
-      listRef.current?.scrollToOffset({
-        offset: safeIndex * itemIntervalRef.current,
-        animated: false,
-      });
-    });
   }, [carousels.length]);
 
-  useEffect(() => {
-    if (!carousels.length) return;
+  const initialScrollIndex =
+    carousels.length > 0
+      ? Math.min(currentIndexRef.current, carousels.length - 1)
+      : 0;
+  const listKey = `home-carousel-${Math.round(ITEM_INTERVAL)}`;
+  const itemContainerStyle = useMemo(
+    () => [styles.itemContainer, { width: ITEM_WIDTH }],
+    [ITEM_WIDTH],
+  );
 
-    if (realignTimeoutRef.current) {
-      clearTimeout(realignTimeoutRef.current);
-    }
-
-    realignTimeoutRef.current = setTimeout(() => {
-      const safeIndex = Math.min(
-        currentIndexRef.current,
-        Math.max(0, carousels.length - 1),
+  const handleMomentumEnd = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      currentIndexRef.current = Math.round(
+        event.nativeEvent.contentOffset.x / ITEM_INTERVAL,
       );
-      currentIndexRef.current = safeIndex;
-      listRef.current?.scrollToOffset({
-        offset: safeIndex * ITEM_INTERVAL,
-        animated: false,
-      });
-    }, 280);
+    },
+    [ITEM_INTERVAL],
+  );
 
-    return () => {
-      if (realignTimeoutRef.current) {
-        clearTimeout(realignTimeoutRef.current);
-        realignTimeoutRef.current = null;
-      }
-    };
-  }, [ITEM_INTERVAL, carousels.length]);
+  const renderItem = useCallback<ListRenderItem<Carousel>>(
+    ({ item }) => (
+      <View style={itemContainerStyle}>
+        <CarouselItem item={item} />
+      </View>
+    ),
+    [itemContainerStyle],
+  );
 
   if (loading) {
     return (
@@ -105,31 +103,31 @@ export function HomeCarousel() {
   return (
     <View style={styles.container} onLayout={onContainerLayout}>
       <FlatList
-        ref={listRef}
+        key={listKey}
         data={carousels}
         keyExtractor={(item) => item.id}
+        initialScrollIndex={initialScrollIndex}
         horizontal
         snapToInterval={ITEM_INTERVAL}
         snapToAlignment="start"
         decelerationRate="fast"
+        disableIntervalMomentum
         showsHorizontalScrollIndicator={false}
         bounces={false}
+        removeClippedSubviews
+        initialNumToRender={2}
+        maxToRenderPerBatch={2}
+        windowSize={3}
+        updateCellsBatchingPeriod={16}
+        extraData={ITEM_INTERVAL}
         getItemLayout={(_, index) => ({
           length: ITEM_INTERVAL,
           offset: ITEM_INTERVAL * index,
           index,
         })}
-        onMomentumScrollEnd={event => {
-          currentIndexRef.current = Math.round(
-            event.nativeEvent.contentOffset.x / itemIntervalRef.current,
-          );
-        }}
+        onMomentumScrollEnd={handleMomentumEnd}
         ItemSeparatorComponent={Separator}
-        renderItem={({ item }) => (
-          <View style={[styles.itemContainer, { width: ITEM_WIDTH }]}>
-            <CarouselItem item={item} />
-          </View>
-        )}
+        renderItem={renderItem}
       />
     </View>
   );
@@ -150,7 +148,7 @@ const styles = {
     alignItems: 'center',
   } as const,
   separator: {
-    width: 22,
+    width: 20,
   } as const,
   itemContainer: {
   } as const,
