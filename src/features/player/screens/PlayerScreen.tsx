@@ -19,10 +19,9 @@ import { AppDispatch } from '../../../store';
 import { streamingApi, StreamPayload } from '../services/streaming.api';
 import { getAppLanguage } from '../../../i18n';
 import { tokenStorage } from '../../../shared/lib/tokenStorage';
-import { BackIcon } from '../../../shared/icons/BackIcon';
-import { PlayIcon } from '../../../shared/icons/PlayIcon';
-import { PauseIcon } from '../../../shared/icons/PauseIcon';
-import { SettingsIcon } from '../../../shared/icons/SettingIcon';
+import { PlayerTopRow } from '../components/PlayerTopRow';
+import { PlayerSettingsPanel } from '../components/PlayerSettingsPanel';
+import { PlayerBottomControls } from '../components/PlayerBottomControls';
 
 type PlayerRouteProp = RouteProp<RootStackParamList, 'Player'>;
 type PlayerNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -46,15 +45,6 @@ function getVideoComponent(): React.ComponentType<any> | null {
   try {
     const moduleRef = require('react-native-video');
     return (moduleRef?.default || moduleRef) as React.ComponentType<any>;
-  } catch {
-    return null;
-  }
-}
-
-function getTVEventHandlerClass(): any {
-  try {
-    const nativeModule = require('react-native');
-    return nativeModule?.TVEventHandler ?? null;
   } catch {
     return null;
   }
@@ -89,10 +79,9 @@ export function PlayerScreen() {
   const navigation = useNavigation<PlayerNavigationProp>();
   const dispatch = useDispatch<AppDispatch>();
 
-  const isTV = Platform.isTV;
+  const isTV = Platform.isTV || Platform.OS === 'android';
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const tvHandlerRef = useRef<any>(null);
   const playerRef = useRef<any>(null);
   const didSeekToResumeRef = useRef(false);
   const currentTimeRef = useRef(0);
@@ -105,10 +94,11 @@ export function PlayerScreen() {
   const isPausedRef = useRef(false);
   const settingsVisibleRef = useRef(false);
   const controlsVisibleRef = useRef(true);
-  const seekByRef = useRef<(delta: number) => void>(() => {});
+  const seekByRef = useRef<(delta: number, revealControls?: boolean) => void>(() => {});
   const togglePlayPauseRef = useRef<() => void>(() => {});
   const pingControlsRef = useRef<() => void>(() => {});
   const seekIndicatorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTVEventRef = useRef<{ type: string; at: number } | null>(null);
 
   const {
     movieId,
@@ -151,7 +141,6 @@ export function PlayerScreen() {
   const [seekIndicatorVisible, setSeekIndicatorVisible] = useState(false);
 
   const VideoComponent = useMemo(() => getVideoComponent(), []);
-  const TVEventHandlerClass = useMemo(() => getTVEventHandlerClass(), []);
   const VideoElement = VideoComponent as any;
 
   const playbackUri =
@@ -161,6 +150,19 @@ export function PlayerScreen() {
   const progressPercent = canSeek ? Math.min(100, (currentTime / duration) * 100) : 100;
   const progressThumbPercent = Math.min(100, Math.max(0, progressPercent));
   const appLanguage = getAppLanguage();
+  const topFocusedControl: 'back' | null = focusedControl === 'back' ? 'back' : null;
+  const bottomFocusedControl:
+    | 'play'
+    | 'rewind'
+    | 'forward'
+    | 'progress'
+    | 'mute'
+    | 'settings'
+    | null = ['play', 'rewind', 'forward', 'progress', 'mute', 'settings'].includes(
+    String(focusedControl),
+  )
+    ? (focusedControl as 'play' | 'rewind' | 'forward' | 'progress' | 'mute' | 'settings')
+    : null;
 
   useEffect(() => {
     let active = true;
@@ -181,6 +183,8 @@ export function PlayerScreen() {
       if (settingsVisibleRef.current) return;
       if (isPausedRef.current) return;
       setControlsVisible(false);
+      setFocusedControl(null);
+      setFocusedSettingChip(null);
     }, CONTROLS_HIDE_DELAY_MS);
   }, []);
 
@@ -371,7 +375,7 @@ export function PlayerScreen() {
   }, [controlsVisible]);
 
   const seekBy = useCallback(
-    (delta: number) => {
+    (delta: number, revealControls = true) => {
       if (!canSeek) return;
       const next = Math.max(0, Math.min(duration, currentTimeRef.current + delta));
       setCurrentTime(next);
@@ -384,8 +388,10 @@ export function PlayerScreen() {
       seekIndicatorTimeoutRef.current = setTimeout(() => {
         setSeekIndicatorVisible(false);
       }, 1200);
-      setControlsVisible(true);
-      pingControls();
+      if (revealControls) {
+        setControlsVisible(true);
+        pingControls();
+      }
     },
     [canSeek, duration, pingControls],
   );
@@ -469,98 +475,221 @@ export function PlayerScreen() {
     };
   }, [clearStartupTimer, submitProgress]);
 
-  useEffect(() => {
-    if (!isTV || !TVEventHandlerClass) return;
+  const handleTVEvent = useCallback((event: { eventType?: string; eventKeyAction?: number; keyCode?: number }) => {
+    const rawType = event?.eventType;
+    const keyCode = event?.keyCode;
+    if (!rawType && typeof keyCode !== 'number') return;
 
-    const handler = new TVEventHandlerClass();
-    handler.enable(null, (_: any, event: { eventType?: string }) => {
-      const rawType = event?.eventType;
-      if (!rawType) return;
+    const normalized = (rawType || '').toLowerCase().trim();
+    const now = Date.now();
+    const last = lastTVEventRef.current;
+    const fingerprint = `${normalized || 'keycode'}:${String(keyCode ?? '')}`;
+    if (last && last.type === fingerprint && now - last.at < 80) {
+      return;
+    }
+    lastTVEventRef.current = { type: fingerprint, at: now };
 
-      const type =
-        rawType === 'swipeLeft'
-          ? 'left'
-          : rawType === 'swipeRight'
-            ? 'right'
-            : rawType === 'swipeUp'
-              ? 'up'
-              : rawType === 'swipeDown'
-                ? 'down'
-                : rawType === 'rewind'
-                  ? 'left'
-                  : rawType === 'fastForward'
-                    ? 'right'
-                    : rawType === 'back'
+    const type =
+      normalized === 'swipeleft'
+        ? 'left'
+        : normalized === 'swiperight'
+          ? 'right'
+          : normalized === 'swipeup'
+            ? 'up'
+            : normalized === 'swipedown'
+              ? 'down'
+              : normalized === 'rewind'
+                ? 'left'
+                : normalized === 'fastforward'
+                  ? 'right'
+                  : normalized === 'back'
+                    ? 'menu'
+                    : normalized === 'escape'
                       ? 'menu'
-                      : rawType === 'escape'
-                        ? 'menu'
-                        : rawType === 'ok'
+                      : normalized === 'arrowleft' || normalized === 'dpadleft'
+                        ? 'left'
+                        : normalized === 'arrowright' || normalized === 'dpadright'
+                          ? 'right'
+                          : normalized === 'arrowup' || normalized === 'dpadup'
+                            ? 'up'
+                            : normalized === 'arrowdown' || normalized === 'dpaddown'
+                              ? 'down'
+                              : normalized === 'select' || normalized === 'dpadcenter'
+                                ? 'select'
+                      : normalized === 'ok'
+                        ? 'select'
+                        : normalized === 'enter'
                           ? 'select'
-                          : rawType === 'enter'
-                            ? 'select'
-                            : rawType;
+                          : normalized === 'playpause'
+                            ? 'playPause'
+                            : normalized.includes('left')
+                              ? 'left'
+                              : normalized.includes('right')
+                                ? 'right'
+                                : normalized.includes('up')
+                                  ? 'up'
+                                  : normalized.includes('down')
+                                    ? 'down'
+                                    : normalized.includes('select') || normalized.includes('center')
+                                      ? 'select'
+                                      : normalized.includes('menu')
+                                        ? 'menu'
+                                        : typeof keyCode === 'number'
+                                          ? keyCode === 21
+                                            ? 'left'
+                                            : keyCode === 22
+                                              ? 'right'
+                                              : keyCode === 19
+                                                ? 'up'
+                                                : keyCode === 20
+                                                  ? 'down'
+                                                  : keyCode === 37
+                                                    ? 'left'
+                                                    : keyCode === 39
+                                                      ? 'right'
+                                                      : keyCode === 38
+                                                        ? 'up'
+                                                        : keyCode === 40
+                                                          ? 'down'
+                                                  : keyCode === 23 || keyCode === 66
+                                                    ? 'select'
+                                                    : keyCode === 4 || keyCode === 111
+                                                      ? 'menu'
+                                                      : normalized
+                                          : normalized;
 
+    if (type === 'playPause') {
       if (!controlsVisibleRef.current) {
         setControlsVisible(true);
       }
       pingControlsRef.current();
+      togglePlayPauseRef.current();
+      return;
+    }
 
-      if (type === 'playPause') {
+    if (type === 'left') {
+      if (settingsVisibleRef.current) {
+        setSettingsVisible(false);
+      }
+      seekByRef.current(-SEEK_STEP_SECONDS, true);
+      return;
+    }
+
+    if (type === 'right') {
+      if (settingsVisibleRef.current) {
+        setSettingsVisible(false);
+      }
+      seekByRef.current(SEEK_STEP_SECONDS, true);
+      return;
+    }
+
+    if (type === 'down') {
+      if (!controlsVisibleRef.current) {
+        setControlsVisible(true);
+        pingControlsRef.current();
+        return;
+      }
+      if (!settingsVisibleRef.current) {
+        setSettingsVisible(true);
+      }
+      pingControlsRef.current();
+      return;
+    }
+
+    if (type === 'up') {
+      if (!controlsVisibleRef.current) {
+        setControlsVisible(true);
+        pingControlsRef.current();
+        return;
+      }
+      if (settingsVisibleRef.current) {
+        setSettingsVisible(false);
+      }
+      pingControlsRef.current();
+      return;
+    }
+
+    if (type === 'select') {
+      if (controlsVisibleRef.current) {
+        pingControlsRef.current();
         togglePlayPauseRef.current();
         return;
       }
+      setControlsVisible(true);
+      pingControlsRef.current();
+      return;
+    }
 
-      if (type === 'left') {
-        if (settingsVisibleRef.current) {
-          setSettingsVisible(false);
-        }
-        seekByRef.current(-SEEK_STEP_SECONDS);
-        return;
-      }
+    if (type === 'menu') {
+      setControlsVisible(true);
+      setSettingsVisible(prev => !prev);
+      pingControlsRef.current();
+      return;
+    }
 
-      if (type === 'right') {
-        if (settingsVisibleRef.current) {
-          setSettingsVisible(false);
-        }
-        seekByRef.current(SEEK_STEP_SECONDS);
-        return;
-      }
+    if (!controlsVisibleRef.current) {
+      setControlsVisible(true);
+    }
+    pingControlsRef.current();
+    if (settingsVisibleRef.current) {
+      setSettingsVisible(false);
+    }
+  }, []);
 
-      if (type === 'up' || type === 'down') {
-        if (settingsVisibleRef.current) {
-          setSettingsVisible(false);
-        }
-        setControlsVisible(true);
-        pingControlsRef.current();
-        return;
-      }
+  const tvRootPressProps = isTV
+    ? ({
+        onKeyDown: (event: any) => {
+          const key = event?.nativeEvent?.key || event?.nativeEvent?.eventType;
+          const keyCode = event?.nativeEvent?.keyCode;
+          if (!key && typeof keyCode !== 'number') return;
+          handleTVEvent({
+            eventType: key ? String(key) : undefined,
+            keyCode: typeof keyCode === 'number' ? keyCode : undefined,
+          });
+        },
+      } as any)
+    : null;
 
-      if (type === 'select') {
-        if (controlsVisibleRef.current) {
-          togglePlayPauseRef.current();
-        }
-        return;
-      }
+  const handleNativeTVKeyDown = useCallback(
+    (event: any) => {
+      const key = event?.nativeEvent?.key || event?.nativeEvent?.eventType;
+      const keyCode = event?.nativeEvent?.keyCode;
+      if (!key && typeof keyCode !== 'number') return;
+      handleTVEvent({
+        eventType: key ? String(key) : undefined,
+        keyCode: typeof keyCode === 'number' ? keyCode : undefined,
+      });
+    },
+    [handleTVEvent],
+  );
 
-      if (type === 'menu') {
-        // Always show controls and toggle settings
-        setControlsVisible(true);
-        setSettingsVisible(prev => !prev);
-        pingControlsRef.current();
-      }
-    });
+  useEffect(() => {
+    if (!isTV) return;
+    let tvEventSubscription: any = null;
+    try {
+      const rnModule = require('react-native');
+      const TVHandler = rnModule?.TVEventHandler;
+      if (!TVHandler) return;
+      const tvEventHandler = new TVHandler();
+      tvEventSubscription = tvEventHandler;
+      tvEventHandler.enable?.(undefined, (_: any, event: any) => {
+        handleTVEvent(event);
+      });
+    } catch {
+      // no-op when TV event handler is unavailable on this platform/build
+    }
 
-    tvHandlerRef.current = handler;
     return () => {
-      tvHandlerRef.current?.disable?.();
-      tvHandlerRef.current = null;
+      tvEventSubscription?.disable?.();
     };
-  }, [TVEventHandlerClass, isTV]);
+  }, [handleTVEvent, isTV]);
 
   return (
     <Pressable
       onPress={pingControls}
-      focusable={false}
+      focusable={isTV}
+      hasTVPreferredFocus={isTV}
+      {...tvRootPressProps}
       style={styles.screen}
     >
       {VideoElement && hasVideoSource ? (
@@ -680,216 +809,76 @@ export function PlayerScreen() {
         </View>
       )}
 
-      <View style={styles.topRow}>
+      {isTV && !streamError && (
         <Pressable
-          focusable={isTV}
-          hasTVPreferredFocus={isTV}
-          onFocus={() => setFocusedControl('back')}
-          onBlur={() => setFocusedControl(null)}
-          onPress={() => navigation.goBack()}
-          style={[
-            styles.roundControl,
-            focusedControl === 'back' && styles.focusedControl,
-          ]}
-        >
-          <BackIcon size={22} color="#fff" filled />
-        </Pressable>
+          focusable
+          hasTVPreferredFocus={!controlsVisible}
+          pointerEvents={controlsVisible ? 'none' : 'auto'}
+          onPress={pingControls}
+          onKeyDown={handleNativeTVKeyDown}
+          style={styles.focusCatcher}
+        />
+      )}
 
-        <View style={styles.titleWrap}>
-          <Text style={styles.title} numberOfLines={1}>{resolvedTitle}</Text>
-          {!!subtitle && <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>}
-        </View>
-
-        <View style={styles.rightInfoWrap}>
-          {isLive ? <Text style={styles.liveChip}>{t('player.live')}</Text> : null}
-          <Text style={styles.clock}>
-            {new Date().toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </Text>
-        </View>
-      </View>
+      {controlsVisible && !streamError && (
+        <PlayerTopRow
+          isTV={isTV}
+          focusedControl={topFocusedControl}
+          onFocusControl={setFocusedControl}
+          onBackPress={() => navigation.goBack()}
+          title={resolvedTitle}
+          subtitle={subtitle}
+          isLive={isLive}
+          liveLabel={t('player.live')}
+          styles={styles}
+        />
+      )}
 
       {controlsVisible && !streamError && (
         <>
           {settingsVisible && (
-            <View style={styles.settingsPanel}>
-              <Text style={styles.panelTitle}>{t('player.subtitle_size')}</Text>
-              <View style={styles.row}>
-                {(['small', 'default', 'large'] as SubtitleSize[]).map(item => (
-                  <Pressable
-                    key={item}
-                    focusable={isTV}
-                    onFocus={() => setFocusedSettingChip(`size-${item}`)}
-                    onBlur={() => setFocusedSettingChip(null)}
-                    onPress={() => setSubtitleSize(item)}
-                    style={[
-                      styles.chip,
-                      subtitleSize === item && styles.chipActive,
-                      focusedSettingChip === `size-${item}` && styles.focusedControl,
-                    ]}
-                  >
-                    <Text style={styles.chipText}>{t(`player.size_${item}`)}</Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <Text style={styles.panelTitle}>{t('player.subtitles')}</Text>
-              <View style={styles.row}>
-                <Pressable
-                  focusable={isTV}
-                  onFocus={() => setFocusedSettingChip('subtitle-off')}
-                  onBlur={() => setFocusedSettingChip(null)}
-                  onPress={() => setSubtitleLanguage('off')}
-                  style={[
-                    styles.chip,
-                    subtitleLanguage === 'off' && styles.chipActive,
-                    focusedSettingChip === 'subtitle-off' && styles.focusedControl,
-                  ]}
-                >
-                  <Text style={styles.chipText}>{t('player.off')}</Text>
-                </Pressable>
-                {(subtitles || []).map(item => (
-                  <Pressable
-                    key={item.id}
-                    focusable={isTV}
-                    onFocus={() => setFocusedSettingChip(`subtitle-${item.id}`)}
-                    onBlur={() => setFocusedSettingChip(null)}
-                    onPress={() => setSubtitleLanguage(item.language)}
-                    style={[
-                      styles.chip,
-                      subtitleLanguage === item.language && styles.chipActive,
-                      focusedSettingChip === `subtitle-${item.id}` && styles.focusedControl,
-                    ]}
-                  >
-                    <Text style={styles.chipText}>{item.language.toUpperCase()}</Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <Text style={styles.panelTitle}>{t('player.audio_tracks')}</Text>
-              <View style={styles.row}>
-                {(audioTracks || []).map(item => (
-                  <Pressable
-                    key={item.id}
-                    focusable={isTV}
-                    onFocus={() => setFocusedSettingChip(`audio-${item.id}`)}
-                    onBlur={() => setFocusedSettingChip(null)}
-                    onPress={() => setAudioLanguage(item.language)}
-                    style={[
-                      styles.chip,
-                      audioLanguage === item.language && styles.chipActive,
-                      focusedSettingChip === `audio-${item.id}` && styles.focusedControl,
-                    ]}
-                  >
-                    <Text style={styles.chipText}>{item.language.toUpperCase()}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
+            <PlayerSettingsPanel
+              isTV={isTV}
+              focusedSettingChip={focusedSettingChip}
+              onFocusSettingChip={setFocusedSettingChip}
+              subtitleSize={subtitleSize}
+              onChangeSubtitleSize={setSubtitleSize}
+              subtitleLanguage={subtitleLanguage}
+              onChangeSubtitleLanguage={setSubtitleLanguage}
+              audioLanguage={audioLanguage}
+              onChangeAudioLanguage={setAudioLanguage}
+              subtitles={subtitles}
+              audioTracks={audioTracks}
+              t={t}
+              styles={styles}
+            />
           )}
 
-          <View style={styles.bottomWrap}>
-            <View style={styles.progressRow}>
-              <Pressable
-                focusable={isTV && canSeek}
-                onFocus={() => {
-                  setFocusedControl('progress');
-                  pingControls();
-                }}
-                onBlur={() => setFocusedControl(null)}
-                style={[
-                  styles.progressTrack,
-                  focusedControl === 'progress' && styles.progressTrackFocused,
-                ]}
-              >
-                <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
-                {canSeek && seekIndicatorVisible && (
-                  <View style={[styles.progressThumb, { left: `${progressThumbPercent}%` }]} />
-                )}
-              </Pressable>
-            </View>
-
-            <View style={styles.timeRow}>
-              <Text style={styles.timeText}>{formatTimer(currentTime)}</Text>
-              <Text style={styles.timeText}>{isLive ? t('player.live') : formatTimer(duration)}</Text>
-            </View>
-
-            <View style={styles.actionsRow}>
-              <View style={styles.leftActions}>
-                <Pressable
-                  focusable={isTV}
-                  onFocus={() => {
-                    setFocusedControl('play');
-                    pingControls();
-                  }}
-                  onBlur={() => setFocusedControl(null)}
-                  onPress={togglePlayPause}
-                  style={[styles.actionBtn, focusedControl === 'play' && styles.focusedControl]}
-                >
-                  {isPaused ? <PlayIcon size={22} color="#fff" /> : <PauseIcon size={22} color="#fff" />}
-                </Pressable>
-
-                <Pressable
-                  focusable={isTV}
-                  onFocus={() => {
-                    setFocusedControl('rewind');
-                    pingControls();
-                  }}
-                  onBlur={() => setFocusedControl(null)}
-                  onPress={() => seekBy(-10)}
-                  style={[styles.actionBtn, focusedControl === 'rewind' && styles.focusedControl]}
-                >
-                  <Text style={styles.actionText}>-10</Text>
-                </Pressable>
-
-                <Pressable
-                  focusable={isTV}
-                  onFocus={() => {
-                    setFocusedControl('forward');
-                    pingControls();
-                  }}
-                  onBlur={() => setFocusedControl(null)}
-                  onPress={() => seekBy(10)}
-                  style={[styles.actionBtn, focusedControl === 'forward' && styles.focusedControl]}
-                >
-                  <Text style={styles.actionText}>+10</Text>
-                </Pressable>
-
-                <Pressable
-                  focusable={isTV}
-                  onFocus={() => {
-                    setFocusedControl('mute');
-                    pingControls();
-                  }}
-                  onBlur={() => setFocusedControl(null)}
-                  onPress={() => {
-                    setIsMuted(prev => !prev);
-                    pingControls();
-                  }}
-                  style={[styles.actionBtn, focusedControl === 'mute' && styles.focusedControl]}
-                >
-                  <Text style={styles.actionText}>{isMuted ? t('player.unmute') : t('player.mute')}</Text>
-                </Pressable>
-              </View>
-
-              <View style={styles.rightActions}>
-                <Pressable
-                  focusable={isTV}
-                  onFocus={() => {
-                    setFocusedControl('settings');
-                    pingControls();
-                  }}
-                  onBlur={() => setFocusedControl(null)}
-                  onPress={toggleSettings}
-                  style={[styles.actionBtn, focusedControl === 'settings' && styles.focusedControl]}
-                >
-                  <SettingsIcon size={18} color="#fff" />
-                </Pressable>
-              </View>
-            </View>
-          </View>
+          <PlayerBottomControls
+            isTV={isTV}
+            canSeek={canSeek}
+            focusedControl={bottomFocusedControl}
+            onFocusControl={setFocusedControl}
+            onPingControls={pingControls}
+            progressPercent={progressPercent}
+            progressThumbPercent={progressThumbPercent}
+            seekIndicatorVisible={seekIndicatorVisible}
+            currentTimeLabel={formatTimer(currentTime)}
+            durationLabel={isLive ? t('player.live') : formatTimer(duration)}
+            isPaused={isPaused}
+            isMuted={isMuted}
+            onTogglePlayPause={togglePlayPause}
+            onSeekBackward={() => seekBy(-SEEK_STEP_SECONDS)}
+            onSeekForward={() => seekBy(SEEK_STEP_SECONDS)}
+            onToggleMute={() => {
+              setIsMuted(prev => !prev);
+              pingControls();
+            }}
+            onToggleSettings={toggleSettings}
+            muteLabel={t('player.mute')}
+            unmuteLabel={t('player.unmute')}
+            styles={styles}
+          />
         </>
       )}
     </Pressable>
@@ -967,6 +956,10 @@ const styles = StyleSheet.create({
   focusedControl: {
     borderColor: '#fff',
   },
+  focusCatcher: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 2,
+  },
   titleWrap: {
     flex: 1,
     paddingHorizontal: 18,
@@ -1016,10 +1009,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.24)',
     borderRadius: 4,
     overflow: 'hidden',
-  },
-  progressTrackFocused: {
-    borderWidth: 1,
-    borderColor: '#ffffff',
   },
   progressFill: {
     height: 6,
