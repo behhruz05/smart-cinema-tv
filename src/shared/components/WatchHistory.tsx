@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Image,
+  Platform,
   StyleSheet,
   View,
   Text,
@@ -25,6 +26,7 @@ interface Props {
 export const WatchHistory = React.memo(({ item, onPress }: Props) => {
   const { t, i18n } = useTranslation();
   const [focused, setFocused] = useState(false);
+  const isTV = Platform.isTV;
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -74,7 +76,7 @@ export const WatchHistory = React.memo(({ item, onPress }: Props) => {
 
   return (
     <Pressable
-      focusable
+      focusable={isTV}
       onPress={() => {
         if (onPress) {
           onPress(item);

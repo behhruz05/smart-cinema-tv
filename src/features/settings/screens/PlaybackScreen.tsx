@@ -94,7 +94,7 @@ export default function PlaybackScreen() {
 
       <Pressable
         focusable={isTV}
-        hasTVPreferredFocus
+        hasTVPreferredFocus={isTV}
         onFocus={() => setFocused('autoplay')}
         onBlur={() => setFocused(null)}
         onPress={toggleAutoplay}
@@ -135,7 +135,7 @@ export default function PlaybackScreen() {
           <Pressable
             key={item}
             focusable={isTV}
-            hasTVPreferredFocus={index === 0 && !autoplayNext}
+            hasTVPreferredFocus={isTV && index === 0 && !autoplayNext}
             onFocus={() => setFocused(`quality-${item}`)}
             onBlur={() => setFocused(null)}
             onPress={() => setVideoQuality(item)}

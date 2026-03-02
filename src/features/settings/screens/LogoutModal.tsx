@@ -36,7 +36,7 @@ export default function LogoutModal({ onCancel }: Props) {
           {/* CANCEL */}
           <Pressable
             focusable={isTV}
-            hasTVPreferredFocus
+            hasTVPreferredFocus={isTV}
             onFocus={() => setFocused('cancel')}
             onBlur={() => setFocused(null)}
             onPress={onCancel}

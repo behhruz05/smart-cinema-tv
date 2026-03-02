@@ -64,7 +64,7 @@ export function SettingsMainScreen() {
             <Pressable
               key={item.route}
               focusable={isTV}
-              hasTVPreferredFocus={index === 0}
+              hasTVPreferredFocus={isTV && index === 0}
               onFocus={() => setFocused(item.route)}
               onBlur={() => setFocused(null)}
               onPress={() => {

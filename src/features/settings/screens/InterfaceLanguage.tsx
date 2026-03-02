@@ -66,7 +66,7 @@ export default function InterfaceLanguageScreen() {
             <Pressable
               key={lang}
               focusable={isTV}
-              hasTVPreferredFocus={index === 0}
+              hasTVPreferredFocus={isTV && index === 0}
               disabled={savingLanguage}
               onFocus={() => setFocusedLang(lang)}
               onBlur={() => setFocusedLang(null)}

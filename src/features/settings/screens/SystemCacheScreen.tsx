@@ -48,7 +48,7 @@ export default function SystemCacheScreen() {
 
       <Pressable
         focusable={isTV}
-        hasTVPreferredFocus
+        hasTVPreferredFocus={isTV}
         onFocus={() => setFocused('clear')}
         onBlur={() => setFocused(null)}
         onPress={onClearCache}

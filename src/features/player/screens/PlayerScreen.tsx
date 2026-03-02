@@ -79,7 +79,7 @@ export function PlayerScreen() {
   const navigation = useNavigation<PlayerNavigationProp>();
   const dispatch = useDispatch<AppDispatch>();
 
-  const isTV = Platform.isTV || Platform.OS === 'android';
+  const isTV = Platform.isTV;
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playerRef = useRef<any>(null);
@@ -99,6 +99,8 @@ export function PlayerScreen() {
   const pingControlsRef = useRef<() => void>(() => {});
   const seekIndicatorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTVEventRef = useRef<{ type: string; at: number } | null>(null);
+  const focusedControlRef = useRef<FocusedControlId>(null);
+  const focusedSettingChipRef = useRef<string | null>(null);
 
   const {
     movieId,
@@ -374,6 +376,14 @@ export function PlayerScreen() {
     controlsVisibleRef.current = controlsVisible;
   }, [controlsVisible]);
 
+  useEffect(() => {
+    focusedControlRef.current = focusedControl;
+  }, [focusedControl]);
+
+  useEffect(() => {
+    focusedSettingChipRef.current = focusedSettingChip;
+  }, [focusedSettingChip]);
+
   const seekBy = useCallback(
     (delta: number, revealControls = true) => {
       if (!canSeek) return;
@@ -567,6 +577,22 @@ export function PlayerScreen() {
       return;
     }
 
+    const hasFocusedOverlayControl = Boolean(
+      focusedSettingChipRef.current || focusedControlRef.current,
+    );
+
+    if (
+      hasFocusedOverlayControl &&
+      (type === 'left' ||
+        type === 'right' ||
+        type === 'up' ||
+        type === 'down' ||
+        type === 'select')
+    ) {
+      pingControlsRef.current();
+      return;
+    }
+
     if (type === 'left') {
       if (settingsVisibleRef.current) {
         setSettingsVisible(false);
@@ -662,6 +688,12 @@ export function PlayerScreen() {
     },
     [handleTVEvent],
   );
+
+  const tvFocusCatcherProps = isTV
+    ? ({
+        onKeyDown: handleNativeTVKeyDown,
+      } as any)
+    : null;
 
   useEffect(() => {
     if (!isTV) return;
@@ -811,11 +843,11 @@ export function PlayerScreen() {
 
       {isTV && !streamError && (
         <Pressable
-          focusable
-          hasTVPreferredFocus={!controlsVisible}
+          focusable={isTV}
+          hasTVPreferredFocus={isTV && !controlsVisible}
           pointerEvents={controlsVisible ? 'none' : 'auto'}
           onPress={pingControls}
-          onKeyDown={handleNativeTVKeyDown}
+          {...tvFocusCatcherProps}
           style={styles.focusCatcher}
         />
       )}

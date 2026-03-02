@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Image,
   Keyboard,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -39,6 +40,7 @@ export function LoginScreen() {
   const { t } = useTranslation();
   const { setToken } = useAuth();
   const dispatch = store.dispatch;
+  const isTV = Platform.isTV;
 
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
@@ -178,7 +180,7 @@ export function LoginScreen() {
     if (sessionState === 'expired' || sessionState === 'error') {
       return (
         <Pressable
-          focusable
+          focusable={isTV}
           onPress={createSession}
           style={styles.qrBox}>
           <Text style={styles.qrRetryText}>
@@ -240,7 +242,7 @@ export function LoginScreen() {
             {t('login.phone_or_id')}
           </Text>
           <Pressable
-            focusable
+            focusable={isTV}
             onFocus={() => setFocusedField('login')}
             onBlur={() => setFocusedField(null)}
             style={[
@@ -261,7 +263,7 @@ export function LoginScreen() {
             {t('login.password')}
           </Text>
           <Pressable
-            focusable
+            focusable={isTV}
             onFocus={() => setFocusedField('password')}
             onBlur={() => setFocusedField(null)}
             style={[
@@ -294,7 +296,7 @@ export function LoginScreen() {
           ) : null}
 
           <Pressable
-            focusable
+            focusable={isTV}
             disabled={loading}
             onPress={onLogin}
             onFocus={() => setFocusedField('submit')}

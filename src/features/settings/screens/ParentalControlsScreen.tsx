@@ -56,7 +56,7 @@ export default function ParentalControlScreen() {
 
       <Pressable
         focusable={isTV}
-        hasTVPreferredFocus
+        hasTVPreferredFocus={isTV}
         onFocus={() => setFocused('enabled')}
         onBlur={() => setFocused(null)}
         onPress={toggleEnabled}

@@ -4,6 +4,7 @@ import {
   Text,
   FlatList,
   Pressable,
+  Platform,
   StyleSheet,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -29,6 +30,7 @@ export const GenreSection = ({ activeGenreId }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [focusedId, setFocusedId] = useState<string | null>(null);
+  const isTV = Platform.isTV;
 
   const { genres } = useSelector(
     (state: RootState) => state.movie
@@ -62,10 +64,11 @@ export const GenreSection = ({ activeGenreId }: Props) => {
 
           return (
             <Pressable
+              focusable={isTV}
               onPress={() => handlePress(item)}
               onFocus={() => setFocusedId(item.id)}
               onBlur={() => setFocusedId(null)}
-              hasTVPreferredFocus={index === 0}
+              hasTVPreferredFocus={isTV && index === 0}
               style={[
                 styles.genreItem,
                 isActive && styles.activeItem,

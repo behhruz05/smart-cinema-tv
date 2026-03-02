@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Image,
+  Platform,
   StyleSheet,
   Pressable,
 } from 'react-native';
@@ -12,10 +13,11 @@ interface Props {
 
 export const ReelCard = React.memo(({ item }: Props) => {
   const [focused, setFocused] = useState(false);
+  const isTV = Platform.isTV;
 
   return (
     <Pressable
-      focusable
+      focusable={isTV}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
       style={[

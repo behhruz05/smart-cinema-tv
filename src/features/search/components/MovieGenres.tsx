@@ -5,6 +5,7 @@ import {
   Text,
   FlatList,
   Pressable,
+  Platform,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +25,7 @@ export function MovieGenres() {
   );
 
   const [focusedId, setFocusedId] = useState<string | null>(null);
+  const isTV = Platform.isTV;
 
   useEffect(() => {
     if (genres.length === 0) {
@@ -47,8 +49,8 @@ export function MovieGenres() {
 
           return (
             <Pressable
-              focusable
-              hasTVPreferredFocus={index === 0}
+              focusable={isTV}
+              hasTVPreferredFocus={isTV && index === 0}
               onFocus={() => setFocusedId(item.id)}
               onBlur={() => setFocusedId(null)}
               style={[

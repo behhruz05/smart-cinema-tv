@@ -82,6 +82,12 @@ export const PlayerBottomControls = React.memo(function PlayerBottomControls({
     [onPingControls, onSeekBackward, onSeekForward],
   );
 
+  const tvProgressPressProps = isTV
+    ? ({
+        onKeyDown: handleProgressKeyDown,
+      } as any)
+    : null;
+
   return (
     <View style={styles.bottomWrap}>
       <View style={styles.progressRow}>
@@ -92,7 +98,7 @@ export const PlayerBottomControls = React.memo(function PlayerBottomControls({
             onPingControls();
           }}
           onBlur={() => onFocusControl(null)}
-          onKeyDown={handleProgressKeyDown}
+          {...tvProgressPressProps}
           style={[
             styles.progressTrack,
             focusedControl === 'progress' && styles.progressTrackFocused,

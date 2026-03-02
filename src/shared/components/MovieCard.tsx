@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Image,
+  Platform,
   StyleSheet,
   Pressable,
   ViewStyle,
@@ -16,6 +17,7 @@ interface Props {
 export const MovieCard = React.memo(({ movie, style }: Props) => {
   const [focused, setFocused] = useState(false);
   const navigation = useNavigation<any>();
+  const isTV = Platform.isTV;
 
   const handlePress = () => {
     navigation.navigate('MovieDetail', {
@@ -25,7 +27,7 @@ export const MovieCard = React.memo(({ movie, style }: Props) => {
 
   return (
     <Pressable
-      focusable
+      focusable={isTV}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
       onPress={handlePress}
