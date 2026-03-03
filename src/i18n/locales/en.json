@@ -42,7 +42,9 @@
       "continue_watching": "Continue watching",
       "latest": "New releases",
       "tv_channels": "TV channels",
-      "reels": "Reels"
+      "reels": "Reels",
+      "popular_series": "Popular series",
+      "latest_series": "Latest series"
     },
     "carousel": {
       "watch": "Watch",
@@ -78,6 +80,12 @@
     "empty_title": "No reels yet",
     "empty_subtitle": "New reels will appear here.",
     "no_more": "No more reels"
+  },
+  "series": {
+    "season": "Season",
+    "seasons": "seasons",
+    "episodes": "Episodes",
+    "genres": "Genres"
   },
   "movie_detail": {
     "description": "Description",

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import {
   ScrollView,
   FlatList,
@@ -14,6 +14,10 @@ import {
   fetchChannels,
 } from '../../../store/slice/home.slice';
 import { fetchReels } from '../../../store/slice/reel.slice';
+import {
+  fetchLatestSeries,
+  fetchPopularSeries,
+} from '../../../store/slice/series.slice';
 import { AppDispatch, RootState } from '../../../store';
 import { Section } from '../../../shared/components/Section';
 import { MovieCard } from '../../../shared/components/MovieCard';
@@ -31,6 +35,26 @@ export function MoviesScreen() {
 
   const { reels } =
     useSelector((state: RootState) => state.reel);
+  const {
+    popular: popularSeries,
+    latest: latestSeries,
+  } = useSelector((state: RootState) => state.series);
+
+  const popularCombined = useMemo(
+    () => [
+      ...popular.map(item => ({ type: 'movie' as const, item })),
+      ...popularSeries.map(item => ({ type: 'series' as const, item })),
+    ],
+    [popular, popularSeries],
+  );
+
+  const latestCombined = useMemo(
+    () => [
+      ...latest.map(item => ({ type: 'movie' as const, item })),
+      ...latestSeries.map(item => ({ type: 'series' as const, item })),
+    ],
+    [latest, latestSeries],
+  );
 
   useEffect(() => {
     dispatch(fetchPopular());
@@ -38,25 +62,13 @@ export function MoviesScreen() {
     dispatch(fetchHistory());
     dispatch(fetchChannels());
     dispatch(fetchReels({ page: 1, per_page: 20 }));
+    dispatch(fetchPopularSeries({ page: 1, per_page: 20 }));
+    dispatch(fetchLatestSeries({ page: 1, per_page: 20 }));
   }, [dispatch]);
-
-  const renderPopular = useCallback(
-    ({ item }: { item: (typeof popular)[0] }) => (
-      <MovieCard movie={item} style={styles.wideMovieCard} />
-    ),
-    [],
-  );
 
   const renderHistory = useCallback(
     ({ item }: { item: (typeof history)[0] }) => (
       <WatchHistory item={item} />
-    ),
-    [],
-  );
-
-  const renderLatest = useCallback(
-    ({ item }: { item: (typeof latest)[0] }) => (
-      <NewMovieCard movie={item} style={styles.narrowMovieCard} />
     ),
     [],
   );
@@ -73,14 +85,20 @@ export function MoviesScreen() {
       style={styles.container}
       showsVerticalScrollIndicator={false}
     >
-      <Section title={t('home.sections.most_watched')} data={popular}>
+      <Section title={t('home.sections.most_watched')} data={popularCombined}>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
-          data={popular}
-          keyExtractor={(item) => item.id}
+          data={popularCombined}
+          keyExtractor={(item) => `${item.type}-${item.item.id}`}
           contentContainerStyle={styles.horizontalList}
-          renderItem={renderPopular}
+          renderItem={({ item }) => (
+            <MovieCard
+              movie={item.item}
+              contentType={item.type}
+              style={styles.wideMovieCard}
+            />
+          )}
         />
       </Section>
 
@@ -97,14 +115,20 @@ export function MoviesScreen() {
         />
       </Section>
 
-      <Section title={t('home.sections.latest')} data={latest}>
+      <Section title={t('home.sections.latest')} data={latestCombined}>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
-          data={latest}
-          keyExtractor={(item) => item.id}
+          data={latestCombined}
+          keyExtractor={(item) => `${item.type}-${item.item.id}`}
           contentContainerStyle={styles.horizontalList}
-          renderItem={renderLatest}
+          renderItem={({ item }) => (
+            <NewMovieCard
+              movie={item.item}
+              contentType={item.type}
+              style={styles.narrowMovieCard}
+            />
+          )}
         />
       </Section>
 

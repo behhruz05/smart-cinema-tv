@@ -7,21 +7,36 @@ import {
   ViewStyle,
 } from 'react-native';
 import { Movie } from '../../types/search';
+import { Series } from '../../types/series';
 import { useNavigation } from '@react-navigation/native';
 
 interface Props {
-  movie: Movie;
+  movie: Movie | Series;
+  contentType?: 'movie' | 'series';
   style?: ViewStyle;
+  tall?: boolean;
 }
 
-export const MovieCard = React.memo(({ movie, style }: Props) => {
+export const MovieCard = React.memo(({
+  movie,
+  contentType = 'movie',
+  style,
+  tall = false,
+}: Props) => {
   const [focused, setFocused] = useState(false);
   const navigation = useNavigation<any>();
   const isTV = Platform.isTV;
 
   const handlePress = () => {
+    if (contentType === 'series') {
+      navigation.navigate('SeriesDetail', {
+        seriesId: movie.id,
+      });
+      return;
+    }
+
     navigation.navigate('MovieDetail', {
-     movieId: movie.id,
+      movieId: movie.id,
     });
   };
 
@@ -39,7 +54,7 @@ export const MovieCard = React.memo(({ movie, style }: Props) => {
     >
       <Image
         source={{ uri: movie.poster_url }}
-        style={styles.image}
+        style={[styles.image, tall && styles.tallImage]}
       />
     </Pressable>
   );
@@ -58,5 +73,8 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 180,
     borderRadius: 14,
+  },
+  tallImage: {
+    height: 250,
   },
 });

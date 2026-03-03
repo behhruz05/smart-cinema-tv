@@ -16,9 +16,23 @@ import { movieService } from '../../../service/movie.service';
 
 interface Props {
   item: Carousel;
+  itemIndex: number;
+  preferredFocus?: boolean;
+  onActionFocus?: (itemIndex: number) => void;
+  onActionBlur?: (itemIndex: number) => void;
+  onDirectionalPress?: (direction: 'left' | 'right', itemIndex: number) => void;
+  onEdgeNavigate?: (direction: 'left' | 'right', itemIndex: number) => void;
 }
 
-function CarouselItemComponent({ item }: Props) {
+function CarouselItemComponent({
+  item,
+  itemIndex,
+  preferredFocus = false,
+  onActionFocus,
+  onActionBlur,
+  onDirectionalPress,
+  onEdgeNavigate,
+}: Props) {
   const { t, i18n } = useTranslation();
   const movie = item.movie;
   const navigation = useNavigation<any>();
@@ -28,6 +42,12 @@ function CarouselItemComponent({ item }: Props) {
   >(null);
   const [isFavorite, setIsFavorite] = React.useState(false);
   const [favoriteLoading, setFavoriteLoading] = React.useState(false);
+  const watchRef = React.useRef<React.ComponentRef<typeof Pressable> | null>(null);
+  const detailsRef = React.useRef<React.ComponentRef<typeof Pressable> | null>(null);
+  const saveRef = React.useRef<React.ComponentRef<typeof Pressable> | null>(null);
+  const [watchHandle, setWatchHandle] = React.useState<number | undefined>(undefined);
+  const [detailsHandle, setDetailsHandle] = React.useState<number | undefined>(undefined);
+  const [saveHandle, setSaveHandle] = React.useState<number | undefined>(undefined);
 
   const lang = i18n.language.startsWith('ru')
     ? 'ru'
@@ -77,6 +97,65 @@ function CarouselItemComponent({ item }: Props) {
     }
   }, [favoriteLoading, isFavorite, movie.id, lang]);
 
+  React.useEffect(() => {
+    if (!isTV) return;
+    const rnModule = require('react-native');
+    const findNodeHandle = rnModule?.findNodeHandle as
+      | ((componentOrHandle: any) => number | null)
+      | undefined;
+    if (!findNodeHandle) return;
+
+    setWatchHandle(findNodeHandle(watchRef.current) ?? undefined);
+    setDetailsHandle(findNodeHandle(detailsRef.current) ?? undefined);
+    setSaveHandle(findNodeHandle(saveRef.current) ?? undefined);
+  }, [isTV]);
+
+  const handleDirectionalKeyDown = React.useCallback(
+    (event: any) => {
+      const normalized = String(
+        event?.nativeEvent?.key || event?.nativeEvent?.eventType || '',
+      )
+        .toLowerCase()
+        .trim();
+      const keyCode = event?.nativeEvent?.keyCode;
+
+      const direction =
+        normalized === 'left' ||
+        normalized === 'arrowleft' ||
+        normalized === 'dpadleft' ||
+        normalized === 'swipeleft' ||
+        keyCode === 21 ||
+        keyCode === 37
+          ? 'left'
+          : normalized === 'right' ||
+              normalized === 'arrowright' ||
+              normalized === 'dpadright' ||
+              normalized === 'swiperight' ||
+              keyCode === 22 ||
+              keyCode === 39
+            ? 'right'
+            : null;
+
+      if (!direction) return;
+      if (focusedButton === 'watch' && direction === 'left') {
+        onEdgeNavigate?.('left', itemIndex);
+        return;
+      }
+      if (focusedButton === 'save' && direction === 'right') {
+        onEdgeNavigate?.('right', itemIndex);
+        return;
+      }
+      onDirectionalPress?.(direction, itemIndex);
+    },
+    [focusedButton, itemIndex, onDirectionalPress, onEdgeNavigate],
+  );
+
+  const tvKeyDownProps = isTV
+    ? ({
+        onKeyDown: handleDirectionalKeyDown,
+      } as any)
+    : null;
+
   return (
     <ImageBackground
       source={{ uri: item.poster_url }}
@@ -100,14 +179,28 @@ function CarouselItemComponent({ item }: Props) {
 
         <View style={styles.actions}>
           <Pressable
+            ref={watchRef}
             style={[
               styles.playBtn,
               focusedButton === 'watch' && styles.focusedButton,
             ]}
             focusable={isTV}
-            hasTVPreferredFocus={isTV}
-            onFocus={() => setFocusedButton('watch')}
-            onBlur={() => setFocusedButton(null)}
+            hasTVPreferredFocus={isTV && preferredFocus}
+            {...(isTV
+              ? ({
+                  nextFocusLeft: watchHandle,
+                  nextFocusRight: detailsHandle,
+                } as any)
+              : null)}
+            onFocus={() => {
+              setFocusedButton('watch');
+              onActionFocus?.(itemIndex);
+            }}
+            onBlur={() => {
+              setFocusedButton(null);
+              onActionBlur?.(itemIndex);
+            }}
+            {...tvKeyDownProps}
             onPress={() =>
               navigation.navigate('Player', {
                 movieId: movie.id,
@@ -124,13 +217,27 @@ function CarouselItemComponent({ item }: Props) {
           </Pressable>
 
           <Pressable
+            ref={detailsRef}
             style={[
               styles.moreBtn,
               focusedButton === 'details' && styles.focusedButton,
             ]}
             focusable={isTV}
-            onFocus={() => setFocusedButton('details')}
-            onBlur={() => setFocusedButton(null)}
+            {...(isTV
+              ? ({
+                  nextFocusLeft: watchHandle,
+                  nextFocusRight: saveHandle,
+                } as any)
+              : null)}
+            onFocus={() => {
+              setFocusedButton('details');
+              onActionFocus?.(itemIndex);
+            }}
+            onBlur={() => {
+              setFocusedButton(null);
+              onActionBlur?.(itemIndex);
+            }}
+            {...tvKeyDownProps}
             onPress={() =>
               navigation.navigate('MovieDetail', {
                 movieId: movie.id,
@@ -141,14 +248,28 @@ function CarouselItemComponent({ item }: Props) {
           </Pressable>
 
           <Pressable
+            ref={saveRef}
             style={[
               styles.savedBtn,
               isFavorite && styles.savedBtnActive,
               focusedButton === 'save' && styles.focusedButton,
             ]}
             focusable={isTV}
-            onFocus={() => setFocusedButton('save')}
-            onBlur={() => setFocusedButton(null)}
+            {...(isTV
+              ? ({
+                  nextFocusLeft: detailsHandle,
+                  nextFocusRight: saveHandle,
+                } as any)
+              : null)}
+            onFocus={() => {
+              setFocusedButton('save');
+              onActionFocus?.(itemIndex);
+            }}
+            onBlur={() => {
+              setFocusedButton(null);
+              onActionBlur?.(itemIndex);
+            }}
+            {...tvKeyDownProps}
             onPress={handleToggleFavorite}
             disabled={favoriteLoading}
           >
@@ -166,7 +287,9 @@ function CarouselItemComponent({ item }: Props) {
 
 export const CarouselItem = React.memo(
   CarouselItemComponent,
-  (prev, next) => prev.item.id === next.item.id,
+  (prev, next) =>
+    prev.item.id === next.item.id &&
+    prev.preferredFocus === next.preferredFocus,
 );
 
 const styles = StyleSheet.create({
@@ -249,7 +372,6 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   savedBtnActive: {
-    borderColor: '#fff',
     backgroundColor: 'rgba(255,255,255,0.22)',
   },
   focusedButton: {

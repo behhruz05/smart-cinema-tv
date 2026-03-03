@@ -42,7 +42,9 @@
       "continue_watching": "Продолжить просмотр",
       "latest": "Новинки",
       "tv_channels": "Телеканалы",
-      "reels": "Reels"
+      "reels": "Reels",
+      "popular_series": "Популярные сериалы",
+      "latest_series": "Новые сериалы"
     },
     "carousel": {
       "watch": "Смотреть",
@@ -78,6 +80,12 @@
     "empty_title": "Больше рилсов пока нет.",
     "empty_subtitle": "Загляните позже — мы уже готовим новые.",
     "no_more": "Больше reels нет"
+  },
+  "series": {
+    "season": "Сезон",
+    "seasons": "сезонов",
+    "episodes": "Серии",
+    "genres": "Жанры"
   },
   "movie_detail": {
     "description": "Описание",

@@ -42,7 +42,9 @@
       "continue_watching": "Ko'rishni davom ettirish",
       "latest": "Yangilar",
       "tv_channels": "Telekanallar",
-      "reels": "Reels"
+      "reels": "Reels",
+      "popular_series": "Mashhur seriallar",
+      "latest_series": "Yangi seriallar"
     },
     "carousel": {
       "watch": "Ko'rish",
@@ -78,6 +80,12 @@
     "empty_title": "Reels hozircha yo'q",
     "empty_subtitle": "Yangi reels shu yerda chiqadi.",
     "no_more": "Boshqa reels yo'q"
+  },
+  "series": {
+    "season": "Mavsum",
+    "seasons": "mavsum",
+    "episodes": "Qismlar",
+    "genres": "Janrlar"
   },
   "movie_detail": {
     "description": "Tavsif",

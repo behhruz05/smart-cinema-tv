@@ -16,6 +16,11 @@ interface RequestOptions {
   skipAuth?: boolean;
 }
 
+type ApiError = Error & {
+  status?: number;
+  payload?: unknown;
+};
+
 function isNetworkError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
   const message = error.message?.toLowerCase?.() ?? '';
@@ -92,19 +97,30 @@ export async function api<T>(
     if (response.status === 401 && !skipAuth) {
       await tokenStorage.remove();
       triggerLogout();
-      throw new Error(data?.error?.message || 'UNAUTHORIZED');
+      const unauthorizedError: ApiError = new Error(
+        data?.error?.message || 'UNAUTHORIZED'
+      );
+      unauthorizedError.status = 401;
+      unauthorizedError.payload = data;
+      throw unauthorizedError;
     }
 
     if (!response.ok) {
-      throw new Error(
+      const error: ApiError = new Error(
         data?.error?.message ||
         data?.message ||
         i18n.t('errors.server')
       );
+      error.status = response.status;
+      error.payload = data;
+      throw error;
     }
 
     if (data?.success === false) {
-      throw new Error(data?.error?.message);
+      const error: ApiError = new Error(data?.error?.message || i18n.t('errors.server'));
+      error.status = response.status;
+      error.payload = data;
+      throw error;
     }
 
     return data as T;

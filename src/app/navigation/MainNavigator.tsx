@@ -16,6 +16,7 @@ import { MainLayout } from '../../shared/layout/MainLayout';
 import { MoviesScreen } from '../../features/movies/screens/MoviesScreen';
 import { SettingsMainScreen } from '../../features/settings/screens/SettingsMainScreen';
 import { MovieDetailScreen } from '../../features/movies/screens/MovieDetailScreen';
+import { SeriesDetailScreen } from '../../features/series/screens/SeriesDetailScreen';
 import { TvChannelsScreen } from '../../features/tv-channels/screens/TvChannelsScreen';
 import { PlayerScreen } from '../../features/player/screens/PlayerScreen';
 
@@ -63,6 +64,7 @@ export function MainNavigator() {
       <RootStack.Screen name="Search" component={SearchScreen} />
       <RootStack.Screen name="Genre" component={GenreScreen} />
       <RootStack.Screen name="MovieDetail" component={MovieDetailScreen} />
+      <RootStack.Screen name="SeriesDetail" component={SeriesDetailScreen} />
       <RootStack.Screen name="Player" component={PlayerScreen} />
     </RootStack.Navigator>
   );

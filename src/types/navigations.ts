@@ -18,6 +18,7 @@ export type RootStackParamList = {
     slug: string;
   };
   MovieDetail: { movieId: string };
+  SeriesDetail: { seriesId: string };
   Player: {
     movieId?: string;
     episodeId?: string;

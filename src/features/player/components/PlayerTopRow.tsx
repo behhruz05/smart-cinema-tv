@@ -7,6 +7,7 @@ type PlayerTopRowProps = {
   focusedControl: 'back' | null;
   onFocusControl: (control: 'back' | null) => void;
   onBackPress: () => void;
+  preferBackFocus?: boolean;
   title: string;
   subtitle?: string;
   isLive: boolean;
@@ -19,6 +20,7 @@ export const PlayerTopRow = React.memo(function PlayerTopRow({
   focusedControl,
   onFocusControl,
   onBackPress,
+  preferBackFocus = false,
   title,
   subtitle,
   isLive,
@@ -29,7 +31,7 @@ export const PlayerTopRow = React.memo(function PlayerTopRow({
     <View style={styles.topRow}>
       <Pressable
         focusable={isTV}
-        hasTVPreferredFocus={isTV}
+        hasTVPreferredFocus={isTV && preferBackFocus}
         onFocus={() => onFocusControl('back')}
         onBlur={() => onFocusControl(null)}
         onPress={onBackPress}

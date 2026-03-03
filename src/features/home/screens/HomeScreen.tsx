@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { ScrollView, FlatList, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -11,6 +11,10 @@ import {
   fetchChannels,
 } from '../../../store/slice/home.slice';
 import { fetchReels } from '../../../store/slice/reel.slice';
+import {
+  fetchLatestSeries,
+  fetchPopularSeries,
+} from '../../../store/slice/series.slice';
 import { AppDispatch, RootState } from '../../../store';
 import { Section } from '../../../shared/components/Section';
 import { MovieCard } from '../../../shared/components/MovieCard';
@@ -34,6 +38,26 @@ export function HomeScreen() {
 
   const { reels } =
     useSelector((state: RootState) => state.reel);
+  const {
+    popular: popularSeries,
+    latest: latestSeries,
+  } = useSelector((state: RootState) => state.series);
+
+  const popularCombined = useMemo(
+    () => [
+      ...popular.map(item => ({ type: 'movie' as const, item })),
+      ...popularSeries.map(item => ({ type: 'series' as const, item })),
+    ],
+    [popular, popularSeries],
+  );
+
+  const latestCombined = useMemo(
+    () => [
+      ...latest.map(item => ({ type: 'movie' as const, item })),
+      ...latestSeries.map(item => ({ type: 'series' as const, item })),
+    ],
+    [latest, latestSeries],
+  );
 
   useEffect(() => {
     dispatch(fetchPopular());
@@ -41,14 +65,9 @@ export function HomeScreen() {
     dispatch(fetchHistory());
     dispatch(fetchChannels());
     dispatch(fetchReels({ page: 1, per_page: 20 }));
+    dispatch(fetchPopularSeries({ page: 1, per_page: 20 }));
+    dispatch(fetchLatestSeries({ page: 1, per_page: 20 }));
   }, [dispatch]);
-
-  const renderPopular = useCallback(
-    ({ item }: { item: (typeof popular)[0] }) => (
-      <MovieCard movie={item} style={styles.wideMovieCard} />
-    ),
-    [],
-  );
 
   const renderHistory = useCallback(
     ({ item }: { item: (typeof history)[0] }) => (
@@ -64,6 +83,12 @@ export function HomeScreen() {
           if (historyItem.type === 'movie') {
             navigation.navigate('MovieDetail', {
               movieId: contentId,
+            });
+            return;
+          }
+          if (historyItem.type === 'series') {
+            navigation.navigate('SeriesDetail', {
+              seriesId: historyItem.series_id || contentId,
             });
             return;
           }
@@ -88,12 +113,6 @@ export function HomeScreen() {
     [navigation],
   );
 
-  const renderLatest = useCallback(
-    ({ item }: { item: (typeof latest)[0] }) => (
-      <NewMovieCard movie={item} style={styles.narrowMovieCard} />
-    ),
-    [],
-  );
 
   const renderReel = useCallback(
     ({ item }: { item: (typeof reels)[0] }) => (
@@ -116,13 +135,19 @@ export function HomeScreen() {
     >
       <HomeCarousel />
 
-      <Section title={t('home.sections.most_watched')} data={popular}>
+      <Section title={t('home.sections.most_watched')} data={popularCombined}>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
-          data={popular}
-          keyExtractor={(item) => item.id}
-          renderItem={renderPopular}
+          data={popularCombined}
+          keyExtractor={(item) => `${item.type}-${item.item.id}`}
+          renderItem={({ item }) =>
+            <MovieCard
+              movie={item.item}
+              contentType={item.type}
+              style={styles.wideMovieCard}
+            />
+          }
         />
       </Section>
 
@@ -136,13 +161,19 @@ export function HomeScreen() {
         />
       </Section>
 
-      <Section title={t('home.sections.latest')} data={latest}>
+      <Section title={t('home.sections.latest')} data={latestCombined}>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
-          data={latest}
-          keyExtractor={(item) => item.id}
-          renderItem={renderLatest}
+          data={latestCombined}
+          keyExtractor={(item) => `${item.type}-${item.item.id}`}
+          renderItem={({ item }) =>
+            <NewMovieCard
+              movie={item.item}
+              contentType={item.type}
+              style={styles.narrowMovieCard}
+            />
+          }
         />
       </Section>
 

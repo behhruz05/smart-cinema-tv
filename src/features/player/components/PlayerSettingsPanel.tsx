@@ -6,6 +6,7 @@ type SubtitleSize = 'small' | 'default' | 'large';
 
 type PlayerSettingsPanelProps = {
   isTV: boolean;
+  preferFirstChipFocus?: boolean;
   focusedSettingChip: string | null;
   onFocusSettingChip: (value: string | null) => void;
   subtitleSize: SubtitleSize;
@@ -22,6 +23,7 @@ type PlayerSettingsPanelProps = {
 
 export const PlayerSettingsPanel = React.memo(function PlayerSettingsPanel({
   isTV,
+  preferFirstChipFocus = false,
   focusedSettingChip,
   onFocusSettingChip,
   subtitleSize,
@@ -43,6 +45,7 @@ export const PlayerSettingsPanel = React.memo(function PlayerSettingsPanel({
           <Pressable
             key={item}
             focusable={isTV}
+            hasTVPreferredFocus={isTV && preferFirstChipFocus && item === 'small'}
             onFocus={() => onFocusSettingChip(`size-${item}`)}
             onBlur={() => onFocusSettingChip(null)}
             onPress={() => onChangeSubtitleSize(item)}

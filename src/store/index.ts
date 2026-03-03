@@ -5,6 +5,7 @@ import authReducer from './slice/auth.slice'
 import movieReducer from './slice/movie.slice';
 import reelReducer from './slice/reel.slice';
 import tvReducer from './slice/tv.slice';
+import seriesReducer from './slice/series.slice';
 import { showErrorToast, showWarningToast } from './slice/ui.slice';
 import i18n from '../i18n';
 
@@ -79,6 +80,7 @@ export const store = configureStore({
     auth: authReducer,
     reel: reelReducer,
     tv: tvReducer,
+    series: seriesReducer,
   },
   devTools: __DEV__,
   middleware: getDefaultMiddleware =>

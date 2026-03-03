@@ -52,12 +52,20 @@ export const WatchHistory = React.memo(({ item, onPress }: Props) => {
     !!item.episode_number;
 
   const handleDefaultPress = () => {
-    const contentId =
-      item.content_id || item.movie_id || item.episode_id || item.id;
+    const contentId = item.content_id || item.movie_id || item.episode_id || item.id;
 
     if (item.type === 'movie') {
       navigation.navigate('MovieDetail', {
         movieId: contentId,
+      });
+      return;
+    }
+
+    if (item.type === 'series') {
+      const targetSeriesId = item.series_id || contentId;
+      if (!targetSeriesId) return;
+      navigation.navigate('SeriesDetail', {
+        seriesId: targetSeriesId,
       });
       return;
     }
