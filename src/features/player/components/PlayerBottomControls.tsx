@@ -2,6 +2,8 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { PauseIcon } from '../../../shared/icons/PauseIcon';
 import { PlayIcon } from '../../../shared/icons/PlayIcon';
+import { SeekBackwardIcon } from '../../../shared/icons/SeekBackwardIcon';
+import { SeekForwardIcon } from '../../../shared/icons/SeekForwardIcon';
 import { SettingsIcon } from '../../../shared/icons/SettingIcon';
 
 type PlayerBottomControlsProps = {
@@ -141,7 +143,10 @@ export const PlayerBottomControls = React.memo(function PlayerBottomControls({
             onPress={onSeekBackward}
             style={[styles.actionBtn, focusedControl === 'rewind' && styles.focusedControl]}
           >
-            <Text style={styles.actionText}>-10</Text>
+            <View style={styles.seekActionContent}>
+              <SeekBackwardIcon size={16} color="#fff" />
+              <Text style={styles.actionText}>10s</Text>
+            </View>
           </Pressable>
 
           <Pressable
@@ -154,7 +159,10 @@ export const PlayerBottomControls = React.memo(function PlayerBottomControls({
             onPress={onSeekForward}
             style={[styles.actionBtn, focusedControl === 'forward' && styles.focusedControl]}
           >
-            <Text style={styles.actionText}>+10</Text>
+            <View style={styles.seekActionContent}>
+              <Text style={styles.actionText}>10s</Text>
+              <SeekForwardIcon size={16} color="#fff" />
+            </View>
           </Pressable>
 
           <Pressable

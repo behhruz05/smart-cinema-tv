@@ -22,11 +22,14 @@ import { AppDispatch, RootState } from '../../../store';
 import { fetchCarousels } from '../../../store/slice/home.slice';
 import { Carousel } from '../../../types/home';
 
-const HOME_SCREEN_HORIZONTAL_PADDING = 102;
 const SPACING = 20;
 const AUTO_ROTATE_INTERVAL_MS = 3000;
 const DOUBLE_PRESS_WINDOW_MS = 320;
 const ITEM_EDGE_SAFE_GAP = 12;
+const SIDEBAR_COLLAPSED_TOTAL_INSET = 102;
+const SIDEBAR_EXPANDED_TOTAL_INSET = 212;
+const PROGRAMMATIC_SCROLL_SETTLE_MS = 360;
+const PENDING_WIDTH_FLUSH_MS = 520;
 
 export function HomeCarousel() {
   const dispatch = useDispatch<AppDispatch>();
@@ -35,36 +38,92 @@ export function HomeCarousel() {
   const currentIndexRef = useRef(0);
   const listRef = useRef<FlatList<Carousel> | null>(null);
   const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollSettleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingWidthFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isHorizontalScrollActiveRef = useRef(false);
+  const pendingViewportWidthRef = useRef<number | null>(null);
+  const lastMeasuredViewportWidthRef = useRef<number>(0);
   const lastDirectionalPressRef = useRef<{ dir: 'left' | 'right'; at: number } | null>(null);
   const focusedActionIndexRef = useRef<number | null>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
   const [preferredFocusIndex, setPreferredFocusIndex] = useState<number | null>(null);
-
-  const fallbackWidth = Math.max(
-    280,
-    width - HOME_SCREEN_HORIZONTAL_PADDING,
-  );
-
-  const viewportWidth = Math.max(280, containerWidth || fallbackWidth);
-  const ITEM_WIDTH = Math.max(280, viewportWidth - ITEM_EDGE_SAFE_GAP);
-  const ITEM_INTERVAL = ITEM_WIDTH + SPACING;
 
   const { carousels, loading } = useSelector(
     (state: RootState) => state.home
   );
+  const isSidebarOpen = useSelector(
+    (state: RootState) => state.ui.isSidebarOpen,
+  );
+
+  const computeViewportWidth = useCallback(
+    (screenWidth: number, sidebarOpen: boolean) =>
+      Math.max(
+        280,
+        screenWidth - (sidebarOpen ? SIDEBAR_EXPANDED_TOTAL_INSET : SIDEBAR_COLLAPSED_TOTAL_INSET),
+      ),
+    [],
+  );
+
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    computeViewportWidth(width, isSidebarOpen),
+  );
+  const ITEM_WIDTH = Math.max(280, viewportWidth - ITEM_EDGE_SAFE_GAP);
+  const ITEM_INTERVAL = ITEM_WIDTH + SPACING;
+
+  const flushPendingViewportWidth = useCallback(() => {
+    const pending = pendingViewportWidthRef.current;
+    pendingViewportWidthRef.current = null;
+    if (pending === null) return;
+    if (Math.abs(pending - viewportWidth) < 2) return;
+    isHorizontalScrollActiveRef.current = false;
+    setViewportWidth(pending);
+  }, [viewportWidth]);
+
+  const queuePendingViewportWidth = useCallback((nextWidth: number) => {
+    pendingViewportWidthRef.current = nextWidth;
+    if (pendingWidthFlushTimerRef.current) {
+      clearTimeout(pendingWidthFlushTimerRef.current);
+    }
+    // Watchdog: avoid width being stuck when scroll-end callbacks don't fire.
+    pendingWidthFlushTimerRef.current = setTimeout(() => {
+      flushPendingViewportWidth();
+    }, PENDING_WIDTH_FLUSH_MS);
+  }, [flushPendingViewportWidth]);
+
+  const onContainerLayout = useCallback((event: LayoutChangeEvent) => {
+    const measuredWidth = Math.round(event.nativeEvent.layout.width);
+    if (!measuredWidth || measuredWidth < 280) return;
+    lastMeasuredViewportWidthRef.current = measuredWidth;
+
+    if (Math.abs(measuredWidth - viewportWidth) < 2) return;
+    if (isHorizontalScrollActiveRef.current) {
+      queuePendingViewportWidth(measuredWidth);
+      return;
+    }
+    setViewportWidth(measuredWidth);
+  }, [queuePendingViewportWidth, viewportWidth]);
 
   useEffect(() => {
     dispatch(fetchCarousels());
   }, [dispatch]);
 
-  const onContainerLayout = (event: LayoutChangeEvent) => {
-    const nextWidth = Math.round(event.nativeEvent.layout.width);
-    if (!nextWidth || nextWidth === containerWidth) {
+  useEffect(() => {
+    if (lastMeasuredViewportWidthRef.current > 0) {
+      // Prefer real measured width once available.
       return;
     }
-    setContainerWidth(nextWidth);
-  };
+    const nextViewportWidth = computeViewportWidth(width, isSidebarOpen);
+    if (Math.abs(nextViewportWidth - viewportWidth) < 2) {
+      return;
+    }
+
+    if (isHorizontalScrollActiveRef.current) {
+      queuePendingViewportWidth(nextViewportWidth);
+      return;
+    }
+
+    setViewportWidth(nextViewportWidth);
+  }, [computeViewportWidth, isSidebarOpen, queuePendingViewportWidth, viewportWidth, width]);
 
   useEffect(() => {
     if (!carousels.length) return;
@@ -82,19 +141,36 @@ export function HomeCarousel() {
     carousels.length > 0
       ? Math.min(activeIndex, carousels.length - 1)
       : 0;
-  const listKey = `home-carousel-${Math.round(ITEM_INTERVAL)}`;
   const itemContainerStyle = useMemo(
     () => [styles.itemContainer, { width: ITEM_WIDTH }],
     [ITEM_WIDTH],
   );
+
+  useEffect(() => {
+    if (!carousels.length) return;
+    const safeIndex = Math.max(
+      0,
+      Math.min(currentIndexRef.current, carousels.length - 1),
+    );
+    listRef.current?.scrollToOffset({
+      offset: safeIndex * ITEM_INTERVAL,
+      animated: false,
+    });
+  }, [ITEM_INTERVAL, carousels.length]);
 
   const handleMomentumEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const nextIndex = Math.round(
         event.nativeEvent.contentOffset.x / ITEM_INTERVAL,
       );
+      isHorizontalScrollActiveRef.current = false;
       currentIndexRef.current = nextIndex;
       setActiveIndex(nextIndex);
+      const pending = pendingViewportWidthRef.current;
+      pendingViewportWidthRef.current = null;
+      if (pending !== null) {
+        setViewportWidth(pending);
+      }
     },
     [ITEM_INTERVAL],
   );
@@ -103,6 +179,14 @@ export function HomeCarousel() {
     (index: number, options?: { preserveFocus?: boolean }) => {
       if (!carousels.length) return;
       const next = Math.max(0, Math.min(index, carousels.length - 1));
+      isHorizontalScrollActiveRef.current = true;
+      if (scrollSettleTimerRef.current) {
+        clearTimeout(scrollSettleTimerRef.current);
+      }
+      scrollSettleTimerRef.current = setTimeout(() => {
+        isHorizontalScrollActiveRef.current = false;
+        flushPendingViewportWidth();
+      }, PROGRAMMATIC_SCROLL_SETTLE_MS);
       currentIndexRef.current = next;
       setActiveIndex(next);
       setPreferredFocusIndex(options?.preserveFocus ? next : null);
@@ -220,6 +304,17 @@ export function HomeCarousel() {
   }, [carousels.length, scrollToIndex]);
 
   useEffect(() => {
+    return () => {
+      if (scrollSettleTimerRef.current) {
+        clearTimeout(scrollSettleTimerRef.current);
+      }
+      if (pendingWidthFlushTimerRef.current) {
+        clearTimeout(pendingWidthFlushTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (!isTV) return;
     let tvEventSubscription: any = null;
 
@@ -238,6 +333,12 @@ export function HomeCarousel() {
 
     return () => {
       tvEventSubscription?.disable?.();
+      if (scrollSettleTimerRef.current) {
+        clearTimeout(scrollSettleTimerRef.current);
+      }
+      if (pendingWidthFlushTimerRef.current) {
+        clearTimeout(pendingWidthFlushTimerRef.current);
+      }
       if (blurTimerRef.current) {
         clearTimeout(blurTimerRef.current);
       }
@@ -283,7 +384,6 @@ export function HomeCarousel() {
     <View style={styles.container} onLayout={onContainerLayout}>
       <FlatList
         ref={listRef}
-        key={listKey}
         data={carousels}
         keyExtractor={(item) => item.id}
         initialScrollIndex={initialScrollIndex}
@@ -307,7 +407,23 @@ export function HomeCarousel() {
           offset: ITEM_INTERVAL * index,
           index,
         })}
+        onScrollBeginDrag={() => {
+          isHorizontalScrollActiveRef.current = true;
+        }}
+        onMomentumScrollBegin={() => {
+          isHorizontalScrollActiveRef.current = true;
+        }}
         onMomentumScrollEnd={handleMomentumEnd}
+        onScrollEndDrag={() => {
+          if (!isHorizontalScrollActiveRef.current) return;
+          if (scrollSettleTimerRef.current) {
+            clearTimeout(scrollSettleTimerRef.current);
+          }
+          scrollSettleTimerRef.current = setTimeout(() => {
+            isHorizontalScrollActiveRef.current = false;
+            flushPendingViewportWidth();
+          }, 120);
+        }}
         ItemSeparatorComponent={Separator}
         renderItem={renderItem}
         onScrollToIndexFailed={(info) => {

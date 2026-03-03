@@ -14,6 +14,7 @@ interface RequestOptions {
   retry?: number;
   signal?: AbortSignal;
   skipAuth?: boolean;
+  timeoutMs?: number;
 }
 
 type ApiError = Error & {
@@ -70,6 +71,7 @@ export async function api<T>(
     retry = 0,
     signal,
     skipAuth = false,
+    timeoutMs = TIMEOUT,
   } = options;
 
   try {
@@ -87,7 +89,7 @@ export async function api<T>(
         },
         body: hasBody ? JSON.stringify(body) : undefined,
       },
-      TIMEOUT,
+      timeoutMs,
       signal
     );
 

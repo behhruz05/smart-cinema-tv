@@ -130,6 +130,8 @@ export const streamingApi = {
     const response = await api<WrappedStreamPayload | string>(`/streaming/movie/${safeMovieId}`, {
       headers: streamHeaders(),
       skipAuth: false,
+      timeoutMs: 25000,
+      retry: 1,
     });
     return normalizeStreamPayload(response);
   },
@@ -139,6 +141,8 @@ export const streamingApi = {
     const response = await api<WrappedStreamPayload | string>(`/streaming/series/${safeEpisodeId}`, {
       headers: streamHeaders(),
       skipAuth: false,
+      timeoutMs: 25000,
+      retry: 1,
     });
     return normalizeStreamPayload(response);
   },
@@ -154,6 +158,8 @@ export const streamingApi = {
         method: 'POST',
         headers: streamHeaders(),
         skipAuth: false,
+        timeoutMs: 15000,
+        retry: 1,
       },
     );
   },
@@ -169,6 +175,8 @@ export const streamingApi = {
         method: 'POST',
         headers: streamHeaders(),
         skipAuth: false,
+        timeoutMs: 15000,
+        retry: 1,
       },
     );
   },

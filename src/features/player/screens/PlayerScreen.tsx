@@ -23,6 +23,8 @@ import { tokenStorage } from '../../../shared/lib/tokenStorage';
 import { PlayerTopRow } from '../components/PlayerTopRow';
 import { PlayerSettingsPanel } from '../components/PlayerSettingsPanel';
 import { PlayerBottomControls } from '../components/PlayerBottomControls';
+import { SeekBackwardIcon } from '../../../shared/icons/SeekBackwardIcon';
+import { SeekForwardIcon } from '../../../shared/icons/SeekForwardIcon';
 
 type PlayerRouteProp = RouteProp<RootStackParamList, 'Player'>;
 type PlayerNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -40,6 +42,10 @@ type FocusedControlId =
   | 'retry';
 const MAX_STREAM_RELOADS = 2;
 const SEEK_STEP_SECONDS = 10;
+const SEEK_STEP_PROGRESS_SECONDS = 30;
+const SEEK_STEP_PROGRESS_VISIBLE_SECONDS = 10;
+const SEEK_STEP_PROGRESS_HOLD_SECONDS = 20;
+const SEEK_BURST_WINDOW_MS = 900;
 const CONTROLS_HIDE_DELAY_MS = 5000;
 
 function getVideoComponent(): React.ComponentType<any> | null {
@@ -72,6 +78,21 @@ function extractHttpStatusCode(error?: any): number | null {
   if (!match) return null;
   const parsed = Number(match[1]);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function matchesAnyEventType(
+  rawType: string,
+  aliases: string[],
+): boolean {
+  const normalized = String(rawType || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[\s-]+/g, '_');
+  if (!normalized) return false;
+  return aliases.some(alias => {
+    const token = alias.toLowerCase();
+    return normalized === token || normalized.includes(token);
+  });
 }
 
 export function PlayerScreen() {
@@ -109,7 +130,11 @@ export function PlayerScreen() {
   const togglePlayPauseRef = useRef<() => void>(() => {});
   const pingControlsRef = useRef<() => void>(() => {});
   const seekIndicatorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const seekBurstDirectionRef = useRef<-1 | 0 | 1>(0);
+  const seekBurstTotalRef = useRef(0);
+  const seekBurstLastAtRef = useRef(0);
   const lastTVEventRef = useRef<{ type: string; at: number } | null>(null);
+  const focusedControlRef = useRef<FocusedControlId>(null);
 
   const {
     movieId,
@@ -150,8 +175,8 @@ export function PlayerScreen() {
   const [audioTracks, setAudioTracks] = useState<StreamPayload['audio_tracks']>([]);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [seekIndicatorVisible, setSeekIndicatorVisible] = useState(false);
+  const [seekDelta, setSeekDelta] = useState(SEEK_STEP_SECONDS);
   const [settingsFocusToken, setSettingsFocusToken] = useState(0);
-  const [focusCatcherToken, setFocusCatcherToken] = useState(0);
 
   const VideoComponent = useMemo(() => getVideoComponent(), []);
   const VideoElement = VideoComponent as any;
@@ -193,7 +218,6 @@ export function PlayerScreen() {
     setControlsVisible(true);
     if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
     hideTimeoutRef.current = setTimeout(() => {
-      if (settingsVisibleRef.current) return;
       if (isPausedRef.current) return;
       setControlsVisible(false);
       setSettingsVisible(false);
@@ -404,8 +428,24 @@ export function PlayerScreen() {
   }, [controlsVisible]);
 
   useEffect(() => {
+    focusedControlRef.current = focusedControl;
+  }, [focusedControl]);
+
+  useEffect(() => {
+    if (!settingsVisible) return;
+    if (isPaused) return;
+
+    const timer = setTimeout(() => {
+      setSettingsVisible(false);
+      setFocusedControl('progress');
+      setFocusedSettingChip(null);
+    }, CONTROLS_HIDE_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, [isPaused, settingsVisible]);
+
+  useEffect(() => {
     if (!controlsVisible) {
-      setFocusCatcherToken(prev => prev + 1);
       lastTVEventRef.current = null;
       setSettingsVisible(false);
     }
@@ -418,12 +458,29 @@ export function PlayerScreen() {
       setCurrentTime(next);
       currentTimeRef.current = next;
       playerRef.current?.seek?.(next);
+
+      const direction: -1 | 1 = delta < 0 ? -1 : 1;
+      const amount = Math.max(1, Math.abs(Math.round(delta)));
+      const now = Date.now();
+      const sameBurst =
+        seekBurstDirectionRef.current === direction &&
+        now - seekBurstLastAtRef.current <= SEEK_BURST_WINDOW_MS;
+      const nextBurstTotal = sameBurst ? seekBurstTotalRef.current + amount : amount;
+
+      seekBurstDirectionRef.current = direction;
+      seekBurstTotalRef.current = nextBurstTotal;
+      seekBurstLastAtRef.current = now;
+
       setSeekIndicatorVisible(true);
+      setSeekDelta(direction * nextBurstTotal);
       if (seekIndicatorTimeoutRef.current) {
         clearTimeout(seekIndicatorTimeoutRef.current);
       }
       seekIndicatorTimeoutRef.current = setTimeout(() => {
         setSeekIndicatorVisible(false);
+        seekBurstDirectionRef.current = 0;
+        seekBurstTotalRef.current = 0;
+        seekBurstLastAtRef.current = 0;
       }, 1200);
       if (revealControls) {
         setControlsVisible(true);
@@ -512,22 +569,198 @@ export function PlayerScreen() {
     };
   }, [clearStartupTimer, submitProgress]);
 
-  const handleTVEvent = useCallback((event: { eventType?: string; eventKeyAction?: number; keyCode?: number }) => {
+  const handleTVEvent = useCallback((event: { eventType?: string; eventKeyAction?: number; keyCode?: number; repeatCount?: number }) => {
+    if (__DEV__) {
+      console.log('TV remote event (normalized input):', event);
+    }
     const keyCode = event?.keyCode;
-    const eventKeyAction = event?.eventKeyAction;
-    if (typeof keyCode !== 'number') return;
+    const repeatCount = typeof event?.repeatCount === 'number' ? event.repeatCount : 0;
+    const rawEventType = String(event?.eventType || '');
+    const normalizedEventType = rawEventType.toLowerCase().trim();
+    const isLeftKey =
+      keyCode === 21 || keyCode === 37 || keyCode === 89 ||
+      matchesAnyEventType(rawEventType, [
+        'left',
+        'arrowleft',
+        'dpadleft',
+        'dpad_left',
+        'keycode_dpad_left',
+        'swipeleft',
+      ]);
+    const isRightKey =
+      keyCode === 22 || keyCode === 39 || keyCode === 90 ||
+      matchesAnyEventType(rawEventType, [
+        'right',
+        'arrowright',
+        'dpadright',
+        'dpad_right',
+        'keycode_dpad_right',
+        'swiperight',
+      ]);
+    const isUpKey =
+      keyCode === 19 || keyCode === 38 ||
+      matchesAnyEventType(rawEventType, [
+        'up',
+        'arrowup',
+        'dpadup',
+        'dpad_up',
+        'keycode_dpad_up',
+      ]);
+    const isDownKey =
+      keyCode === 20 || keyCode === 40 ||
+      matchesAnyEventType(rawEventType, [
+        'down',
+        'arrowdown',
+        'dpaddown',
+        'dpad_down',
+        'keycode_dpad_down',
+      ]);
+    const isEnterKey =
+      keyCode === 23 || keyCode === 66 ||
+      matchesAnyEventType(rawEventType, [
+        'select',
+        'enter',
+        'center',
+        'dpad_center',
+        'keycode_dpad_center',
+      ]);
+    const isPlayPauseKey =
+      keyCode === 85 ||
+      matchesAnyEventType(rawEventType, ['playpause', 'media_play_pause', 'keycode_media_play_pause']);
+    const isPlayKey =
+      keyCode === 126 ||
+      matchesAnyEventType(rawEventType, ['play', 'media_play', 'keycode_media_play']);
+    const isPauseKey =
+      keyCode === 127 ||
+      matchesAnyEventType(rawEventType, ['pause', 'media_pause', 'keycode_media_pause']);
+    const isStopKey =
+      keyCode === 86 ||
+      matchesAnyEventType(rawEventType, ['stop', 'media_stop', 'keycode_media_stop']);
+    const isVolumeUpKey =
+      keyCode === 24 ||
+      matchesAnyEventType(rawEventType, ['volumeup', 'volume_up', 'keycode_volume_up']);
+    const isVolumeDownKey =
+      keyCode === 25 ||
+      matchesAnyEventType(rawEventType, ['volumedown', 'volume_down', 'keycode_volume_down']);
+    const isMuteKey =
+      keyCode === 164 || keyCode === 91 ||
+      matchesAnyEventType(rawEventType, ['mute', 'volume_mute', 'keycode_volume_mute']);
+    const isMenuKey =
+      keyCode === 4 || keyCode === 111 || keyCode === 82 ||
+      matchesAnyEventType(rawEventType, [
+        'menu',
+        'back',
+        'escape',
+        'keycode_back',
+      ]);
 
-    // When controls are hidden, allow only one recovery action: ENTER/OK opens menu.
+    if (
+      !isLeftKey &&
+      !isRightKey &&
+      !isUpKey &&
+      !isDownKey &&
+      !isEnterKey &&
+      !isPlayPauseKey &&
+      !isPlayKey &&
+      !isPauseKey &&
+      !isStopKey &&
+      !isVolumeUpKey &&
+      !isVolumeDownKey &&
+      !isMuteKey &&
+      !isMenuKey &&
+      typeof keyCode !== 'number'
+    ) {
+      return;
+    }
+
+    // When controls are hidden, player surface is the active layer:
+    // left/right seek, up/down reopen menu, enter toggles playback.
     if (!controlsVisibleRef.current) {
-      const isEnter = keyCode === 23 || keyCode === 66;
-      if (!isEnter) {
+      if (isLeftKey) {
+        const step =
+          focusedControlRef.current === 'progress'
+            ? SEEK_STEP_PROGRESS_SECONDS
+            : SEEK_STEP_SECONDS;
+        seekByRef.current(-step, false);
         return;
       }
+
+      if (isRightKey) {
+        const step =
+          focusedControlRef.current === 'progress'
+            ? SEEK_STEP_PROGRESS_SECONDS
+            : SEEK_STEP_SECONDS;
+        seekByRef.current(step, false);
+        return;
+      }
+
+      if (isUpKey) {
+        setControlsVisible(true);
+        setSettingsVisible(false);
+        setFocusedControl('progress');
+        pingControlsRef.current();
+        return;
+      }
+
+      if (isMenuKey) {
+        setControlsVisible(true);
+        setSettingsVisible(true);
+        setFocusedControl(null);
+        setSettingsFocusToken(prev => prev + 1);
+        pingControlsRef.current();
+        return;
+      }
+
+      if (isDownKey) {
+        setControlsVisible(true);
+        setSettingsVisible(false);
+        setFocusedControl('progress');
+        pingControlsRef.current();
+        return;
+      }
+
+      if (isPlayPauseKey) {
+        togglePlayPauseRef.current();
+        return;
+      }
+
+      if (isPlayKey) {
+        setIsPaused(false);
+        return;
+      }
+
+      if (isPauseKey) {
+        setIsPaused(true);
+        return;
+      }
+
+      if (isStopKey) {
+        setIsPaused(true);
+        if (canSeek) {
+          setCurrentTime(0);
+          currentTimeRef.current = 0;
+          playerRef.current?.seek?.(0);
+        }
+        return;
+      }
+
+      if (isMuteKey) {
+        setIsMuted(prev => !prev);
+        return;
+      }
+
+      // Let TV OS control hardware volume keys.
+      if (isVolumeUpKey || isVolumeDownKey) {
+        return;
+      }
+
+      if (!isEnterKey) {
+        return;
+      }
+
       setControlsVisible(true);
-      setSettingsVisible(true);
-      setFocusedControl(null);
-      setSettingsFocusToken(prev => prev + 1);
       pingControlsRef.current();
+      togglePlayPauseRef.current();
       return;
     }
 
@@ -535,47 +768,40 @@ export function PlayerScreen() {
     const last = lastTVEventRef.current;
     // Some remotes emit only UP, some emit DOWN+UP.
     // De-duplicate by keyCode in a short window so one physical press = one action.
-    const fingerprint = `kc:${keyCode}`;
-    if (last && last.type === fingerprint && now - last.at < 120) {
+    const fingerprint =
+      typeof keyCode === 'number'
+        ? `kc:${keyCode}`
+        : `et:${normalizedEventType || 'unknown'}`;
+    if (repeatCount === 0 && last && last.type === fingerprint && now - last.at < 120) {
       return;
     }
     lastTVEventRef.current = { type: fingerprint, at: now };
 
-    // Hard-priority key handling for Android TV remotes.
-    // This bypasses any focus/menu state issues.
-    if (keyCode === 22 || keyCode === 39 || keyCode === 90) {
-      setControlsVisible(true);
-      setSettingsVisible(false);
-      seekByRef.current(SEEK_STEP_SECONDS, true);
-      return;
-    }
-    if (keyCode === 21 || keyCode === 37 || keyCode === 89) {
-      setControlsVisible(true);
-      setSettingsVisible(false);
-      seekByRef.current(-SEEK_STEP_SECONDS, true);
-      return;
-    }
-    if (keyCode === 19 || keyCode === 38) {
-      setControlsVisible(true);
-      if (!settingsVisibleRef.current) {
-        setSettingsVisible(true);
-        setFocusedControl(null);
-        setSettingsFocusToken(prev => prev + 1);
+    // When controls are visible, keep DPAD for focus/navigation only.
+    // Custom left/right seek and up/down panel switching should run only when controls are hidden.
+    if (isLeftKey || isRightKey || isUpKey || isDownKey) {
+      if (
+        !settingsVisibleRef.current &&
+        focusedControlRef.current === 'progress' &&
+        canSeek &&
+        (isLeftKey || isRightKey)
+      ) {
+        const step =
+          repeatCount >= 2
+            ? SEEK_STEP_PROGRESS_HOLD_SECONDS
+            : SEEK_STEP_PROGRESS_VISIBLE_SECONDS;
+        seekByRef.current(isLeftKey ? -step : step, true);
       }
       pingControlsRef.current();
       return;
     }
-    if (keyCode === 20 || keyCode === 40) {
-      setControlsVisible(true);
-      if (settingsVisibleRef.current) {
-        setSettingsVisible(false);
-      }
-      pingControlsRef.current();
-      return;
-    }
-    if (keyCode === 23 || keyCode === 66) {
+
+    if (isEnterKey) {
       if (controlsVisibleRef.current) {
         pingControlsRef.current();
+        if (focusedControlRef.current) {
+          return;
+        }
         togglePlayPauseRef.current();
       } else {
         setControlsVisible(true);
@@ -583,7 +809,22 @@ export function PlayerScreen() {
       }
       return;
     }
-    if (keyCode === 4 || keyCode === 111 || keyCode === 82) {
+    if (isPlayPauseKey) {
+      pingControlsRef.current();
+      togglePlayPauseRef.current();
+      return;
+    }
+    if (isPlayKey) {
+      setIsPaused(false);
+      pingControlsRef.current();
+      return;
+    }
+    if (isPauseKey) {
+      setIsPaused(true);
+      pingControlsRef.current();
+      return;
+    }
+    if (isMenuKey) {
       setControlsVisible(true);
       setSettingsVisible(prev => {
         const next = !prev;
@@ -598,29 +839,33 @@ export function PlayerScreen() {
     }
 
     const type =
-      keyCode === 21 || keyCode === 37 || keyCode === 89
+      isLeftKey
         ? 'left'
-        : keyCode === 22 || keyCode === 39 || keyCode === 90
+        : isRightKey
           ? 'right'
-          : keyCode === 19 || keyCode === 38
+          : isUpKey
             ? 'up'
-            : keyCode === 20 || keyCode === 40
+            : isDownKey
               ? 'down'
-              : keyCode === 23 || keyCode === 66
-                ? 'select'
-                : keyCode === 4 || keyCode === 111 || keyCode === 82
-                  ? 'menu'
-                  : keyCode === 85 || keyCode === 126 || keyCode === 127
+                : isEnterKey
+                  ? 'select'
+                  : isPlayPauseKey
                     ? 'playPause'
-                    : keyCode === 86
-                      ? 'stop'
-                      : keyCode === 24
-                        ? 'volumeUp'
-                        : keyCode === 25
-                          ? 'volumeDown'
-                          : keyCode === 164 || keyCode === 91
-                            ? 'mute'
-                            : 'unknown';
+                    : isPlayKey
+                      ? 'play'
+                      : isPauseKey
+                        ? 'pause'
+                : isStopKey
+                  ? 'stop'
+                  : isVolumeUpKey
+                    ? 'volumeUp'
+                    : isVolumeDownKey
+                      ? 'volumeDown'
+                      : isMuteKey
+                        ? 'mute'
+                : isMenuKey
+                  ? 'menu'
+                  : 'unknown';
 
     if (type === 'playPause') {
       if (!controlsVisibleRef.current) {
@@ -656,55 +901,7 @@ export function PlayerScreen() {
       return;
     }
 
-    if (
-      settingsVisibleRef.current &&
-      (type === 'up' || type === 'down' || type === 'select')
-    ) {
-      pingControlsRef.current();
-      return;
-    }
-
-    if (type === 'left') {
-      if (settingsVisibleRef.current) {
-        setSettingsVisible(false);
-      }
-      seekByRef.current(-SEEK_STEP_SECONDS, true);
-      return;
-    }
-
-    if (type === 'right') {
-      if (settingsVisibleRef.current) {
-        setSettingsVisible(false);
-      }
-      seekByRef.current(SEEK_STEP_SECONDS, true);
-      return;
-    }
-
-    if (type === 'down') {
-      if (!controlsVisibleRef.current) {
-        setControlsVisible(true);
-        setSettingsVisible(false);
-        pingControlsRef.current();
-        return;
-      }
-      if (settingsVisibleRef.current) {
-        setSettingsVisible(false);
-      } else {
-        setFocusedControl(null);
-      }
-      pingControlsRef.current();
-      return;
-    }
-
-    if (type === 'up') {
-      if (!controlsVisibleRef.current) {
-        setControlsVisible(true);
-      }
-      if (!settingsVisibleRef.current) {
-        setSettingsVisible(true);
-        setFocusedControl(null);
-        setSettingsFocusToken(prev => prev + 1);
-      }
+    if (settingsVisibleRef.current && type === 'select') {
       pingControlsRef.current();
       return;
     }
@@ -712,6 +909,9 @@ export function PlayerScreen() {
     if (type === 'select') {
       if (controlsVisibleRef.current) {
         pingControlsRef.current();
+        if (focusedControlRef.current) {
+          return;
+        }
         togglePlayPauseRef.current();
         return;
       }
@@ -758,34 +958,14 @@ export function PlayerScreen() {
         eventType: key ? String(key) : undefined,
         eventKeyAction: typeof eventKeyAction === 'number' ? eventKeyAction : undefined,
         keyCode: typeof keyCode === 'number' ? keyCode : undefined,
+        repeatCount: typeof event?.nativeEvent?.repeatCount === 'number' ? event.nativeEvent.repeatCount : undefined,
       });
     },
   } as any)
     : null;
 
-  const handleNativeTVKeyDown = useCallback(
-    (event: any) => {
-      const key = event?.nativeEvent?.key || event?.nativeEvent?.eventType;
-      const keyCode = event?.nativeEvent?.keyCode;
-      const eventKeyAction = event?.nativeEvent?.eventKeyAction;
-      if (!key && typeof keyCode !== 'number') return;
-      handleTVEvent({
-        eventType: key ? String(key) : undefined,
-        eventKeyAction: typeof eventKeyAction === 'number' ? eventKeyAction : undefined,
-        keyCode: typeof keyCode === 'number' ? keyCode : undefined,
-      });
-    },
-    [handleTVEvent],
-  );
-
-  const tvFocusCatcherProps = isTV && !isAndroid
-    ? ({
-        onKeyDown: handleNativeTVKeyDown,
-      } as any)
-    : null;
-
   useEffect(() => {
-    if (!(isTV || isAndroid) || isAndroid) return;
+    if (!(isTV || isAndroid)) return;
     let tvEventSubscription: any = null;
     try {
       const rnModule = require('react-native');
@@ -803,11 +983,14 @@ export function PlayerScreen() {
     return () => {
       tvEventSubscription?.disable?.();
     };
-  }, [handleTVEvent, isAndroid, isTV]);
+  }, [handleTVEvent, isTV, isAndroid]);
 
   useEffect(() => {
     if (!isAndroid) return;
     const sub = DeviceEventEmitter.addListener('TV_REMOTE_KEY', (payload: any) => {
+      if (__DEV__) {
+        console.log('TV_REMOTE_KEY payload:', payload);
+      }
       const action = String(payload?.action || '').toUpperCase();
       const keyCode = typeof payload?.keyCode === 'number' ? payload.keyCode : undefined;
       const keyName = payload?.keyName ? String(payload.keyName) : undefined;
@@ -815,6 +998,7 @@ export function PlayerScreen() {
         eventType: keyName,
         eventKeyAction: action === 'UP' ? 1 : 0,
         keyCode,
+        repeatCount: typeof payload?.repeatCount === 'number' ? payload.repeatCount : undefined,
       });
     });
     return () => {
@@ -928,6 +1112,16 @@ export function PlayerScreen() {
         </View>
       )}
 
+      {seekIndicatorVisible && !streamError && (
+        <View pointerEvents="none" style={styles.seekOverlay}>
+          <View style={styles.seekOverlayCard}>
+            <Text style={styles.seekOverlayText}>
+              {seekDelta > 0 ? `+${Math.abs(seekDelta)}s` : `\u2212${Math.abs(seekDelta)}s`}
+            </Text>
+          </View>
+        </View>
+      )}
+
       {streamError && (
         <View style={styles.errorOverlay}>
           <Text style={styles.errorTitle}>{streamError}</Text>
@@ -944,18 +1138,6 @@ export function PlayerScreen() {
             <Text style={styles.retryText}>{t('player.retry')}</Text>
           </Pressable>
         </View>
-      )}
-
-      {isTV && !streamError && (
-        <Pressable
-          key={`focus-catcher-${focusCatcherToken}`}
-          focusable={isTV}
-          hasTVPreferredFocus={isTV && !controlsVisible}
-          pointerEvents={controlsVisible ? 'none' : 'auto'}
-          onPress={pingControls}
-          {...tvFocusCatcherProps}
-          style={styles.focusCatcher}
-        />
       )}
 
       {controlsVisible && !streamError && (
@@ -988,6 +1170,12 @@ export function PlayerScreen() {
               onChangeSubtitleLanguage={setSubtitleLanguage}
               audioLanguage={audioLanguage}
               onChangeAudioLanguage={setAudioLanguage}
+              onApplyAndClose={() => {
+                setSettingsVisible(false);
+                setFocusedSettingChip(null);
+                setFocusedControl('settings');
+                pingControls();
+              }}
               subtitles={subtitles}
               audioTracks={audioTracks}
               t={t}
@@ -1009,8 +1197,20 @@ export function PlayerScreen() {
             isPaused={isPaused}
             isMuted={isMuted}
             onTogglePlayPause={togglePlayPause}
-            onSeekBackward={() => seekBy(-SEEK_STEP_SECONDS)}
-            onSeekForward={() => seekBy(SEEK_STEP_SECONDS)}
+            onSeekBackward={() =>
+              seekBy(
+                focusedControl === 'progress'
+                  ? -SEEK_STEP_PROGRESS_VISIBLE_SECONDS
+                  : -SEEK_STEP_SECONDS,
+              )
+            }
+            onSeekForward={() =>
+              seekBy(
+                focusedControl === 'progress'
+                  ? SEEK_STEP_PROGRESS_VISIBLE_SECONDS
+                  : SEEK_STEP_SECONDS,
+              )
+            }
             onToggleMute={() => {
               setIsMuted(prev => !prev);
               pingControls();
@@ -1022,6 +1222,7 @@ export function PlayerScreen() {
           />
         </>
       )}
+
 
     </Pressable>
   );
@@ -1097,10 +1298,6 @@ const styles = StyleSheet.create({
   },
   focusedControl: {
     borderColor: '#fff',
-  },
-  focusCatcher: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 2,
   },
   titleWrap: {
     flex: 1,
@@ -1204,7 +1401,38 @@ const styles = StyleSheet.create({
   },
   actionText: {
     color: '#fff',
-    fontSize: 13,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  seekActionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  compactActionsWrap: {
+    position: 'absolute',
+    right: 18,
+    bottom: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    zIndex: 3,
+  },
+  compactActionBtn: {
+    minWidth: 58,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: 'rgba(14,14,14,0.62)',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+  },
+  compactActionText: {
+    color: '#fff',
+    fontSize: 12,
     fontWeight: '700',
   },
   settingsPanel: {
@@ -1231,6 +1459,38 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     marginBottom: 4,
+  },
+  seekOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 8,
+  },
+  seekOverlayCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: 'rgba(0,0,0,0.58)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.16)',
+  },
+  seekOverlayText: {
+    color: '#fff',
+    fontSize: 36,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  progressTrackFocused: {
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.5)',
+    borderRadius: 4,
   },
   chip: {
     backgroundColor: 'rgba(255,255,255,0.12)',

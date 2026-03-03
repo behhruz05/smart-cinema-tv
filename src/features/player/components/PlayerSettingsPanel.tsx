@@ -15,6 +15,7 @@ type PlayerSettingsPanelProps = {
   onChangeSubtitleLanguage: (value: string) => void;
   audioLanguage: string | null;
   onChangeAudioLanguage: (value: string) => void;
+  onApplyAndClose: () => void;
   subtitles: StreamPayload['subtitles'];
   audioTracks: StreamPayload['audio_tracks'];
   t: (key: string) => string;
@@ -32,6 +33,7 @@ export const PlayerSettingsPanel = React.memo(function PlayerSettingsPanel({
   onChangeSubtitleLanguage,
   audioLanguage,
   onChangeAudioLanguage,
+  onApplyAndClose,
   subtitles,
   audioTracks,
   t,
@@ -48,7 +50,10 @@ export const PlayerSettingsPanel = React.memo(function PlayerSettingsPanel({
             hasTVPreferredFocus={isTV && preferFirstChipFocus && item === 'small'}
             onFocus={() => onFocusSettingChip(`size-${item}`)}
             onBlur={() => onFocusSettingChip(null)}
-            onPress={() => onChangeSubtitleSize(item)}
+            onPress={() => {
+              onChangeSubtitleSize(item);
+              onApplyAndClose();
+            }}
             style={[
               styles.chip,
               subtitleSize === item && styles.chipActive,
@@ -66,7 +71,10 @@ export const PlayerSettingsPanel = React.memo(function PlayerSettingsPanel({
           focusable={isTV}
           onFocus={() => onFocusSettingChip('subtitle-off')}
           onBlur={() => onFocusSettingChip(null)}
-          onPress={() => onChangeSubtitleLanguage('off')}
+          onPress={() => {
+            onChangeSubtitleLanguage('off');
+            onApplyAndClose();
+          }}
           style={[
             styles.chip,
             subtitleLanguage === 'off' && styles.chipActive,
@@ -81,7 +89,10 @@ export const PlayerSettingsPanel = React.memo(function PlayerSettingsPanel({
             focusable={isTV}
             onFocus={() => onFocusSettingChip(`subtitle-${item.id}`)}
             onBlur={() => onFocusSettingChip(null)}
-            onPress={() => onChangeSubtitleLanguage(item.language)}
+            onPress={() => {
+              onChangeSubtitleLanguage(item.language);
+              onApplyAndClose();
+            }}
             style={[
               styles.chip,
               subtitleLanguage === item.language && styles.chipActive,
@@ -101,7 +112,10 @@ export const PlayerSettingsPanel = React.memo(function PlayerSettingsPanel({
             focusable={isTV}
             onFocus={() => onFocusSettingChip(`audio-${item.id}`)}
             onBlur={() => onFocusSettingChip(null)}
-            onPress={() => onChangeAudioLanguage(item.language)}
+            onPress={() => {
+              onChangeAudioLanguage(item.language);
+              onApplyAndClose();
+            }}
             style={[
               styles.chip,
               audioLanguage === item.language && styles.chipActive,
