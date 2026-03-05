@@ -29,6 +29,7 @@ import { RootStackParamList } from '../../../types/navigations';
 import { PlayIcon } from '../../../shared/icons/PlayIcon';
 import { BackIcon } from '../../../shared/icons/BackIcon';
 import { MovieCard } from '../../../shared/components/MovieCard';
+import { RatingBadge } from '../../../shared/components/RatingBadge';
 import { SeriesEpisode, SeriesSeason } from '../../../types/series';
 
 type ScreenRouteProp = RouteProp<RootStackParamList, 'SeriesDetail'>;
@@ -231,7 +232,7 @@ export function SeriesDetailScreen() {
         </Pressable>
 
         <View style={styles.heroContent}>
-          <Text style={styles.rating}>★ {selectedSeries.imdb_rating || '-'}</Text>
+          <RatingBadge rating={selectedSeries.imdb_rating} style={styles.ratingBadge} />
           <Text style={styles.title}>{title}</Text>
 
           <View style={styles.badges}>
@@ -411,10 +412,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 24,
   },
-  rating: {
-    color: '#f4c64f',
-    fontSize: 22,
-    fontWeight: '700',
+  ratingBadge: {
     marginBottom: 8,
   },
   title: {

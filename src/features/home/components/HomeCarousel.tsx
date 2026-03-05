@@ -30,6 +30,7 @@ const SIDEBAR_COLLAPSED_TOTAL_INSET = 102;
 const SIDEBAR_EXPANDED_TOTAL_INSET = 212;
 const PROGRAMMATIC_SCROLL_SETTLE_MS = 360;
 const PENDING_WIDTH_FLUSH_MS = 520;
+const EDGE_NAV_DEDUPE_MS = 220;
 
 export function HomeCarousel() {
   const dispatch = useDispatch<AppDispatch>();
@@ -45,6 +46,12 @@ export function HomeCarousel() {
   const lastMeasuredViewportWidthRef = useRef<number>(0);
   const lastDirectionalPressRef = useRef<{ dir: 'left' | 'right'; at: number } | null>(null);
   const focusedActionIndexRef = useRef<number | null>(null);
+  const focusedActionKindRef = useRef<null | 'watch' | 'details' | 'save'>(null);
+  const lastEdgeNavigateRef = useRef<{
+    dir: 'left' | 'right';
+    at: number;
+    index: number;
+  } | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [preferredFocusIndex, setPreferredFocusIndex] = useState<number | null>(null);
 
@@ -195,24 +202,35 @@ export function HomeCarousel() {
         animated: true,
       });
     },
-    [carousels.length],
+    [carousels.length, flushPendingViewportWidth],
   );
 
-  const markCarouselFocused = useCallback((itemIndex: number) => {
+  const markCarouselFocused = useCallback((
+    itemIndex: number,
+    action: 'watch' | 'details' | 'save',
+  ) => {
     if (blurTimerRef.current) {
       clearTimeout(blurTimerRef.current);
       blurTimerRef.current = null;
     }
     focusedActionIndexRef.current = itemIndex;
+    focusedActionKindRef.current = action;
   }, []);
 
-  const markCarouselBlurred = useCallback((itemIndex: number) => {
+  const markCarouselBlurred = useCallback((
+    itemIndex: number,
+    action: 'watch' | 'details' | 'save',
+  ) => {
     if (blurTimerRef.current) {
       clearTimeout(blurTimerRef.current);
     }
     blurTimerRef.current = setTimeout(() => {
-      if (focusedActionIndexRef.current === itemIndex) {
+      if (
+        focusedActionIndexRef.current === itemIndex &&
+        focusedActionKindRef.current === action
+      ) {
         focusedActionIndexRef.current = null;
+        focusedActionKindRef.current = null;
       }
     }, 120);
   }, []);
@@ -246,6 +264,21 @@ export function HomeCarousel() {
 
   const handleEdgeNavigate = useCallback(
     (direction: 'left' | 'right', sourceIndex: number) => {
+      const now = Date.now();
+      const last = lastEdgeNavigateRef.current;
+      if (
+        last &&
+        last.dir === direction &&
+        last.index === sourceIndex &&
+        now - last.at <= EDGE_NAV_DEDUPE_MS
+      ) {
+        return;
+      }
+      lastEdgeNavigateRef.current = {
+        dir: direction,
+        at: now,
+        index: sourceIndex,
+      };
       scrollToIndex(
         sourceIndex + (direction === 'right' ? 1 : -1),
         { preserveFocus: true },
@@ -282,9 +315,21 @@ export function HomeCarousel() {
             : null;
 
       if (!direction) return;
+
+      const focusedAction = focusedActionKindRef.current;
+      const focusedIndex = focusedActionIndexRef.current;
+      const isEdgeNavigate =
+        (focusedAction === 'watch' && direction === 'left') ||
+        (focusedAction === 'save' && direction === 'right');
+
+      if (isEdgeNavigate && typeof focusedIndex === 'number') {
+        handleEdgeNavigate(direction, focusedIndex);
+        return;
+      }
+
       handleDirectionalPress(direction, focusedActionIndexRef.current ?? undefined);
     },
-    [handleDirectionalPress, isTV],
+    [handleDirectionalPress, handleEdgeNavigate, isTV],
   );
 
   useEffect(() => {

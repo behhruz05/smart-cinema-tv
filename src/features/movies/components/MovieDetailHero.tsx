@@ -13,6 +13,7 @@ import { PlayIcon } from '../../../shared/icons/PlayIcon';
 import { BackIcon } from '../../../shared/icons/BackIcon';
 import { SavedIcon } from '../../../shared/icons/SaverIcon';
 import { MovieDetailHeroProps } from '../types/movieDetail.types';
+import { RatingBadge } from '../../../shared/components/RatingBadge';
 
 export function MovieDetailHero({
   movie,
@@ -67,7 +68,7 @@ export function MovieDetailHero({
         </Pressable>
 
         <View style={styles.heroContent}>
-          <Text style={styles.rating}>{movie.imdb_rating}★</Text>
+          <RatingBadge rating={movie.imdb_rating} style={styles.ratingBadge} />
 
           <Text style={styles.title}>{title}</Text>
 
@@ -168,10 +169,7 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
   },
 
-  rating: {
-    color: '#f4c64f',
-    fontSize: 20,
-    fontWeight: '700',
+  ratingBadge: {
     marginBottom: 8,
   },
 

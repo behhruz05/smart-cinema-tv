@@ -13,13 +13,14 @@ import { SavedIcon } from '../../../shared/icons/SaverIcon';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { movieService } from '../../../service/movie.service';
+import { RatingBadge } from '../../../shared/components/RatingBadge';
 
 interface Props {
   item: Carousel;
   itemIndex: number;
   preferredFocus?: boolean;
-  onActionFocus?: (itemIndex: number) => void;
-  onActionBlur?: (itemIndex: number) => void;
+  onActionFocus?: (itemIndex: number, action: 'watch' | 'details' | 'save') => void;
+  onActionBlur?: (itemIndex: number, action: 'watch' | 'details' | 'save') => void;
   onDirectionalPress?: (direction: 'left' | 'right', itemIndex: number) => void;
   onEdgeNavigate?: (direction: 'left' | 'right', itemIndex: number) => void;
 }
@@ -48,6 +49,10 @@ function CarouselItemComponent({
   const [watchHandle, setWatchHandle] = React.useState<number | undefined>(undefined);
   const [detailsHandle, setDetailsHandle] = React.useState<number | undefined>(undefined);
   const [saveHandle, setSaveHandle] = React.useState<number | undefined>(undefined);
+  const lastDirectionalEventRef = React.useRef<{
+    direction: 'left' | 'right';
+    at: number;
+  } | null>(null);
 
   const lang = i18n.language.startsWith('ru')
     ? 'ru'
@@ -110,45 +115,93 @@ function CarouselItemComponent({
     setSaveHandle(findNodeHandle(saveRef.current) ?? undefined);
   }, [isTV]);
 
+  const resolveDirection = React.useCallback((event: any): 'left' | 'right' | null => {
+    const normalized = String(
+      event?.nativeEvent?.key || event?.nativeEvent?.eventType || event?.eventType || '',
+    )
+      .toLowerCase()
+      .trim();
+    const keyCode = event?.nativeEvent?.keyCode ?? event?.keyCode;
+
+    if (
+      normalized === 'left' ||
+      normalized === 'arrowleft' ||
+      normalized === 'dpadleft' ||
+      normalized === 'swipeleft' ||
+      normalized === 'rewind' ||
+      keyCode === 21 ||
+      keyCode === 37
+    ) {
+      return 'left';
+    }
+
+    if (
+      normalized === 'right' ||
+      normalized === 'arrowright' ||
+      normalized === 'dpadright' ||
+      normalized === 'swiperight' ||
+      normalized === 'fastforward' ||
+      keyCode === 22 ||
+      keyCode === 39
+    ) {
+      return 'right';
+    }
+
+    return null;
+  }, []);
+
+  const handleDirectionalEvent = React.useCallback((event: any) => {
+    const direction = resolveDirection(event);
+    if (!direction || !focusedButton) return;
+
+    const now = Date.now();
+    const prev = lastDirectionalEventRef.current;
+    if (prev && prev.direction === direction && now - prev.at < 120) {
+      return;
+    }
+    lastDirectionalEventRef.current = { direction, at: now };
+
+    if (focusedButton === 'watch' && direction === 'left') {
+      onEdgeNavigate?.('left', itemIndex);
+      return;
+    }
+
+    if (focusedButton === 'save' && direction === 'right') {
+      onEdgeNavigate?.('right', itemIndex);
+      return;
+    }
+
+    onDirectionalPress?.(direction, itemIndex);
+  }, [focusedButton, itemIndex, onDirectionalPress, onEdgeNavigate, resolveDirection]);
+
   const handleDirectionalKeyDown = React.useCallback(
     (event: any) => {
-      const normalized = String(
-        event?.nativeEvent?.key || event?.nativeEvent?.eventType || '',
-      )
-        .toLowerCase()
-        .trim();
-      const keyCode = event?.nativeEvent?.keyCode;
-
-      const direction =
-        normalized === 'left' ||
-        normalized === 'arrowleft' ||
-        normalized === 'dpadleft' ||
-        normalized === 'swipeleft' ||
-        keyCode === 21 ||
-        keyCode === 37
-          ? 'left'
-          : normalized === 'right' ||
-              normalized === 'arrowright' ||
-              normalized === 'dpadright' ||
-              normalized === 'swiperight' ||
-              keyCode === 22 ||
-              keyCode === 39
-            ? 'right'
-            : null;
-
-      if (!direction) return;
-      if (focusedButton === 'watch' && direction === 'left') {
-        onEdgeNavigate?.('left', itemIndex);
-        return;
-      }
-      if (focusedButton === 'save' && direction === 'right') {
-        onEdgeNavigate?.('right', itemIndex);
-        return;
-      }
-      onDirectionalPress?.(direction, itemIndex);
+      handleDirectionalEvent(event);
     },
-    [focusedButton, itemIndex, onDirectionalPress, onEdgeNavigate],
+    [handleDirectionalEvent],
   );
+
+  React.useEffect(() => {
+    if (!isTV || !focusedButton) return;
+    let tvEventSubscription: any = null;
+
+    try {
+      const rnModule = require('react-native');
+      const TVHandler = rnModule?.TVEventHandler;
+      if (!TVHandler) return;
+      const tvEventHandler = new TVHandler();
+      tvEventSubscription = tvEventHandler;
+      tvEventHandler.enable?.(undefined, (_: any, event: any) => {
+        handleDirectionalEvent(event);
+      });
+    } catch {
+      // no-op when TV event handler is unavailable
+    }
+
+    return () => {
+      tvEventSubscription?.disable?.();
+    };
+  }, [focusedButton, handleDirectionalEvent, isTV]);
 
   const tvKeyDownProps = isTV
     ? ({
@@ -164,7 +217,7 @@ function CarouselItemComponent({
       <View style={styles.overlay} />
 
       <View style={styles.content}>
-        <Text style={styles.rating}>⭐ {movie.imdb_rating}</Text>
+        <RatingBadge rating={movie.imdb_rating} style={styles.ratingBadge} />
 
         <Text style={styles.title}>{movie.title_uz}</Text>
 
@@ -194,11 +247,11 @@ function CarouselItemComponent({
               : null)}
             onFocus={() => {
               setFocusedButton('watch');
-              onActionFocus?.(itemIndex);
+              onActionFocus?.(itemIndex, 'watch');
             }}
             onBlur={() => {
               setFocusedButton(null);
-              onActionBlur?.(itemIndex);
+              onActionBlur?.(itemIndex, 'watch');
             }}
             {...tvKeyDownProps}
             onPress={() =>
@@ -231,11 +284,11 @@ function CarouselItemComponent({
               : null)}
             onFocus={() => {
               setFocusedButton('details');
-              onActionFocus?.(itemIndex);
+              onActionFocus?.(itemIndex, 'details');
             }}
             onBlur={() => {
               setFocusedButton(null);
-              onActionBlur?.(itemIndex);
+              onActionBlur?.(itemIndex, 'details');
             }}
             {...tvKeyDownProps}
             onPress={() =>
@@ -263,11 +316,11 @@ function CarouselItemComponent({
               : null)}
             onFocus={() => {
               setFocusedButton('save');
-              onActionFocus?.(itemIndex);
+              onActionFocus?.(itemIndex, 'save');
             }}
             onBlur={() => {
               setFocusedButton(null);
-              onActionBlur?.(itemIndex);
+              onActionBlur?.(itemIndex, 'save');
             }}
             {...tvKeyDownProps}
             onPress={handleToggleFavorite}
@@ -307,9 +360,7 @@ const styles = StyleSheet.create({
   content: {
     padding: 32,
   },
-  rating: {
-    color: '#facc15',
-    fontSize: 14,
+  ratingBadge: {
     marginBottom: 8,
   },
   title: {

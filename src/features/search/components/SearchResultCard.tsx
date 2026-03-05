@@ -12,6 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Movie } from '../../../types/search';
 import { RootStackParamList } from '../../../types/navigations';
+import { RatingBadge } from '../../../shared/components/RatingBadge';
 
 interface Props {
   movie: Movie;
@@ -25,10 +26,6 @@ export const SearchResultCard = React.memo(({ movie, style }: Props) => {
   const isTV = Platform.isTV;
   const [focused, setFocused] = useState(false);
 
-  const rating = movie?.imdb_rating
-    ? Number(movie.imdb_rating).toFixed(1)
-    : null;
-
   return (
     <Pressable
       focusable={isTV}
@@ -41,10 +38,16 @@ export const SearchResultCard = React.memo(({ movie, style }: Props) => {
         focused && styles.focusedCard,
       ]}
     >
-      <Image
-        source={{ uri: movie.poster_url }}
-        style={styles.image}
-      />
+      <View style={styles.imageWrapper}>
+        <Image
+          source={{ uri: movie.poster_url }}
+          style={styles.image}
+        />
+        <RatingBadge
+          rating={movie.imdb_rating}
+          style={styles.ratingBadge}
+        />
+      </View>
 
       <View style={styles.info}>
         <Text style={styles.title} numberOfLines={1}>
@@ -52,7 +55,6 @@ export const SearchResultCard = React.memo(({ movie, style }: Props) => {
         </Text>
 
         <Text style={styles.meta}>
-          {rating ? `⭐ ${rating} • ` : ''}
           {movie.year}
         </Text>
       </View>
@@ -74,6 +76,14 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 230,
     borderRadius: 14,
+  },
+  imageWrapper: {
+    position: 'relative',
+  },
+  ratingBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
   },
   info: {
     marginTop: 8,
