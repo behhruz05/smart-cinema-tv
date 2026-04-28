@@ -19,6 +19,7 @@ import { MovieDetailScreen } from '../../features/movies/screens/MovieDetailScre
 import { SeriesDetailScreen } from '../../features/series/screens/SeriesDetailScreen';
 import { TvChannelsScreen } from '../../features/tv-channels/screens/TvChannelsScreen';
 import { PlayerScreen } from '../../features/player/screens/PlayerScreen';
+import { TvPlayerScreen } from '../../features/tv-channels/screens/TvPlayerScreen';
 
 const RootStack =
   createNativeStackNavigator<RootStackParamList>();
@@ -66,6 +67,7 @@ export function MainNavigator() {
       <RootStack.Screen name="MovieDetail" component={MovieDetailScreen} />
       <RootStack.Screen name="SeriesDetail" component={SeriesDetailScreen} />
       <RootStack.Screen name="Player" component={PlayerScreen} />
+      <RootStack.Screen name="TvPlayer" component={TvPlayerScreen} />
     </RootStack.Navigator>
   );
 }

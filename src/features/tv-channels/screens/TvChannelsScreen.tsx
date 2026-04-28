@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Animated,
   ActivityIndicator,
   FlatList,
-  Image,
   Platform,
   Pressable,
   ScrollView,
@@ -10,6 +10,15 @@ import {
   Text,
   View,
 } from 'react-native';
+
+function getVideoComponent(): React.ComponentType<any> | null {
+  try {
+    const m = require('react-native-video');
+    return (m?.default || m) as React.ComponentType<any>;
+  } catch {
+    return null;
+  }
+}
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useDispatch, useSelector } from 'react-redux';
@@ -39,6 +48,53 @@ function formatProgramTime(dateValue: string) {
   return `${hh}:${mm}`;
 }
 
+function PreviewSkeleton() {
+  const shimmer = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(shimmer, {
+        toValue: 1,
+        duration: 1100,
+        useNativeDriver: true,
+      }),
+    ).start();
+  }, [shimmer]);
+
+  const translateX = shimmer.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-320, 320],
+  });
+
+  return (
+    <View style={skeletonStyles.container}>
+      <Animated.View
+        style={[skeletonStyles.shimmer, { transform: [{ translateX }] }]}
+      />
+    </View>
+  );
+}
+
+const skeletonStyles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#1c1c1c',
+    overflow: 'hidden',
+  },
+  shimmer: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 220,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    transform: [{ skewX: '-20deg' }],
+  },
+});
+
 function getDayChips() {
   const labels = ['today', 'tomorrow'];
   const now = new Date();
@@ -64,6 +120,11 @@ export function TvChannelsScreen() {
   const navigation = useNavigation<ScreenNavigationProp>();
   const dispatch = useDispatch<AppDispatch>();
   const isTV = Platform.isTV;
+
+  const VideoEl = useMemo(() => getVideoComponent(), []) as any;
+  const previewRef = useRef<any>(null);
+  const [previewReady, setPreviewReady] = useState(false);
+
   const [focusedCategoryId, setFocusedCategoryId] = useState<
     string | null
   >(null);
@@ -72,6 +133,7 @@ export function TvChannelsScreen() {
   );
   const [selectedDayKey, setSelectedDayKey] = useState('today');
   const [focusedDayKey, setFocusedDayKey] = useState<string | null>(null);
+  const [previewFocused, setPreviewFocused] = useState(false);
 
   const {
     categories,
@@ -112,6 +174,11 @@ export function TvChannelsScreen() {
     if (selectedChannelId) return;
     dispatch(setSelectedChannelId(channels[0].id));
   }, [channels, dispatch, selectedChannelId]);
+
+  // Kanal o'zgarganda preview ni reset qilish
+  useEffect(() => {
+    setPreviewReady(false);
+  }, [selectedChannelId]);
 
   useEffect(() => {
     if (!selectedChannelId) return;
@@ -197,6 +264,7 @@ export function TvChannelsScreen() {
                       styles.categoryText,
                       active && styles.categoryTextActive,
                     ]}
+                    numberOfLines={1}
                   >
                     {category.name}
                   </Text>
@@ -239,22 +307,41 @@ export function TvChannelsScreen() {
             <>
               <Pressable
                 focusable={isTV}
+                onFocus={() => setPreviewFocused(true)}
+                onBlur={() => setPreviewFocused(false)}
                 onPress={() =>
-                  navigation.navigate('Player', {
-                    sourceUri: channelDetail.flussonic_stream_name,
-                    posterUri: channelDetail.logo_url,
-                    title: channelDetail.name,
-                    subtitle: currentProgram?.title || t('tv_channels.live'),
-                    isLive: true,
+                  navigation.navigate('TvPlayer', {
+                    channelId: channelDetail.id,
+                    streamUrl: channelDetail.flussonic_stream_name
+                      ? `https://stream.alloplay.uz/hls/stub/${channelDetail.flussonic_stream_name}/index.m3u8`
+                      : '',
+                    channelName: channelDetail.name,
+                    logoUri: channelDetail.logo_url,
+                    currentProgramTitle: currentProgram?.title,
                   })
                 }
-                style={styles.previewCard}
+                style={[
+                  styles.previewCard,
+                  previewFocused && styles.previewCardFocused,
+                ]}
               >
-                <Image
-                  source={{ uri: channelDetail.logo_url }}
-                  style={styles.previewLogo}
-                  resizeMode="contain"
-                />
+                {VideoEl && channelDetail.flussonic_stream_name ? (
+                  <VideoEl
+                    ref={previewRef}
+                    key={channelDetail.id}
+                    source={{
+                      uri: `https://stream.alloplay.uz/hls/stub/${channelDetail.flussonic_stream_name}/index.m3u8`,
+                    }}
+                    style={StyleSheet.absoluteFill}
+                    resizeMode="cover"
+                    paused={false}
+                    repeat
+                    onReadyForDisplay={() => setPreviewReady(true)}
+                    onLoad={() => setPreviewReady(true)}
+                  />
+                ) : null}
+
+                {!previewReady && <PreviewSkeleton />}
               </Pressable>
 
               <Text style={styles.sectionTitle}>
@@ -384,15 +471,13 @@ const styles = StyleSheet.create({
     height: 226,
     borderRadius: 12,
     backgroundColor: '#161616',
-    borderWidth: 1,
-    borderColor: '#242424',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
     marginBottom: 14,
+    overflow: 'hidden',
   },
-  previewLogo: {
-    width: '92%',
-    height: '84%',
+  previewCardFocused: {
+    borderColor: '#ffffff',
   },
   sectionTitle: {
     color: '#fff',

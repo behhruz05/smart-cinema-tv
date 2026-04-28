@@ -19,6 +19,13 @@ export type RootStackParamList = {
   };
   MovieDetail: { movieId: string };
   SeriesDetail: { seriesId: string };
+  TvPlayer: {
+    channelId: string;
+    streamUrl: string;
+    channelName: string;
+    logoUri?: string;
+    currentProgramTitle?: string;
+  };
   Player: {
     movieId?: string;
     episodeId?: string;

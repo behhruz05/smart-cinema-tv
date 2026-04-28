@@ -107,6 +107,16 @@
     "tomorrow": "Ertaga",
     "live": "Jonli efir"
   },
+  "tv_player": {
+    "no_internet": "Internet aloqasi yo'q",
+    "internet_restored": "Internet aloqasi tiklandi",
+    "no_data": "Ma'lumot yo'q",
+    "live_badge": "Jonli efir",
+    "size_soft": "Yumshoq",
+    "quality_auto": "Avto",
+    "lang_russian": "Русский",
+    "lang_uzbek": "O'zbek"
+  },
   "player": {
     "subtitle_size": "Subtitr hajmi",
     "language": "Til",

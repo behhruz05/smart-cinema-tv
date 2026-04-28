@@ -14,6 +14,7 @@ export interface TvChannel {
   category_id: string;
   order_number: number;
   status: string;
+  flussonic_stream_name?: string;
 }
 
 export interface TvProgram {

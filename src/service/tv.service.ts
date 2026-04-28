@@ -59,4 +59,20 @@ export const tvService = {
       },
     );
   },
+
+  getChannelEpg(
+    channelId: string,
+    startDate: string,
+    endDate: string,
+    lang = 'uz',
+  ) {
+    const query = new URLSearchParams({
+      start_date: startDate,
+      end_date: endDate,
+    }).toString();
+    return api<TvProgramsResponse>(
+      `/tv/channels/${channelId}/epg?${query}`,
+      { headers: { 'Accept-Language': lang } },
+    );
+  },
 };
