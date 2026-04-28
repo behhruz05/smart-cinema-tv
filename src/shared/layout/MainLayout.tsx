@@ -1,8 +1,13 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, StyleSheet, Keyboard } from 'react-native';
 import { SidebarMenu } from './SidebarMenu';
 import { Header } from './Header';
 import { useAuth } from '../../app/providers/AppProviders';
+
+const globalWithIdleCallbacks = globalThis as typeof globalThis & {
+  requestIdleCallback?: (cb: () => void) => number;
+  cancelIdleCallback?: (id: number) => void;
+};
 
 export function MainLayout({
   children,
@@ -11,6 +16,28 @@ export function MainLayout({
 }) {
   const { resolvedTheme } = useAuth();
   const isDarkMode = resolvedTheme === 'dark';
+
+  useEffect(() => {
+    Keyboard.dismiss();
+
+    if (typeof globalWithIdleCallbacks.requestIdleCallback === 'function') {
+      const idleId = globalWithIdleCallbacks.requestIdleCallback(() => {
+        Keyboard.dismiss();
+      });
+
+      return () => {
+        globalWithIdleCallbacks.cancelIdleCallback?.(idleId);
+      };
+    }
+
+    const timeoutId = setTimeout(() => {
+      Keyboard.dismiss();
+    }, 0);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, []);
 
   return (
     <View

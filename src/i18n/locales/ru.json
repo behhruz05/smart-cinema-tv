@@ -124,7 +124,10 @@
     "live": "ПРЯМОЙ ЭФИР",
     "retry": "Повторить",
     "seek_mode_hint": "Нажмите OK для управления прогрессом",
-    "seek_mode_active": "Влево/вправо перемотка, OK применить"
+    "seek_mode_active": "Влево/вправо перемотка, OK применить",
+    "subscription_required_title": "Нужна подписка",
+    "subscription_required_message": "Для просмотра этого контента подписка не активирована. Сначала оформите подписку.",
+    "subscription_required_action": "Понятно"
   },
   "settings": {
     "interface_language": "Интерфейс и язык",

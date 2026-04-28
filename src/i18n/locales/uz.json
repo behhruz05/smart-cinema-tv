@@ -124,7 +124,10 @@
     "live": "JONLI",
     "retry": "Qayta urinish",
     "seek_mode_hint": "Progressni boshqarish uchun OK bosing",
-    "seek_mode_active": "Chap/O'ng suring, OK tasdiqlaydi"
+    "seek_mode_active": "Chap/O'ng suring, OK tasdiqlaydi",
+    "subscription_required_title": "Obuna talab qilinadi",
+    "subscription_required_message": "Bu kontentni ko'rish uchun obuna sotib olinmagan. Avval obunani faollashtiring.",
+    "subscription_required_action": "Tushunarli"
   },
   "settings": {
     "interface_language": "Interfeys va til",

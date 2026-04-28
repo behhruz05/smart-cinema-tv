@@ -26,6 +26,12 @@ const SplineBg = require('../../../assets/imgs/Spline.png');
 const QrCenterLogo = require('../../../assets/imgs/QrCode.png');
 
 const TV_CODE_LENGTH = 6;
+const TV_SESSION_FALLBACK_EXPIRES_SECONDS = 600;
+const TV_SESSION_REFRESH_EARLY_MS = 5000;
+const globalWithIdleCallbacks = globalThis as typeof globalThis & {
+  requestIdleCallback?: (cb: () => void) => number;
+  cancelIdleCallback?: (id: number) => void;
+};
 
 type SessionState = 'loading' | 'pending' | 'expired' | 'error';
 
@@ -59,6 +65,9 @@ export function LoginScreen() {
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
     null,
   );
+  const sessionRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const deviceIdRef = useRef<string>('');
   const loginInputRef = useRef<TextInput | null>(null);
   const passwordInputRef = useRef<TextInput | null>(null);
@@ -70,10 +79,36 @@ export function LoginScreen() {
     }
   }, []);
 
+  const clearSessionRefreshTimer = useCallback(() => {
+    if (sessionRefreshTimerRef.current) {
+      clearTimeout(sessionRefreshTimerRef.current);
+      sessionRefreshTimerRef.current = null;
+    }
+  }, []);
+
+  const dismissKeyboardCompletely = useCallback(() => {
+    loginInputRef.current?.blur();
+    passwordInputRef.current?.blur();
+    Keyboard.dismiss();
+
+    // Some Android TV devices keep IME visible through route changes.
+    if (typeof globalWithIdleCallbacks.requestIdleCallback === 'function') {
+      globalWithIdleCallbacks.requestIdleCallback(() => {
+        Keyboard.dismiss();
+      });
+      return;
+    }
+
+    setTimeout(() => {
+      Keyboard.dismiss();
+    }, 0);
+  }, []);
+
   const createSession = useCallback(async () => {
     setSessionState('loading');
     setSession(null);
     stopPolling();
+    clearSessionRefreshTimer();
     try {
       const deviceId = await deviceStorage.getOrCreate();
       deviceIdRef.current = deviceId;
@@ -86,6 +121,8 @@ export function LoginScreen() {
           const status = await authApi.checkTVStatus(data.session_id);
           if (status.status === 'confirmed' && status.tokens) {
             stopPolling();
+            clearSessionRefreshTimer();
+            dismissKeyboardCompletely();
             await setToken(status.tokens.access_token);
             const user = await dispatch(fetchMe()).unwrap();
             await changeAppLanguage(normalizeAppLanguage(user?.language));
@@ -100,16 +137,50 @@ export function LoginScreen() {
     } catch {
       setSessionState('error');
     }
-  }, [dispatch, setToken, stopPolling]);
+  }, [
+    clearSessionRefreshTimer,
+    dismissKeyboardCompletely,
+    dispatch,
+    setToken,
+    stopPolling,
+  ]);
 
   useEffect(() => {
-    Keyboard.dismiss();
-  }, []);
+    if (sessionState !== 'pending' || !session) return;
+
+    const expiresInSeconds =
+      Number.isFinite(session.expires_in) && session.expires_in > 0
+        ? session.expires_in
+        : TV_SESSION_FALLBACK_EXPIRES_SECONDS;
+    const refreshInMs = Math.max(
+      15000,
+      expiresInSeconds * 1000 - TV_SESSION_REFRESH_EARLY_MS,
+    );
+
+    clearSessionRefreshTimer();
+    sessionRefreshTimerRef.current = setTimeout(() => {
+      createSession();
+    }, refreshInMs);
+
+    return () => {
+      clearSessionRefreshTimer();
+    };
+  }, [
+    clearSessionRefreshTimer,
+    createSession,
+    session,
+    sessionState,
+  ]);
+
+  useEffect(() => {
+    dismissKeyboardCompletely();
+  }, [dismissKeyboardCompletely]);
 
   useEffect(() => {
     createSession();
     return () => {
       stopPolling();
+      clearSessionRefreshTimer();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -124,9 +195,7 @@ export function LoginScreen() {
   };
 
   const onLogin = async () => {
-    loginInputRef.current?.blur();
-    passwordInputRef.current?.blur();
-    Keyboard.dismiss();
+    dismissKeyboardCompletely();
 
     if (!login || !password) {
       setError(t('login.fill_fields'));
@@ -155,13 +224,19 @@ export function LoginScreen() {
       await setToken(token);
       const user = await dispatch(fetchMe()).unwrap();
       await changeAppLanguage(normalizeAppLanguage(user?.language));
-      Keyboard.dismiss();
+      dismissKeyboardCompletely();
     } catch {
       setError(t('login.login_error'));
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      dismissKeyboardCompletely();
+    };
+  }, [dismissKeyboardCompletely]);
 
   // Split session.code into individual digits for display
   const codeDigits = session?.code
@@ -255,7 +330,9 @@ export function LoginScreen() {
               value={login}
               onChangeText={setLogin}
               placeholder={t('login.enter_phone')}
-              placeholderTextColor="#6b7280"
+              placeholderTextColor={
+                focusedField === 'login' ? '#ffffff' : '#6b7280'
+              }
             />
           </Pressable>
 
@@ -276,7 +353,9 @@ export function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               placeholder={t('login.enter_password')}
-              placeholderTextColor="#6b7280"
+              placeholderTextColor={
+                focusedField === 'password' ? '#ffffff' : '#6b7280'
+              }
               secureTextEntry={!showPassword}
             />
             <Pressable
@@ -284,9 +363,23 @@ export function LoginScreen() {
               style={styles.iconRight}
               onPress={() => setShowPassword(!showPassword)}>
               {showPassword ? (
-                <EyeOffIcon size={20} color="#9ca3af" />
+                <EyeOffIcon
+                  size={20}
+                  color={
+                    focusedField === 'password'
+                      ? '#ffffff'
+                      : '#9ca3af'
+                  }
+                />
               ) : (
-                <EyeIcon size={20} color="#9ca3af" />
+                <EyeIcon
+                  size={20}
+                  color={
+                    focusedField === 'password'
+                      ? '#ffffff'
+                      : '#9ca3af'
+                  }
+                />
               )}
             </Pressable>
           </Pressable>

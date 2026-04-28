@@ -124,7 +124,10 @@
     "live": "LIVE",
     "retry": "Retry",
     "seek_mode_hint": "Press OK to control progress",
-    "seek_mode_active": "Left/Right seek, OK to apply"
+    "seek_mode_active": "Left/Right seek, OK to apply",
+    "subscription_required_title": "Subscription Required",
+    "subscription_required_message": "This content is not available on your current plan. Please purchase a subscription first.",
+    "subscription_required_action": "Got it"
   },
   "settings": {
     "interface_language": "Interface and language",

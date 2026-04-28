@@ -26,6 +26,8 @@ import {
 import { MovieDetailHero } from '../components/MovieDetailHero';
 import { MovieDetailFacts } from '../components/MovieDetailFacts';
 import { MovieSimilarRail } from '../components/MovieSimilarRail';
+import { useGuardedPlayerNavigation } from '../../player/hooks/useGuardedPlayerNavigation';
+import { SubscriptionRequiredModal } from '../../../shared/components/SubscriptionRequiredModal';
 
 type ScreenRouteProp = RouteProp<
   RootStackParamList,
@@ -37,6 +39,11 @@ export function MovieDetailScreen() {
   const { t, i18n } = useTranslation();
   const route = useRoute<ScreenRouteProp>();
   const navigation = useNavigation<ScreenNavigationProp>();
+  const {
+    openPlayerWithGuard,
+    subscriptionModalVisible,
+    closeSubscriptionModal,
+  } = useGuardedPlayerNavigation(navigation);
   const dispatch = useDispatch<AppDispatch>();
   const { movieId } = route.params;
 
@@ -133,10 +140,9 @@ export function MovieDetailScreen() {
         backLabel={t('common.back')}
         watchLabel={t('home.carousel.watch')}
         isFavorite={Boolean(movie.is_favorite)}
-        isFavoriteLoading={favoriteStatus === 'loading'}
         onBack={() => navigation.goBack()}
         onWatch={() =>
-          navigation.navigate('Player', {
+          openPlayerWithGuard({
             movieId: movie.id,
             posterUri: movie.poster_url,
             title,
@@ -145,6 +151,7 @@ export function MovieDetailScreen() {
             durationSeconds: movie.duration_seconds,
           })
         }
+        isFavoriteLoading={favoriteStatus === 'loading'}
         onToggleFavorite={() => {
           dispatch(
             toggleMovieFavorite({
@@ -175,6 +182,10 @@ export function MovieDetailScreen() {
           movies={similarMovies}
         />
       )}
+      <SubscriptionRequiredModal
+        visible={subscriptionModalVisible}
+        onClose={closeSubscriptionModal}
+      />
     </ScrollView>
   );
 }

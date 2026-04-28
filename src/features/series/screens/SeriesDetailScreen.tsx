@@ -31,6 +31,8 @@ import { BackIcon } from '../../../shared/icons/BackIcon';
 import { MovieCard } from '../../../shared/components/MovieCard';
 import { RatingBadge } from '../../../shared/components/RatingBadge';
 import { SeriesEpisode, SeriesSeason } from '../../../types/series';
+import { useGuardedPlayerNavigation } from '../../player/hooks/useGuardedPlayerNavigation';
+import { SubscriptionRequiredModal } from '../../../shared/components/SubscriptionRequiredModal';
 
 type ScreenRouteProp = RouteProp<RootStackParamList, 'SeriesDetail'>;
 type ScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -51,6 +53,11 @@ export function SeriesDetailScreen() {
   const { t, i18n } = useTranslation();
   const route = useRoute<ScreenRouteProp>();
   const navigation = useNavigation<ScreenNavigationProp>();
+  const {
+    openPlayerWithGuard,
+    subscriptionModalVisible,
+    closeSubscriptionModal,
+  } = useGuardedPlayerNavigation(navigation);
   const dispatch = useDispatch<AppDispatch>();
   const isTV = Platform.isTV;
   const { seriesId } = route.params;
@@ -167,7 +174,7 @@ export function SeriesDetailScreen() {
           ? episode.title_en || episode.title_uz
           : episode.title_uz;
 
-    navigation.navigate('Player', {
+    openPlayerWithGuard({
       episodeId: episode.id,
       posterUri: episode.poster_url || selectedSeries.poster_url,
       title,
@@ -186,7 +193,7 @@ export function SeriesDetailScreen() {
       return;
     }
 
-    navigation.navigate('Player', {
+    openPlayerWithGuard({
       episodeId,
       posterUri: selectedSeries.poster_url,
       title,
@@ -364,6 +371,10 @@ export function SeriesDetailScreen() {
             />
           </View>
         ) : null}
+        <SubscriptionRequiredModal
+          visible={subscriptionModalVisible}
+          onClose={closeSubscriptionModal}
+        />
       </View>
     </ScrollView>
   );

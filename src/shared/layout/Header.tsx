@@ -56,6 +56,10 @@ export function Header() {
 
   const isSearch = currentRoute === 'Search';
   const isDarkMode = resolvedTheme === 'dark';
+  const isSearchFocused = focused === 'search';
+  const isBackFocused = focused === 'back';
+  const isAvatarActive =
+    focused === 'avatar' || currentRoute === 'Profile';
 
   useEffect(() => {
     if (isTV && isSearch) {
@@ -98,12 +102,22 @@ export function Header() {
               style={[
                 styles.back,
                 isDarkMode && styles.cardDark,
-                focused === 'back' && styles.focusedButton,
-                isDarkMode && focused === 'back' && styles.focusedButtonDark,
+                isBackFocused && styles.focusedButton,
+                isDarkMode && isBackFocused && styles.focusedButtonDark,
               ]}
             >
-              <BackIcon size={20} color={isDarkMode ? '#9a9a9a' : '#888'} />
-              <Text style={[styles.backText, isDarkMode && styles.textMutedDark]}>{t('common.back')}</Text>
+              <BackIcon
+                size={20}
+                color={isBackFocused ? '#ffffff' : isDarkMode ? '#9a9a9a' : '#888'}
+              />
+              <Text
+                style={[
+                  styles.backText,
+                  isDarkMode && styles.textMutedDark,
+                  isBackFocused && styles.textPrimaryDark,
+                ]}>
+                {t('common.back')}
+              </Text>
             </Pressable>
         ) : (
           <View style={styles.timeWeatherRow}>
@@ -124,11 +138,14 @@ export function Header() {
             {
               width: animatedWidth,
             },
-            focused === 'search' && styles.focusedButton,
-            isDarkMode && focused === 'search' && styles.focusedButtonDark,
+            isSearchFocused && styles.focusedButton,
+            isDarkMode && isSearchFocused && styles.focusedButtonDark,
           ]}
         >
-          <SearchIcon size={18} color={isDarkMode ? '#9a9a9a' : '#888'} />
+          <SearchIcon
+            size={18}
+            color={isSearchFocused ? '#ffffff' : isDarkMode ? '#9a9a9a' : '#888'}
+          />
 
           {isSearch ? (
             <TextInput
@@ -137,9 +154,17 @@ export function Header() {
                 dispatch(setQuery(text))
               }
               placeholder={t('common.search')}
-              placeholderTextColor={isDarkMode ? '#9a9a9a' : '#888'}
+              placeholderTextColor={
+                isSearchFocused
+                  ? '#ffffff'
+                  : isDarkMode
+                    ? '#9a9a9a'
+                    : '#888'
+              }
               style={[styles.input, isDarkMode && styles.inputDark]}
               autoFocus
+              onFocus={() => setFocused('search')}
+              onBlur={() => setFocused(null)}
             />
           ) : (
             <Pressable
@@ -153,13 +178,21 @@ export function Header() {
               }}
               onPress={() => navigation.navigate('Search')}
             >
-              <Text style={[styles.searchPlaceholder, isDarkMode && styles.textMutedDark]}>
+              <Text
+                style={[
+                  styles.searchPlaceholder,
+                  isDarkMode && styles.textMutedDark,
+                  isSearchFocused && styles.textPrimaryDark,
+                ]}>
                 {query || t('common.search')}
               </Text>
             </Pressable>
           )}
 
-          <VoiceIcon size={18} color={isDarkMode ? '#9a9a9a' : '#888'} />
+          <VoiceIcon
+            size={18}
+            color={isSearchFocused ? '#ffffff' : isDarkMode ? '#9a9a9a' : '#888'}
+          />
         </Animated.View>
 
         {!isSearch && (
@@ -179,18 +212,16 @@ export function Header() {
               style={[
                 styles.avatar,
                 isDarkMode && styles.cardDark,
-                (focused === 'avatar' ||
-                  currentRoute === 'Profile') &&
-                  styles.focusedButton,
+                isAvatarActive && styles.focusedButton,
                 isDarkMode &&
-                  (focused === 'avatar' || currentRoute === 'Profile') &&
+                  isAvatarActive &&
                   styles.focusedButtonDark,
               ]}
             >
               <UserIcon
                 size={18}
                 color={
-                  currentRoute === 'Profile'
+                  isAvatarActive
                     ? isDarkMode
                       ? '#ffffff'
                       : '#fff'

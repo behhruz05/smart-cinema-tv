@@ -25,6 +25,8 @@ import { WatchHistory } from '../../../shared/components/WatchHistory';
 import { NewMovieCard } from '../../../shared/components/NewMovieCard';
 import { RootStackParamList } from '../../../types/navigations';
 import { WatchHistoryItem } from '../../../types/history';
+import { useGuardedPlayerNavigation } from '../../player/hooks/useGuardedPlayerNavigation';
+import { SubscriptionRequiredModal } from '../../../shared/components/SubscriptionRequiredModal';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -32,6 +34,11 @@ export function HomeScreen() {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const navigation = useNavigation<NavProp>();
+  const {
+    openPlayerWithGuard,
+    subscriptionModalVisible,
+    closeSubscriptionModal,
+  } = useGuardedPlayerNavigation(navigation);
 
   const { popular, latest, history, channels } =
     useSelector((state: RootState) => state.home);
@@ -95,7 +102,7 @@ export function HomeScreen() {
           if (!contentId) {
             return;
           }
-          navigation.navigate('Player', {
+          openPlayerWithGuard({
             episodeId: contentId,
             posterUri: historyItem.poster_url,
             title:
@@ -110,7 +117,7 @@ export function HomeScreen() {
         }}
       />
     ),
-    [navigation],
+    [navigation, openPlayerWithGuard],
   );
 
 
@@ -196,6 +203,10 @@ export function HomeScreen() {
           renderItem={renderChannel}
         />
       </Section>
+      <SubscriptionRequiredModal
+        visible={subscriptionModalVisible}
+        onClose={closeSubscriptionModal}
+      />
     </ScrollView>
   );
 }

@@ -24,13 +24,13 @@ import { Carousel } from '../../../types/home';
 
 const SPACING = 20;
 const AUTO_ROTATE_INTERVAL_MS = 3000;
-const DOUBLE_PRESS_WINDOW_MS = 320;
 const ITEM_EDGE_SAFE_GAP = 12;
 const SIDEBAR_COLLAPSED_TOTAL_INSET = 102;
 const SIDEBAR_EXPANDED_TOTAL_INSET = 212;
 const PROGRAMMATIC_SCROLL_SETTLE_MS = 360;
 const PENDING_WIDTH_FLUSH_MS = 520;
 const EDGE_NAV_DEDUPE_MS = 220;
+const EDGE_FOCUS_GRACE_MS = 320;
 
 export function HomeCarousel() {
   const dispatch = useDispatch<AppDispatch>();
@@ -44,9 +44,11 @@ export function HomeCarousel() {
   const isHorizontalScrollActiveRef = useRef(false);
   const pendingViewportWidthRef = useRef<number | null>(null);
   const lastMeasuredViewportWidthRef = useRef<number>(0);
-  const lastDirectionalPressRef = useRef<{ dir: 'left' | 'right'; at: number } | null>(null);
   const focusedActionIndexRef = useRef<number | null>(null);
   const focusedActionKindRef = useRef<null | 'watch' | 'details' | 'save'>(null);
+  const lastFocusedActionIndexRef = useRef<number | null>(null);
+  const lastFocusedActionKindRef = useRef<null | 'watch' | 'details' | 'save'>(null);
+  const lastActionBlurAtRef = useRef<number>(0);
   const lastEdgeNavigateRef = useRef<{
     dir: 'left' | 'right';
     at: number;
@@ -215,12 +217,16 @@ export function HomeCarousel() {
     }
     focusedActionIndexRef.current = itemIndex;
     focusedActionKindRef.current = action;
+    lastFocusedActionIndexRef.current = itemIndex;
+    lastFocusedActionKindRef.current = action;
+    lastActionBlurAtRef.current = 0;
   }, []);
 
   const markCarouselBlurred = useCallback((
     itemIndex: number,
     action: 'watch' | 'details' | 'save',
   ) => {
+    lastActionBlurAtRef.current = Date.now();
     if (blurTimerRef.current) {
       clearTimeout(blurTimerRef.current);
     }
@@ -235,35 +241,10 @@ export function HomeCarousel() {
     }, 120);
   }, []);
 
-  const handleDirectionalPress = useCallback(
-    (direction: 'left' | 'right', sourceIndex?: number) => {
-      const now = Date.now();
-      const previous = lastDirectionalPressRef.current;
-      const isDoubleTap =
-        previous &&
-        previous.dir === direction &&
-        now - previous.at <= DOUBLE_PRESS_WINDOW_MS;
-
-      lastDirectionalPressRef.current = { dir: direction, at: now };
-      if (!isDoubleTap) return;
-
-      const baseIndex =
-        typeof sourceIndex === 'number'
-          ? sourceIndex
-          : typeof focusedActionIndexRef.current === 'number'
-            ? focusedActionIndexRef.current
-            : currentIndexRef.current;
-
-      scrollToIndex(
-        baseIndex + (direction === 'right' ? 1 : -1),
-        { preserveFocus: true },
-      );
-    },
-    [scrollToIndex],
-  );
-
   const handleEdgeNavigate = useCallback(
     (direction: 'left' | 'right', sourceIndex: number) => {
+      if (!carousels.length) return;
+
       const now = Date.now();
       const last = lastEdgeNavigateRef.current;
       if (
@@ -279,17 +260,23 @@ export function HomeCarousel() {
         at: now,
         index: sourceIndex,
       };
-      scrollToIndex(
-        sourceIndex + (direction === 'right' ? 1 : -1),
-        { preserveFocus: true },
-      );
+      const rawNextIndex =
+        sourceIndex + (direction === 'right' ? 1 : -1);
+      const wrappedNextIndex =
+        rawNextIndex < 0
+          ? carousels.length - 1
+          : rawNextIndex >= carousels.length
+            ? 0
+            : rawNextIndex;
+
+      scrollToIndex(wrappedNextIndex, { preserveFocus: true });
     },
-    [scrollToIndex],
+    [carousels.length, scrollToIndex],
   );
 
   const handleTVEvent = useCallback(
     (event: { eventType?: string; keyCode?: number }) => {
-      if (!isTV || focusedActionIndexRef.current === null) return;
+      if (!isTV) return;
 
       const normalized = String(event?.eventType || '')
         .toLowerCase()
@@ -316,20 +303,35 @@ export function HomeCarousel() {
 
       if (!direction) return;
 
-      const focusedAction = focusedActionKindRef.current;
-      const focusedIndex = focusedActionIndexRef.current;
+      const now = Date.now();
+      const hasLiveFocus = focusedActionIndexRef.current !== null;
+      const inGraceWindow =
+        !hasLiveFocus &&
+        lastActionBlurAtRef.current > 0 &&
+        now - lastActionBlurAtRef.current <= EDGE_FOCUS_GRACE_MS;
+
+      const focusedAction = hasLiveFocus
+        ? focusedActionKindRef.current
+        : inGraceWindow
+          ? lastFocusedActionKindRef.current
+          : null;
+      const focusedIndex = hasLiveFocus
+        ? focusedActionIndexRef.current
+        : inGraceWindow
+          ? lastFocusedActionIndexRef.current
+          : null;
+
+      if (focusedAction === null || focusedIndex === null) return;
+
       const isEdgeNavigate =
         (focusedAction === 'watch' && direction === 'left') ||
         (focusedAction === 'save' && direction === 'right');
 
       if (isEdgeNavigate && typeof focusedIndex === 'number') {
         handleEdgeNavigate(direction, focusedIndex);
-        return;
       }
-
-      handleDirectionalPress(direction, focusedActionIndexRef.current ?? undefined);
     },
-    [handleDirectionalPress, handleEdgeNavigate, isTV],
+    [handleEdgeNavigate, isTV],
   );
 
   useEffect(() => {
@@ -349,17 +351,6 @@ export function HomeCarousel() {
   }, [carousels.length, scrollToIndex]);
 
   useEffect(() => {
-    return () => {
-      if (scrollSettleTimerRef.current) {
-        clearTimeout(scrollSettleTimerRef.current);
-      }
-      if (pendingWidthFlushTimerRef.current) {
-        clearTimeout(pendingWidthFlushTimerRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
     if (!isTV) return;
     let tvEventSubscription: any = null;
 
@@ -370,7 +361,7 @@ export function HomeCarousel() {
       const tvEventHandler = new TVHandler();
       tvEventSubscription = tvEventHandler;
       tvEventHandler.enable?.(undefined, (_: any, event: any) => {
-        handleTVEvent(event);
+        handleTVEvent(event as { eventType?: string; keyCode?: number });
       });
     } catch {
       // no-op when TV event handler is unavailable
@@ -378,6 +369,11 @@ export function HomeCarousel() {
 
     return () => {
       tvEventSubscription?.disable?.();
+    };
+  }, [handleTVEvent, isTV]);
+
+  useEffect(() => {
+    return () => {
       if (scrollSettleTimerRef.current) {
         clearTimeout(scrollSettleTimerRef.current);
       }
@@ -388,7 +384,7 @@ export function HomeCarousel() {
         clearTimeout(blurTimerRef.current);
       }
     };
-  }, [handleTVEvent, isTV]);
+  }, []);
 
   const renderItem = useCallback<ListRenderItem<Carousel>>(
     ({ item, index }) => (
@@ -399,14 +395,10 @@ export function HomeCarousel() {
           preferredFocus={isTV && preferredFocusIndex === index}
           onActionFocus={markCarouselFocused}
           onActionBlur={markCarouselBlurred}
-          onDirectionalPress={handleDirectionalPress}
-          onEdgeNavigate={handleEdgeNavigate}
         />
       </View>
     ),
     [
-      handleEdgeNavigate,
-      handleDirectionalPress,
       isTV,
       itemContainerStyle,
       markCarouselBlurred,

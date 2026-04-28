@@ -250,7 +250,9 @@ export function SidebarMenu() {
                   ? '#9a9a9a'
                   : '#777'
             }
-            filled={stableCurrentRoute === 'Settings'}
+            filled={
+              stableCurrentRoute === 'Settings' || focused === 'Settings'
+            }
           />
 
           <Animated.View style={{ opacity: textOpacity }}>

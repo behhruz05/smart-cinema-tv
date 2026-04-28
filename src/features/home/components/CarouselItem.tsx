@@ -14,6 +14,10 @@ import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { movieService } from '../../../service/movie.service';
 import { RatingBadge } from '../../../shared/components/RatingBadge';
+import { RootStackParamList } from '../../../types/navigations';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useGuardedPlayerNavigation } from '../../player/hooks/useGuardedPlayerNavigation';
+import { SubscriptionRequiredModal } from '../../../shared/components/SubscriptionRequiredModal';
 
 interface Props {
   item: Carousel;
@@ -21,8 +25,6 @@ interface Props {
   preferredFocus?: boolean;
   onActionFocus?: (itemIndex: number, action: 'watch' | 'details' | 'save') => void;
   onActionBlur?: (itemIndex: number, action: 'watch' | 'details' | 'save') => void;
-  onDirectionalPress?: (direction: 'left' | 'right', itemIndex: number) => void;
-  onEdgeNavigate?: (direction: 'left' | 'right', itemIndex: number) => void;
 }
 
 function CarouselItemComponent({
@@ -31,12 +33,17 @@ function CarouselItemComponent({
   preferredFocus = false,
   onActionFocus,
   onActionBlur,
-  onDirectionalPress,
-  onEdgeNavigate,
 }: Props) {
   const { t, i18n } = useTranslation();
   const movie = item.movie;
-  const navigation = useNavigation<any>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const {
+    openPlayerWithGuard,
+    isCheckingAccess,
+    subscriptionModalVisible,
+    closeSubscriptionModal,
+  } = useGuardedPlayerNavigation(navigation);
   const isTV = Platform.isTV;
   const [focusedButton, setFocusedButton] = React.useState<
     null | 'watch' | 'details' | 'save'
@@ -49,10 +56,6 @@ function CarouselItemComponent({
   const [watchHandle, setWatchHandle] = React.useState<number | undefined>(undefined);
   const [detailsHandle, setDetailsHandle] = React.useState<number | undefined>(undefined);
   const [saveHandle, setSaveHandle] = React.useState<number | undefined>(undefined);
-  const lastDirectionalEventRef = React.useRef<{
-    direction: 'left' | 'right';
-    at: number;
-  } | null>(null);
 
   const lang = i18n.language.startsWith('ru')
     ? 'ru'
@@ -115,105 +118,12 @@ function CarouselItemComponent({
     setSaveHandle(findNodeHandle(saveRef.current) ?? undefined);
   }, [isTV]);
 
-  const resolveDirection = React.useCallback((event: any): 'left' | 'right' | null => {
-    const normalized = String(
-      event?.nativeEvent?.key || event?.nativeEvent?.eventType || event?.eventType || '',
-    )
-      .toLowerCase()
-      .trim();
-    const keyCode = event?.nativeEvent?.keyCode ?? event?.keyCode;
-
-    if (
-      normalized === 'left' ||
-      normalized === 'arrowleft' ||
-      normalized === 'dpadleft' ||
-      normalized === 'swipeleft' ||
-      normalized === 'rewind' ||
-      keyCode === 21 ||
-      keyCode === 37
-    ) {
-      return 'left';
-    }
-
-    if (
-      normalized === 'right' ||
-      normalized === 'arrowright' ||
-      normalized === 'dpadright' ||
-      normalized === 'swiperight' ||
-      normalized === 'fastforward' ||
-      keyCode === 22 ||
-      keyCode === 39
-    ) {
-      return 'right';
-    }
-
-    return null;
-  }, []);
-
-  const handleDirectionalEvent = React.useCallback((event: any) => {
-    const direction = resolveDirection(event);
-    if (!direction || !focusedButton) return;
-
-    const now = Date.now();
-    const prev = lastDirectionalEventRef.current;
-    if (prev && prev.direction === direction && now - prev.at < 120) {
-      return;
-    }
-    lastDirectionalEventRef.current = { direction, at: now };
-
-    if (focusedButton === 'watch' && direction === 'left') {
-      onEdgeNavigate?.('left', itemIndex);
-      return;
-    }
-
-    if (focusedButton === 'save' && direction === 'right') {
-      onEdgeNavigate?.('right', itemIndex);
-      return;
-    }
-
-    onDirectionalPress?.(direction, itemIndex);
-  }, [focusedButton, itemIndex, onDirectionalPress, onEdgeNavigate, resolveDirection]);
-
-  const handleDirectionalKeyDown = React.useCallback(
-    (event: any) => {
-      handleDirectionalEvent(event);
-    },
-    [handleDirectionalEvent],
-  );
-
-  React.useEffect(() => {
-    if (!isTV || !focusedButton) return;
-    let tvEventSubscription: any = null;
-
-    try {
-      const rnModule = require('react-native');
-      const TVHandler = rnModule?.TVEventHandler;
-      if (!TVHandler) return;
-      const tvEventHandler = new TVHandler();
-      tvEventSubscription = tvEventHandler;
-      tvEventHandler.enable?.(undefined, (_: any, event: any) => {
-        handleDirectionalEvent(event);
-      });
-    } catch {
-      // no-op when TV event handler is unavailable
-    }
-
-    return () => {
-      tvEventSubscription?.disable?.();
-    };
-  }, [focusedButton, handleDirectionalEvent, isTV]);
-
-  const tvKeyDownProps = isTV
-    ? ({
-        onKeyDown: handleDirectionalKeyDown,
-      } as any)
-    : null;
-
   return (
-    <ImageBackground
-      source={{ uri: item.poster_url }}
-      style={styles.banner}
-    >
+    <>
+      <ImageBackground
+        source={{ uri: item.poster_url }}
+        style={styles.banner}
+      >
       <View style={styles.overlay} />
 
       <View style={styles.content}>
@@ -253,9 +163,8 @@ function CarouselItemComponent({
               setFocusedButton(null);
               onActionBlur?.(itemIndex, 'watch');
             }}
-            {...tvKeyDownProps}
             onPress={() =>
-              navigation.navigate('Player', {
+              openPlayerWithGuard({
                 movieId: movie.id,
                 posterUri: item.poster_url || movie.poster_url,
                 title,
@@ -264,6 +173,7 @@ function CarouselItemComponent({
                 durationSeconds: movie.duration_seconds,
               })
             }
+            disabled={isCheckingAccess}
           >
             <PlayIcon size={18} color="#000" />
             <Text style={styles.playText}>{t('home.carousel.watch')}</Text>
@@ -290,7 +200,6 @@ function CarouselItemComponent({
               setFocusedButton(null);
               onActionBlur?.(itemIndex, 'details');
             }}
-            {...tvKeyDownProps}
             onPress={() =>
               navigation.navigate('MovieDetail', {
                 movieId: movie.id,
@@ -322,7 +231,6 @@ function CarouselItemComponent({
               setFocusedButton(null);
               onActionBlur?.(itemIndex, 'save');
             }}
-            {...tvKeyDownProps}
             onPress={handleToggleFavorite}
             disabled={favoriteLoading}
           >
@@ -334,7 +242,12 @@ function CarouselItemComponent({
           </Pressable>
         </View>
       </View>
-    </ImageBackground>
+      </ImageBackground>
+      <SubscriptionRequiredModal
+        visible={subscriptionModalVisible}
+        onClose={closeSubscriptionModal}
+      />
+    </>
   );
 }
 
@@ -404,7 +317,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   moreBtn: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.22)',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
@@ -416,7 +329,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   savedBtn: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.22)',
     padding: 10,
     borderRadius: 8,
     borderWidth: 2,

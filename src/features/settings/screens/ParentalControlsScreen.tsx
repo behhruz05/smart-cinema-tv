@@ -76,11 +76,13 @@ export default function ParentalControlScreen() {
         <TextInput
           value={pin}
           onChangeText={(v) => setPin(v.replace(/[^0-9]/g, '').slice(0, 4))}
+          onFocus={() => setFocused('pin')}
+          onBlur={() => setFocused(null)}
           secureTextEntry
           keyboardType="number-pad"
           maxLength={4}
           placeholder={t('settings.parental_pin_placeholder')}
-          placeholderTextColor="#7a7a7a"
+          placeholderTextColor={focused === 'pin' ? '#ffffff' : '#7a7a7a'}
           style={[styles.input, isDarkMode && styles.inputDark]}
         />
 

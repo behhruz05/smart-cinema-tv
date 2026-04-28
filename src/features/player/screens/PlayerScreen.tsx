@@ -23,8 +23,6 @@ import { tokenStorage } from '../../../shared/lib/tokenStorage';
 import { PlayerTopRow } from '../components/PlayerTopRow';
 import { PlayerSettingsPanel } from '../components/PlayerSettingsPanel';
 import { PlayerBottomControls } from '../components/PlayerBottomControls';
-import { SeekBackwardIcon } from '../../../shared/icons/SeekBackwardIcon';
-import { SeekForwardIcon } from '../../../shared/icons/SeekForwardIcon';
 
 type PlayerRouteProp = RouteProp<RootStackParamList, 'Player'>;
 type PlayerNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -120,6 +118,7 @@ export function PlayerScreen() {
   const lastProgressSentRef = useRef(0);
   const lastProgressSentAtRef = useRef(0);
   const streamRequestIdRef = useRef(0);
+  const consumedPreloadedStreamRef = useRef(false);
   const streamReloadAttemptRef = useRef(0);
   const firstFrameReadyRef = useRef(false);
   const playbackFailureRef = useRef<(error?: any) => void>(() => {});
@@ -145,6 +144,7 @@ export function PlayerScreen() {
     subtitle,
     isLive = false,
     durationSeconds = 0,
+    preloadedStreamPayload,
   } = route.params;
   const shouldResolveRemoteStream = Boolean(movieId || episodeId);
 
@@ -513,10 +513,26 @@ export function PlayerScreen() {
   }, [pingControls]);
 
   useEffect(() => {
+    consumedPreloadedStreamRef.current = false;
+  }, [episodeId, movieId, preloadedStreamPayload]);
+
+  useEffect(() => {
     if (movieId || episodeId) {
       setResolvedSourceUri(null);
       setPlaybackCandidates([]);
       setCandidateIndex(0);
+      if (preloadedStreamPayload && !consumedPreloadedStreamRef.current) {
+        consumedPreloadedStreamRef.current = true;
+        try {
+          applyStreamPayload(preloadedStreamPayload);
+          setLoadingStream(false);
+          setStreamError(null);
+          streamReloadAttemptRef.current = 0;
+          return;
+        } catch {
+          // fall back to remote loading
+        }
+      }
       loadStream();
       return;
     }
@@ -527,7 +543,14 @@ export function PlayerScreen() {
       setLoadingStream(false);
       setStreamError(null);
     }
-  }, [episodeId, loadStream, movieId, sourceUri]);
+  }, [
+    applyStreamPayload,
+    episodeId,
+    loadStream,
+    movieId,
+    preloadedStreamPayload,
+    sourceUri,
+  ]);
 
   useEffect(() => {
     setFirstFrameReady(false);
@@ -945,7 +968,7 @@ export function PlayerScreen() {
     if (settingsVisibleRef.current) {
       setSettingsVisible(false);
     }
-  }, []);
+  }, [canSeek]);
 
   const tvRootPressProps = isTV && !isAndroid
     ? ({

@@ -28,5 +28,24 @@ export type RootStackParamList = {
     subtitle?: string;
     isLive?: boolean;
     durationSeconds?: number;
+    preloadedStreamPayload?: {
+      movie_id?: string;
+      episode_id?: string;
+      title?: string;
+      stream_url: string;
+      expires_at?: number;
+      duration_seconds?: number;
+      resume_position_seconds?: number;
+      subtitles?: Array<{
+        id: string;
+        language: string;
+        file_url: string;
+      }>;
+      audio_tracks?: Array<{
+        id: string;
+        language: string;
+        file_url: string;
+      }>;
+    };
   };
 };
